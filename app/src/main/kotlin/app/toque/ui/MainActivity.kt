@@ -54,6 +54,60 @@ class MainActivity : Activity() {
     /** Écrans de base, un par partie de l'appli, gardés pour retrouver leur état. */
     private val roots = HashMap<Section, Screen>()
     private val main = Handler(Looper.getMainLooper())
+
+    // ------------------------------------------------------------------ veille de l'écran
+    private lateinit var sleepView: View
+    private var lastActivityMs = System.currentTimeMillis()
+    private var sleeping = false
+    /** Le geste qui réveille l'écran ne doit pas aussi appuyer sur un bouton. */
+    private var swallowGesture = false
+    private var lastWeightG = Int.MIN_VALUE
+    private var lastLidOpen: Boolean? = null
+    private val sleepCheck = object : Runnable {
+        override fun run() {
+            val min = prefs.screenSleepMin
+            val s = snapshot
+            val keepAwake = s.busy || s.faultCode.isNotEmpty() || s.turboActive
+            if (keepAwake) lastActivityMs = System.currentTimeMillis()
+            if (!sleeping && min > 0 && System.currentTimeMillis() - lastActivityMs >= min * 60_000L) sleepScreen()
+            main.postDelayed(this, 10_000)
+        }
+    }
+
+    private fun noteActivity() {
+        lastActivityMs = System.currentTimeMillis()
+    }
+
+    private fun sleepScreen() {
+        if (sleeping) return
+        sleeping = true
+        sleepView.visibility = View.VISIBLE
+        sleepView.bringToFront()
+        window.attributes = window.attributes.apply { screenBrightness = 0f }
+    }
+
+    fun wakeScreen() {
+        noteActivity()
+        if (!sleeping) return
+        sleeping = false
+        sleepView.visibility = View.GONE
+        window.attributes = window.attributes.apply {
+            screenBrightness = WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
+        }
+    }
+
+    override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
+        if (sleeping && ev.actionMasked == MotionEvent.ACTION_DOWN) {
+            wakeScreen()
+            swallowGesture = true
+        }
+        if (swallowGesture) {
+            if (ev.actionMasked == MotionEvent.ACTION_UP || ev.actionMasked == MotionEvent.ACTION_CANCEL) swallowGesture = false
+            return true
+        }
+        noteActivity()
+        return super.dispatchTouchEvent(ev)
+    }
     private var unsubscribe: (() -> Unit)? = null
     private var unsubscribeEvents: (() -> Unit)? = null
     lateinit var sounds: Sounds
@@ -93,6 +147,11 @@ class MainActivity : Activity() {
         overlay = FrameLayout(this)
         overlay.visibility = View.GONE
         root.addView(overlay, Ui.flp())
+        sleepView = View(this).apply {
+            setBackgroundColor(android.graphics.Color.BLACK)
+            visibility = View.GONE
+        }
+        root.addView(sleepView, Ui.flp())
         setContentView(root)
 
         // Recettes déposées dans le dossier d'import (Thermomix…) : importées à l'ouverture, une fois
@@ -189,9 +248,18 @@ class MainActivity : Activity() {
         unsubscribeEvents = app.machine.onEvent { e -> onMachineEvent(e) }
         main.removeCallbacks(themeCheck)
         main.postDelayed(themeCheck, 30_000)
+        noteActivity()
+        main.removeCallbacks(sleepCheck)
+        main.postDelayed(sleepCheck, 10_000)
     }
 
     private fun dispatchSnapshot(s: Snapshot) {
+        // Quelqu'un pèse, ouvre le couvercle, ou une cuisson tourne : ce n'est pas l'inactivité.
+        val weighing = lastWeightG != Int.MIN_VALUE && kotlin.math.abs(s.weightG - lastWeightG) >= 10
+        val lid = lastLidOpen != null && lastLidOpen != s.lidOpen
+        lastWeightG = s.weightG
+        lastLidOpen = s.lidOpen
+        if (s.busy || s.faultCode.isNotEmpty() || lid) wakeScreen() else if (weighing) wakeScreen()
         topBar.update(s)
         machineBar.update(s)
         stack.lastOrNull()?.onSnapshot(s)
@@ -209,6 +277,8 @@ class MainActivity : Activity() {
         unsubscribe?.invoke()
         unsubscribeEvents?.invoke()
         main.removeCallbacks(themeCheck)
+        main.removeCallbacks(sleepCheck)
+        wakeScreen()
         super.onStop()
     }
 
@@ -316,6 +386,11 @@ class MainActivity : Activity() {
     // ------------------------------------------------------------------ bouton rotatif
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        if (sleeping) {
+            if (event.action == KeyEvent.ACTION_DOWN) wakeScreen()
+            return true
+        }
+        noteActivity()
         knobListener?.let { l ->
             if (event.action == KeyEvent.ACTION_DOWN) l(event)
             return true
@@ -338,6 +413,11 @@ class MainActivity : Activity() {
     }
 
     override fun dispatchGenericMotionEvent(event: MotionEvent): Boolean {
+        if (sleeping) {
+            if (event.action == MotionEvent.ACTION_SCROLL) wakeScreen()
+            return true
+        }
+        noteActivity()
         if (event.action == MotionEvent.ACTION_SCROLL) {
             // Encodeur rotatif (AXIS_SCROLL) ou molette (AXIS_VSCROLL)
             val v = event.getAxisValue(AXIS_SCROLL).let { if (it == 0f) -event.getAxisValue(MotionEvent.AXIS_VSCROLL) else it }
@@ -353,6 +433,7 @@ class MainActivity : Activity() {
     // ------------------------------------------------------------------ évènements machine
 
     private fun onMachineEvent(e: MachineEvent) {
+        wakeScreen()
         current?.onEvent(e)
         when (e.type) {
             EventType.JOB_STARTED -> sound(Sounds.Kind.START)

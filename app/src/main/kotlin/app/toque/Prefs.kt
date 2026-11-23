@@ -121,6 +121,17 @@ class Prefs(context: Context) {
             p.edit().putBoolean("sound", v).commit()
         }
 
+    /**
+     * Mise en veille de l'écran, en minutes sans toucher l'écran ni la molette (0 : jamais). Le robot
+     * n'a pas de bouton pour rallumer un écran éteint par Android : c'est l'appli qui le met au noir,
+     * rétroéclairage au minimum, et un appui ou un tour de molette le rallume.
+     */
+    var screenSleepMin: Int
+        get() = p.getInt("screenSleepMin", 5)
+        set(v) {
+            p.edit().putInt("screenSleepMin", v).commit()
+        }
+
     /** Petit son à chaque appui sur un bouton (si les sons sont activés). */
     var keySound: Boolean
         get() = p.getBoolean("keySound", true)

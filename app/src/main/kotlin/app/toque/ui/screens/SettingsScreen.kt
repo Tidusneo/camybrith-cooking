@@ -94,6 +94,14 @@ class SettingsScreen(a: MainActivity) : Screen(a) {
             a.prefs.language = code
             a.applyLanguage()
         }, Ui.lp(Ui.MATCH, Ui.u(54)))
+        // Mise en veille de l'écran
+        display.addView(Ui.label(c, tr("Mise en veille de l'écran"), Ui.TEXT2, 12f), Ui.lp(t = 24, b = 8))
+        val sleepChoices = listOf(0, 2, 5, 10, 30)
+        val sleepNow = sleepChoices.indexOf(a.prefs.screenSleepMin).let { if (it < 0) 2 else it }
+        display.addView(Ui.segmented(c, sleepChoices.map { m -> null to (if (m == 0) tr("Jamais") else tr("%d min", m)) },
+            sleepNow, 44) { i -> a.prefs.screenSleepMin = sleepChoices[i] }, Ui.lp(Ui.WRAP, Ui.WRAP))
+        display.addView(Ui.text(c, tr("Sans cuisson en cours, l'écran s'éteint après ce délai. Touchez l'écran ou tournez la molette pour le rallumer."),
+            15f, Ui.TEXT3).apply { setLineSpacing(0f, 1.15f) }, Ui.lp(t = 10))
         display.addView(Ui.label(c, tr("Sons"), Ui.TEXT2, 12f), Ui.lp(t = 24, b = 4))
         display.addView(toggle(tr("Sons"), a.prefs.sound) { a.prefs.sound = it }, Ui.lp(t = 6))
         display.addView(toggle(tr("Son des touches"), a.prefs.keySound) { a.prefs.keySound = it }, Ui.lp(t = 12))

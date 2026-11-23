@@ -534,5 +534,9 @@
   "Accueil Android": "Android home",
   "Applis récentes": "Recent apps",
   "Réglages Android": "Android settings",
-  "Mises à jour depuis l'ordinateur : outils/telecharger.sh puis outils/installer.sh (voir le guide)": "Updates from the computer: outils/telecharger.sh then outils/installer.sh (see the guide)"
+  "Mises à jour depuis l'ordinateur : outils/telecharger.sh puis outils/installer.sh (voir le guide)": "Updates from the computer: outils/telecharger.sh then outils/installer.sh (see the guide)",
+  "Mise en veille de l'écran": "Screen sleep",
+  "Jamais": "Never",
+  "%d min": "%d min",
+  "Sans cuisson en cours, l'écran s'éteint après ce délai. Touchez l'écran ou tournez la molette pour le rallumer.": "When nothing is cooking, the screen goes dark after this delay. Touch the screen or turn the knob to wake it up."
 }
