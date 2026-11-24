@@ -4,35 +4,57 @@
 
 ## 1.3.0
 
-> **Tu as une version plus ancienne ?** Fais une dernière mise à jour depuis l'ordinateur
-> (`git pull`, `bash outils/telecharger.sh`, `bash outils/installer.sh`). Ensuite, tout se fera
-> depuis le robot.
+### ⭐ Plus besoin de l'ordinateur pour les mises à jour
+
+**Le robot se met à jour tout seul, depuis son Wi‑Fi, ordinateur éteint.** Plus de câble, plus
+d'ADB, plus de commandes à taper.
+
+* **Il vérifie tout seul** : à l'ouverture de l'appli (au plus toutes les 6 h), il regarde s'il y a
+  une nouvelle version et te le signale.
+* **Un appui pour installer** dans *Réglages › Mises à jour*, avec le résumé des nouveautés. L'appli
+  télécharge la bonne variante (rapide ou prudente), met à jour le pilote moteur s'il a changé,
+  installe le tout avec le root, recompile et se relance.
+* **Sans risque** : jamais pendant une cuisson, jamais sans ton accord, et en cas d'échec l'ancienne
+  version reste en place.
+
+> **Tu as une version plus ancienne ?** Il faut une toute dernière mise à jour depuis l'ordinateur
+> pour recevoir cette nouveauté (`git pull`, `bash outils/telecharger.sh`,
+> `bash outils/installer.sh`). Ensuite, tout se fait depuis le robot.
+
+### Aussi dans cette version
 
 * **Couleurs sur la molette** : l'anneau montre l'état du robot. Rouge pour un problème, orange en
   pause, vert quand c'est à toi (cuisson terminée, ou recette guidée qui attend que tu pèses ou que
   tu lances l'étape), cyan pendant la cuisson. Pendant la veille de l'écran, il reste normal, passe
   en veilleuse ou s'éteint. *Réglages › Affichage et sons › Molette.* Code repris de Toque 0.9.0
   (Wuki60) : le Smart a les mêmes LED que le Connect.
-* **Mises à jour depuis l'appli** : *Réglages › Mises à jour* télécharge le pilote moteur et
-  l'interface (même variante, rapide ou prudente), les installe avec le root, recompile la version
-  rapide et relance l'appli. Jamais pendant une cuisson ; en cas d'échec, l'ancienne version reste.
-* **Nouvelle version signalée** à l'ouverture de l'appli (au plus toutes les 6 h), sans jamais
-  l'installer sans toi.
 
 🇬🇧
-> **On an older version?** Do one last update from the computer (`git pull`,
-> `bash outils/telecharger.sh`, `bash outils/installer.sh`). From then on, everything happens on
-> the robot.
+
+### ⭐ No more computer needed for updates
+
+**The robot now updates itself over its Wi‑Fi, with the computer switched off.** No cable, no ADB,
+no commands to type.
+
+* **It checks on its own**: when the app opens (at most every 6 hours), it looks for a new version
+  and lets you know.
+* **One tap to install** in *Settings › Updates*, with a summary of what's new. The app downloads
+  the right variant (fast or safe), updates the motor pilot if it changed, installs everything with
+  root, recompiles and restarts.
+* **Safe**: never while cooking, never without your OK, and if anything fails the previous version
+  stays.
+
+> **On an older version?** One very last update from the computer is needed to get this
+> (`git pull`, `bash outils/telecharger.sh`, `bash outils/installer.sh`). From then on, everything
+> happens on the robot.
+
+### Also in this version
 
 * **Colours on the knob**: the ring shows the robot's state. Red for a problem, orange when paused,
   green when it's your turn (cooking finished, or a guided recipe waiting for you to weigh or start
   the step), cyan while cooking. During screen sleep it stays normal, dims to a night light or turns
   off. *Settings › Display and sounds › Knob.* Code taken from Toque 0.9.0 (Wuki60): the Smart has
   the same LEDs as the Connect.
-* **Updates from the app**: *Settings › Updates* downloads the motor pilot and the interface (same
-  variant, fast or safe), installs them with root, recompiles the fast version and restarts the
-  app. Never while cooking; if anything fails, the previous version stays.
-* **New versions announced** when the app opens (at most every 6 hours), never installed without you.
 
 ## 1.2.0
 

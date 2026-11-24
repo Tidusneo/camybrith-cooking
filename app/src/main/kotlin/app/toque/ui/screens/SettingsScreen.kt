@@ -568,7 +568,7 @@ class SettingsScreen(a: MainActivity) : Screen(a) {
             else -> section.drop(flag + 1)
         }
         val text = part.map { it.trim() }.filter { it.isNotEmpty() && !it.startsWith(">") }
-            .joinToString("\n") { it.replace("**", "").replace("`", "").replace(Regex("^\\* "), "• ").replace("*", "") }
+            .joinToString("\n") { it.replace(Regex("^#+ *"), "").replace("**", "").replace("`", "").replace(Regex("^\\* "), "• ").replace("*", "") }
             .replace(Regex("\n(?!• )"), " ")
             .lines().take(5).joinToString("\n")
         if (text.isEmpty()) return ""
