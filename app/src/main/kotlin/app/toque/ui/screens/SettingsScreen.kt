@@ -605,8 +605,7 @@ class SettingsScreen(a: MainActivity) : Screen(a) {
             Upd.UP_TO_DATE -> installed + "\n" + tr("Camybrith Cooking est à jour.")
             Upd.AVAILABLE -> installed + "\n" + tr("Nouvelle version disponible : %s", r?.version) + notes(r)
             Upd.DOWNLOADING -> tr("Téléchargement de la version %s… %d %%", r?.version, updPercent)
-            Upd.INSTALLING -> tr("Installation de la version %s… Camybrith Cooking va redémarrer.\n" +
-                "Si Android demande une confirmation, touchez « Installer ».", r?.version)
+            Upd.INSTALLING -> tr("Installation de la version %s… Le robot va redémarrer tout seul, puis Camybrith Cooking se rouvre.", r?.version)
             Upd.ERROR -> installed + "\n" + updMessage
         }
         updButtons.removeAllViews()
@@ -677,7 +676,7 @@ class SettingsScreen(a: MainActivity) : Screen(a) {
         a.confirm(
             tr("Version %s disponible", r.version),
             notes(r).trim().let { if (it.isEmpty()) "" else it + "\n\n" } +
-                tr("Camybrith Cooking va la télécharger depuis GitHub, l'installer puis redémarrer (environ une minute). " +
+                tr("Camybrith Cooking va la télécharger depuis GitHub, l'installer puis redémarrer le robot (une à deux minutes). " +
                     "Le moteur reste arrêté pendant l'opération."),
             tr("Installer"), tr("Plus tard"), icon = Icon.Kind.SYNC,
         ) {

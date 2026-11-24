@@ -2,6 +2,23 @@
 
 🇫🇷 Français, puis 🇬🇧 English.
 
+## 1.4.1
+
+* **Mise à jour depuis le robot plus fiable** : après l'installation, le robot redémarre tout seul
+  au lieu de relancer seulement l'appli. Avant, la liaison avec la base pouvait rester coupée
+  (« Base absente ») jusqu'à un redémarrage à la main.
+
+> Cette correction joue à partir de la mise à jour **suivante**. Si « Base absente » s'affiche
+> après avoir installé la 1.4.1, éteins et rallume le robot une fois.
+
+🇬🇧
+* **More reliable updates from the robot**: after installing, the robot now restarts on its own
+  instead of only relaunching the app. Before, the link with the base could stay down ("No base")
+  until a manual restart.
+
+> This fix applies from the **next** update on. If "No base" shows after installing 1.4.1, switch
+> the robot off and on once.
+
 ## 1.4.0
 
 ### ⭐ Home Assistant

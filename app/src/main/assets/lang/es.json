@@ -90,7 +90,6 @@
   "Camybrith Cooking libère le moteur et lance l'appli Monsieur Cuisine d'origine, qui se synchronise avec les serveurs Lidl comme d'habitude.\n\nRevenez ensuite à Camybrith Cooking avec le bouton « Retour à Camybrith Cooking » affiché par-dessus (vous pouvez le déplacer) : les recettes seront importées automatiquement.": "Camybrith Cooking libera el motor y abre la app original de Monsieur Cuisine, que se sincroniza con los servidores de Lidl como siempre.\n\nLuego vuelve a Camybrith Cooking con el botón «Volver a Camybrith Cooking» que aparece encima (puedes moverlo): las recetas se importarán automáticamente.",
   "Camybrith Cooking libère le moteur, rend l'accès à l'appli Monsieur Cuisine d'origine et passe en mode Démo. Camybrith Cooking ne s'ouvrira plus au démarrage du robot.": "Camybrith Cooking libera el motor, devuelve el acceso a la app original de Monsieur Cuisine y pasa al modo Demo. Camybrith Cooking ya no se abrirá al encender el robot.",
   "Camybrith Cooking télécharge lui-même les recettes officielles du %s sur monsieur-cuisine.com (sans compte).": "Camybrith Cooking descarga por sí mismo las recetas oficiales del %s desde monsieur-cuisine.com (sin cuenta).",
-  "Camybrith Cooking va la télécharger depuis GitHub, l'installer puis redémarrer (environ une minute). Le moteur reste arrêté pendant l'opération.": "Camybrith Cooking la descargará de GitHub, la instalará y se reiniciará (alrededor de un minuto). El motor permanece detenido mientras tanto.",
   "Camybrith Cooking va prendre le contrôle du moteur et de la chauffe à la place de l'appli d'origine.\n\nPremier essai : bol vide, couvercle fermé, à portée de l'interrupteur principal. Si quoi que ce soit semble anormal, coupez l'interrupteur.": "Camybrith Cooking va a tomar el control del motor y del calentamiento en lugar de la app original.\n\nPrimera prueba: vaso vacío, tapa cerrada, con el interruptor principal al alcance. Si algo parece anormal, apágalo.",
   "Capteur du bol en ce moment : %s. Vérifiez qu'il change quand vous retirez le bol avant d'activer cette option.": "Sensor del vaso ahora mismo: %s. Comprueba que cambia al retirar el vaso antes de activar esta opción.",
   "Cette recette ne contient pas d'étapes.": "Esta receta no tiene pasos.",
@@ -204,7 +203,6 @@
   "Ingrédient": "Ingrediente",
   "Ingrédients": "Ingredientes",
   "Installation annulée": "Instalación cancelada",
-  "Installation de la version %s… Camybrith Cooking va redémarrer.\nSi Android demande une confirmation, touchez « Installer ».": "Instalando la versión %s… Camybrith Cooking se reiniciará.\nSi Android pide confirmación, toca «Instalar».",
   "Installation refusée : %s": "Instalación rechazada: %s",
   "Installer": "Instalar",
   "Installer la version %s": "Instalar la versión %s",
@@ -558,6 +556,7 @@
   "Enregistrer": "Guardar",
   "Home Assistant : réglages enregistrés": "Home Assistant: ajustes guardados",
   "Envoi MQTT arrêté": "Envío MQTT detenido",
+  "Installation de la version %s… Le robot va redémarrer tout seul, puis Camybrith Cooking se rouvre.": "Instalando la versión %s… El robot se reiniciará solo y luego Camybrith Cooking se volverá a abrir.",
   "Sans cuisson en cours, l'écran s'éteint après ce délai. Touchez l'écran ou tournez la molette pour le rallumer.": "Si no hay ninguna cocción en curso, la pantalla se apaga tras este tiempo. Toca la pantalla o gira el mando para encenderla.",
   "Éditeur de recettes": "Editor de recetas",
   "Écrivez vos recettes depuis un ordinateur, une tablette ou un téléphone sur le même réseau Wi-Fi : ouvrez l'adresse ci-dessous dans un navigateur et saisissez le code. Les recettes enregistrées arrivent dans l'appli, converties pour le Monsieur Cuisine Smart.": "Escribe tus recetas desde un ordenador, una tableta o un teléfono en la misma red Wi-Fi: abre la dirección de abajo en un navegador e introduce el código. Las recetas guardadas llegan a la app, convertidas para el Monsieur Cuisine Smart.",
@@ -694,5 +693,6 @@
   "Tous les réglages sont valides sur le Monsieur Cuisine.": "Todos los ajustes son válidos en la Monsieur Cuisine.",
   "1 étape à vérifier : son réglage n'est pas accepté ou se fera à la main.": "1 paso por revisar: su ajuste no se acepta o se hará a mano.",
   "%d étapes à vérifier : leur réglage n'est pas accepté ou se fera à la main.": "%d pasos por revisar: su ajuste no se acepta o se hará a mano.",
-  "Réglage à vérifier": "Ajuste por revisar"
-}
+  "Réglage à vérifier": "Ajuste por revisar",
+  "Camybrith Cooking va la télécharger depuis GitHub, l'installer puis redémarrer le robot (une à deux minutes). Le moteur reste arrêté pendant l'opération.": "Camybrith Cooking la descargará de GitHub, la instalará y reiniciará el robot (uno o dos minutos). El motor permanece parado durante la operación."
+  }
