@@ -28,8 +28,10 @@ import app.toque.core.machine.PauseReason
 import app.toque.core.machine.SafetyPolicy
 import app.toque.core.machine.Snapshot
 import app.toque.core.machine.Verdict
+import app.toque.core.ring.RingColour
 import app.toque.recipes.LidlSync
 import app.toque.recipes.SyncService
+import app.toque.update.Updater
 import app.toque.ui.screens.HomeScreen
 import app.toque.ui.screens.ManualScreen
 import app.toque.ui.screens.ProgramsScreen
@@ -84,6 +86,10 @@ class MainActivity : Activity() {
         sleepView.visibility = View.VISIBLE
         sleepView.bringToFront()
         window.attributes = window.attributes.apply { screenBrightness = 0f }
+        when (prefs.knobStandby) {
+            "veilleuse" -> KnobLight.start(KnobLight.NIGHT_LEVEL)
+            "eteint" -> KnobLight.start(0)
+        }
     }
 
     fun wakeScreen() {
@@ -91,9 +97,20 @@ class MainActivity : Activity() {
         if (!sleeping) return
         sleeping = false
         sleepView.visibility = View.GONE
+        KnobLight.stop()
         window.attributes = window.attributes.apply {
             screenBrightness = WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
         }
+    }
+
+    /**
+     * Code couleur de l'anneau de la molette : rouge (problème), orange (pause), vert (à vous :
+     * programme terminé, ou recette guidée affichée qui attend un geste), cyan (en cours). Coupé
+     * dans les réglages : l'anneau reprend son état d'origine.
+     */
+    fun refreshKnob(s: Snapshot = snapshot) {
+        if (!prefs.knobColours) { KnobLight.show(null); return }
+        KnobLight.show(RingColour.of(s, current?.cookWaiting == true))
     }
 
     override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
@@ -166,6 +183,7 @@ class MainActivity : Activity() {
             }.apply { priority = Thread.MIN_PRIORITY }.start()
         }, 4_000)
 
+        KnobLight.log = { m -> app.log.write("molette", m) }
         sounds = Sounds(this, app.log)
         sounds.load()
         Ui.tapSound = { if (prefs.sound && prefs.keySound) sounds.play(Sounds.Kind.TAP) }
@@ -214,6 +232,23 @@ class MainActivity : Activity() {
         if (app.compilerProblem.isNotEmpty()) app.compilerListener?.invoke(app.compilerProblem)
         // Programmation de la synchro : après l'ouverture, rien ne presse.
         main.postDelayed({ SyncService.schedule(this) }, 6_000)
+
+        // Nouvelle version sur GitHub ? Vérifiée au plus toutes les 6 heures, jamais pendant un
+        // programme ; on le signale seulement, l'installation se lance depuis Réglages › Mises à jour.
+        main.postDelayed({
+            if (snapshot.busy || System.currentTimeMillis() - prefs.lastUpdateCheck < 6 * 3_600_000L) return@postDelayed
+            prefs.lastUpdateCheck = System.currentTimeMillis()
+            Thread {
+                try {
+                    val u = Updater(this)
+                    val r = u.latest()
+                    if (u.isNewer(r)) main.post {
+                        toast(tr("Nouvelle version disponible : %s", r.version) + " · " + tr("Réglages") + " › " + tr("Mises à jour"), Ui.OK)
+                    }
+                } catch (_: Exception) {
+                }
+            }.apply { priority = Thread.MIN_PRIORITY }.start()
+        }, 20_000)
         open(reopen ?: Section.HOME)
     }
 
@@ -251,6 +286,7 @@ class MainActivity : Activity() {
         noteActivity()
         main.removeCallbacks(sleepCheck)
         main.postDelayed(sleepCheck, 10_000)
+        refreshKnob()
     }
 
     private fun dispatchSnapshot(s: Snapshot) {
@@ -260,6 +296,7 @@ class MainActivity : Activity() {
         lastWeightG = s.weightG
         lastLidOpen = s.lidOpen
         if (s.busy || s.faultCode.isNotEmpty() || lid) wakeScreen() else if (weighing) wakeScreen()
+        refreshKnob(s)
         topBar.update(s)
         machineBar.update(s)
         stack.lastOrNull()?.onSnapshot(s)
@@ -279,6 +316,7 @@ class MainActivity : Activity() {
         main.removeCallbacks(themeCheck)
         main.removeCallbacks(sleepCheck)
         wakeScreen()
+        KnobLight.release()
         super.onStop()
     }
 
@@ -611,6 +649,7 @@ class MainActivity : Activity() {
                             prefs.vendorSession = true
                             prefs.returnBubble = true
                             ReturnBubble.start(this)
+                            KnobLight.release()
                             startActivity(launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
                         }
                     }

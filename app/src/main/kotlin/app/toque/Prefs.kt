@@ -132,6 +132,27 @@ class Prefs(context: Context) {
             p.edit().putInt("screenSleepMin", v).commit()
         }
 
+    /** Dernière recherche automatique d'une nouvelle version (ms). */
+    var lastUpdateCheck: Long
+        get() = p.getLong("lastUpdateCheck", 0L)
+        set(v) {
+            p.edit().putLong("lastUpdateCheck", v).commit()
+        }
+
+    /** Code couleur sur l'anneau de la molette (problème, pause, à vous, en cours). */
+    var knobColours: Boolean
+        get() = p.getBoolean("knobColours", true)
+        set(v) {
+            p.edit().putBoolean("knobColours", v).commit()
+        }
+
+    /** Anneau de la molette pendant la veille de l'écran : « normal », « veilleuse » ou « eteint ». */
+    var knobStandby: String
+        get() = p.getString("knobStandby", "veilleuse") ?: "veilleuse"
+        set(v) {
+            p.edit().putString("knobStandby", v).commit()
+        }
+
     /** Petit son à chaque appui sur un bouton (si les sons sont activés). */
     var keySound: Boolean
         get() = p.getBoolean("keySound", true)
