@@ -159,6 +159,27 @@ class Prefs(context: Context) {
             p.edit().putBoolean("autoSync", v).commit()
         }
 
+    /** Éditeur de recettes web (serveur sur le réseau local) : arrêté tant qu'on ne l'active pas. */
+    var editorEnabled: Boolean
+        get() = p.getBoolean("editorEnabled", false)
+        set(v) {
+            p.edit().putBoolean("editorEnabled", v).commit()
+        }
+
+    /** Code à saisir dans la page de l'éditeur ; tiré au hasard à la première lecture. */
+    var editorCode: String
+        get() = p.getString("editorCode", null)?.takeIf { it.isNotEmpty() } ?: newEditorCode()
+        set(v) {
+            p.edit().putString("editorCode", v).commit()
+        }
+
+    /** Nouveau code de l'éditeur (les navigateurs déjà connectés devront le saisir). */
+    fun newEditorCode(): String {
+        val code = (java.security.SecureRandom().nextInt(900_000) + 100_000).toString()
+        editorCode = code
+        return code
+    }
+
     var lastSyncMs: Long
         get() = p.getLong("lastSyncMs", 0)
         set(v) {

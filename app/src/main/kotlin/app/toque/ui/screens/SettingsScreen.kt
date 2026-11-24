@@ -25,6 +25,7 @@ import app.toque.core.update.Release
 import app.toque.recipes.FileImport
 import app.toque.recipes.LidlSync
 import app.toque.recipes.OnlineSync
+import app.toque.recipes.WebEditor
 import app.toque.ui.Icon
 import app.toque.ui.MainActivity
 import app.toque.ui.Screen
@@ -205,6 +206,38 @@ class SettingsScreen(a: MainActivity) : Screen(a) {
                 }
             }.start()
         }, Ui.lp(Ui.WRAP, Ui.WRAP, t = 10))
+
+        // ---- Éditeur de recettes web
+        val editor = section(tr("Éditeur de recettes"), Icon.Kind.BOOK)
+        editor.addView(Ui.text(c, tr("Écrivez vos recettes depuis un ordinateur, une tablette ou un téléphone sur le même réseau Wi-Fi : ouvrez l'adresse ci-dessous dans un navigateur et saisissez le code. Les recettes enregistrées arrivent dans l'appli, converties pour le Monsieur Cuisine Smart."),
+            15f, Ui.TEXT2).apply { setLineSpacing(0f, 1.15f) })
+        val editorText = Ui.text(c, "", 17f, Ui.TEXT).apply { setLineSpacing(0f, 1.2f) }
+        fun paintEditor() {
+            editorText.text = when {
+                !a.prefs.editorEnabled -> tr("Éditeur arrêté")
+                WebEditor.error.isNotEmpty() -> tr("Démarrage impossible : %s", WebEditor.error)
+                !WebEditor.running -> tr("Démarrage…")
+                else -> {
+                    val urls = WebEditor.addresses()
+                    (if (urls.isEmpty()) tr("Aucun réseau : connectez le robot au Wi-Fi") else urls.joinToString("\n")) +
+                        "\n" + tr("Code : %s", a.prefs.editorCode)
+                }
+            }
+        }
+        val refresh = { view.post { paintEditor() }; Unit }
+        editor.addView(toggle(tr("Activer l'éditeur sur le réseau local"), a.prefs.editorEnabled) {
+            a.prefs.editorEnabled = it
+            paintEditor()
+            WebEditor.apply(a.app) { refresh() }
+        }, Ui.lp(t = 10))
+        paintEditor()
+        editor.addView(editorText, Ui.lp(t = 10))
+        editor.addView(Ui.button(c, tr("Nouveau code"), Ui.Style.SECONDARY, Icon.Kind.SYNC, height = 52) {
+            a.prefs.newEditorCode()
+            paintEditor()
+        }, Ui.lp(Ui.WRAP, Ui.WRAP, t = 10))
+        editor.addView(Ui.text(c, tr("Le nouveau code est demandé aux navigateurs déjà connectés. N'activez l'éditeur que sur un réseau de confiance."),
+            14f, Ui.TEXT3).apply { setLineSpacing(0f, 1.1f) }, Ui.lp(t = 10))
 
         // ---- Mises à jour
         val updates = section(tr("Mises à jour"), Icon.Kind.INFO)

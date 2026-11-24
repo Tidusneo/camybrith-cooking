@@ -46,7 +46,7 @@ jobs:
         run: |
           v="${{ steps.version.outputs.name }}"
           mkdir -p dist
-          ./gradlew --no-daemon :core:test :pilote:assembleRelease :app:assembleRelease
+          ./gradlew --no-daemon :core:test :editeur:jvmTest :pilote:assembleRelease :app:assembleRelease
           p=$(grep -oP 'versionName = "\K[^"]+' pilote/build.gradle.kts)
           cp pilote/build/outputs/apk/release/pilote-release.apk "dist/Camybrith-pilote-$p.apk"
           cp app/build/outputs/apk/release/app-release.apk "dist/Camybrith-$v-rapide.apk"
