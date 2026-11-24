@@ -91,6 +91,12 @@ another assistant and ask it to guide you step by step.
 * **Everything can be customized**: sounds, the boot animation with your own logo, even the name
   and icon (see [personnalisation/README.en.md](personnalisation/README.en.md)).
 
+## Home Assistant
+
+Camybrith can send the robot's state to Home Assistant over MQTT (status, program, temperature,
+weight, time remaining, lid, alert), with automatic sensor discovery. Read only: nothing can start
+the robot remotely. See [docs/HOME-ASSISTANT.en.md](docs/HOME-ASSISTANT.en.md).
+
 ## Cooking safety
 
 All the stock app's limits are kept (speed 3 max when heating and in reverse, maximum durations,

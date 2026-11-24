@@ -88,6 +88,13 @@ todavía no se ha probado en un Connect real. Ver [docs/CONNECT.en.md](docs/CONN
 * **Todo se personaliza**: sonidos, animación de arranque con tu propio logo, incluso el nombre y
   el icono (ver [personnalisation/README.en.md](personnalisation/README.en.md)).
 
+## Home Assistant
+
+Camybrith puede enviar el estado del robot a Home Assistant por MQTT (estado, programa,
+temperatura, peso, tiempo restante, tapa, alerta), con descubrimiento automático de los sensores.
+Solo lectura: nada puede poner en marcha el robot a distancia. Ver
+[docs/HOME-ASSISTANT.en.md](docs/HOME-ASSISTANT.en.md) (en inglés).
+
 ## Seguridad de la cocción
 
 Se mantienen todos los límites de la app original (velocidad 3 como máximo al calentar y en sentido

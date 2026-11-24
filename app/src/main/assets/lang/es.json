@@ -544,5 +544,19 @@
   "Veilleuse": "Luz tenue",
   "Éteinte": "Apagado",
   "Le fichier téléchargé n'est pas le pilote moteur de Camybrith Cooking": "El archivo descargado no es el piloto del motor de Camybrith Cooking",
-  "Mise à jour impossible sans accès root (Magisk)": "No se puede actualizar sin acceso root (Magisk)"
+  "Mise à jour impossible sans accès root (Magisk)": "No se puede actualizar sin acceso root (Magisk)",
+  "Indiquez l'adresse du serveur MQTT": "Indica la dirección del servidor MQTT",
+  "Connexion à %s…": "Conectando con %s…",
+  "Connecté à %s": "Conectado a %s",
+  "Pas de connexion : %s. Nouvel essai dans %d s.": "Sin conexión: %s. Nuevo intento en %d s.",
+  "Home Assistant": "Home Assistant",
+  "Envoie l'état du robot à Home Assistant en MQTT : état, programme, température, vitesse, poids, temps restant, couvercle, alerte. Les capteurs apparaissent tout seuls (découverte MQTT). Lecture seule : rien ne peut démarrer le robot à distance.": "Envía el estado del robot a Home Assistant por MQTT: estado, programa, temperatura, velocidad, peso, tiempo restante, tapa, alerta. Los sensores aparecen solos (descubrimiento MQTT). Solo lectura: nada puede poner en marcha el robot a distancia.",
+  "Envoyer l'état en MQTT": "Enviar el estado por MQTT",
+  "Serveur MQTT (ex. 192.168.1.10)": "Servidor MQTT (p. ej. 192.168.1.10)",
+  "Utilisateur": "Usuario",
+  "Mot de passe": "Contraseña",
+  "Sujet (camybrith)": "Tema (camybrith)",
+  "Enregistrer": "Guardar",
+  "Home Assistant : réglages enregistrés": "Home Assistant: ajustes guardados",
+  "Envoi MQTT arrêté": "Envío MQTT detenido"
 }

@@ -544,5 +544,19 @@
   "Veilleuse": "Night light",
   "Éteinte": "Off",
   "Le fichier téléchargé n'est pas le pilote moteur de Camybrith Cooking": "The downloaded file is not the Camybrith Cooking motor pilot",
-  "Mise à jour impossible sans accès root (Magisk)": "Update impossible without root access (Magisk)"
+  "Mise à jour impossible sans accès root (Magisk)": "Update impossible without root access (Magisk)",
+  "Indiquez l'adresse du serveur MQTT": "Enter the MQTT server address",
+  "Connexion à %s…": "Connecting to %s…",
+  "Connecté à %s": "Connected to %s",
+  "Pas de connexion : %s. Nouvel essai dans %d s.": "Not connected: %s. Retrying in %d s.",
+  "Home Assistant": "Home Assistant",
+  "Envoie l'état du robot à Home Assistant en MQTT : état, programme, température, vitesse, poids, temps restant, couvercle, alerte. Les capteurs apparaissent tout seuls (découverte MQTT). Lecture seule : rien ne peut démarrer le robot à distance.": "Sends the robot's state to Home Assistant over MQTT: status, program, temperature, speed, weight, time remaining, lid, alert. The sensors appear on their own (MQTT discovery). Read only: nothing can start the robot remotely.",
+  "Envoyer l'état en MQTT": "Send the state over MQTT",
+  "Serveur MQTT (ex. 192.168.1.10)": "MQTT server (e.g. 192.168.1.10)",
+  "Utilisateur": "User",
+  "Mot de passe": "Password",
+  "Sujet (camybrith)": "Topic (camybrith)",
+  "Enregistrer": "Save",
+  "Home Assistant : réglages enregistrés": "Home Assistant: settings saved",
+  "Envoi MQTT arrêté": "MQTT sending stopped"
 }

@@ -2,6 +2,40 @@
 
 🇫🇷 Français, puis 🇬🇧 English.
 
+## 1.4.0
+
+### ⭐ Home Assistant
+
+**Le robot envoie son état à Home Assistant par MQTT**, et ses capteurs apparaissent tout seuls
+grâce à la découverte MQTT : état (au repos, en cours, en pause, alerte), programme, température,
+vitesse, poids sur la balance, temps restant, couvercle, alerte. De quoi recevoir une notification
+quand la cuisson est terminée, par exemple.
+
+* *Réglages › Home Assistant* : adresse du serveur, port, utilisateur, mot de passe.
+* **Lecture seule** : rien venant du réseau ne peut démarrer le moteur ou la chauffe.
+* Désactivé par défaut. Mode d'emploi : [docs/HOME-ASSISTANT.md](docs/HOME-ASSISTANT.md).
+
+> Mise à jour directement depuis le robot, *Réglages › Mises à jour*, si tu es déjà en 1.3.0 ou
+> plus. Sinon, une dernière fois depuis l'ordinateur (`git pull`, `bash outils/telecharger.sh`,
+> `bash outils/installer.sh`).
+
+🇬🇧
+
+### ⭐ Home Assistant
+
+**The robot sends its state to Home Assistant over MQTT**, and its sensors show up on their own
+through MQTT discovery: status (idle, running, paused, fault), program, temperature, speed, weight
+on the scale, time remaining, lid, alert. Handy for a notification when cooking is done, for
+example.
+
+* *Settings › Home Assistant*: server address, port, user, password.
+* **Read only**: nothing coming from the network can start the motor or the heater.
+* Off by default. How‑to: [docs/HOME-ASSISTANT.en.md](docs/HOME-ASSISTANT.en.md).
+
+> Update straight from the robot, *Settings › Updates*, if you're already on 1.3.0 or later.
+> Otherwise, one last time from the computer (`git pull`, `bash outils/telecharger.sh`,
+> `bash outils/installer.sh`).
+
 ## 1.3.1
 
 * **Veille de l'écran corrigée** : le choix du délai s'affiche bien quand on appuie dessus, et
