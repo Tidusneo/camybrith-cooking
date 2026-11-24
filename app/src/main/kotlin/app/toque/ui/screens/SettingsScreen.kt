@@ -33,6 +33,7 @@ import app.toque.ui.Section
 import app.toque.ui.Ui
 import app.toque.ui.tap
 import app.toque.update.Updater
+import app.toque.ui.KnobLight
 
 class SettingsScreen(a: MainActivity) : Screen(a) {
     override val title = tr("Réglages")
@@ -103,6 +104,19 @@ class SettingsScreen(a: MainActivity) : Screen(a) {
             sleepNow, 44) { i -> a.prefs.screenSleepMin = sleepChoices[i] }, Ui.lp(Ui.WRAP, Ui.WRAP))
         display.addView(Ui.text(c, tr("Sans cuisson en cours, l'écran s'éteint après ce délai. Touchez l'écran ou tournez la molette pour le rallumer."),
             15f, Ui.TEXT3).apply { setLineSpacing(0f, 1.15f) }, Ui.lp(t = 10))
+        // Anneau de la molette
+        display.addView(Ui.label(c, tr("Molette"), Ui.TEXT2, 12f), Ui.lp(t = 24, b = 4))
+        display.addView(toggle(tr("Couleurs sur la molette"), a.prefs.knobColours) {
+            a.prefs.knobColours = it
+            a.refreshKnob()
+        }, Ui.lp(t = 6))
+        display.addView(Ui.text(c, tr("Rouge : un problème. Orange : en pause. Vert : à vous de jouer. Cyan : en cours."),
+            15f, Ui.TEXT3).apply { setLineSpacing(0f, 1.15f) }, Ui.lp(t = 8))
+        display.addView(Ui.label(c, tr("Molette pendant la veille"), Ui.TEXT2, 12f), Ui.lp(t = 16, b = 8))
+        val knobModes = listOf("normal", "veilleuse", "eteint")
+        display.addView(Ui.segmented(c, listOf(null to tr("Normale"), null to tr("Veilleuse"), null to tr("Éteinte")),
+            knobModes.indexOf(a.prefs.knobStandby).let { if (it < 0) 1 else it }, 44) { i -> a.prefs.knobStandby = knobModes[i] },
+            Ui.lp(Ui.WRAP, Ui.WRAP))
         display.addView(Ui.label(c, tr("Sons"), Ui.TEXT2, 12f), Ui.lp(t = 24, b = 4))
         display.addView(toggle(tr("Sons"), a.prefs.sound) { a.prefs.sound = it }, Ui.lp(t = 6))
         display.addView(toggle(tr("Son des touches"), a.prefs.keySound) { a.prefs.keySound = it }, Ui.lp(t = 12))
@@ -477,6 +491,7 @@ class SettingsScreen(a: MainActivity) : Screen(a) {
         ) {
             a.prefs.mode = Prefs.Mode.DEMO
             a.prefs.bootLaunch = false
+            KnobLight.release()
             a.machine.reconfigure {
                 Thread {
                     val sync = LidlSync(a, a.prefs, a.app.recipes, a.app.log)
@@ -570,10 +585,27 @@ class SettingsScreen(a: MainActivity) : Screen(a) {
         }
     }
 
+    /**
+     * Résumé des nouveautés d'une version, tiré de ses notes (écrites depuis CHANGELOG.md) : la partie
+     * française, ou la partie anglaise (après 🇬🇧) si l'appli n'est pas en français.
+     */
     private fun notes(r: Release?): String {
-        val text = r?.notes?.lines()?.map { it.trim() }?.filter { it.isNotEmpty() }?.take(4)?.joinToString("\n") ?: ""
+        val all = r?.notes?.lines() ?: return ""
+        val start = all.indexOfFirst { it.startsWith("## Nouveaut") }.let { if (it < 0) 0 else it + 1 }
+        val section = all.drop(start).takeWhile { !it.startsWith("## ") }
+        val flag = section.indexOfFirst { it.trim().startsWith("🇬🇧") }
+        val french = I18n.current.code == "fr"
+        val part = when {
+            flag < 0 -> section
+            french -> section.take(flag)
+            else -> section.drop(flag + 1)
+        }
+        val text = part.map { it.trim() }.filter { it.isNotEmpty() && !it.startsWith(">") }
+            .joinToString("\n") { it.replace(Regex("^#+ *"), "").replace("**", "").replace("`", "").replace(Regex("^\\* "), "• ").replace("*", "") }
+            .replace(Regex("\n(?!• )"), " ")
+            .lines().take(5).joinToString("\n")
         if (text.isEmpty()) return ""
-        return "\n\n" + if (text.length > 280) text.substring(0, 280) + "…" else text
+        return "\n\n" + if (text.length > 420) text.substring(0, 420) + "…" else text
     }
 
     private fun checkUpdate() {

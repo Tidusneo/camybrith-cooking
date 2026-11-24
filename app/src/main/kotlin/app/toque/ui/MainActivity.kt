@@ -28,8 +28,10 @@ import app.toque.core.machine.PauseReason
 import app.toque.core.machine.SafetyPolicy
 import app.toque.core.machine.Snapshot
 import app.toque.core.machine.Verdict
+import app.toque.core.ring.RingColour
 import app.toque.recipes.LidlSync
 import app.toque.recipes.SyncService
+import app.toque.update.Updater
 import app.toque.ui.screens.HomeScreen
 import app.toque.ui.screens.ManualScreen
 import app.toque.ui.screens.ProgramsScreen
@@ -81,19 +83,43 @@ class MainActivity : Activity() {
     private fun sleepScreen() {
         if (sleeping) return
         sleeping = true
+        app.log.write("veille", "écran éteint après ${prefs.screenSleepMin} min")
         sleepView.visibility = View.VISIBLE
         sleepView.bringToFront()
         window.attributes = window.attributes.apply { screenBrightness = 0f }
+        when (prefs.knobStandby) {
+            "veilleuse" -> KnobLight.start(KnobLight.NIGHT_LEVEL)
+            "eteint" -> KnobLight.start(0)
+        }
     }
 
-    fun wakeScreen() {
+    /** Dernière raison qui a empêché ou interrompu la veille, notée au journal une fois par minute. */
+    private var lastWakeLog = 0L
+
+    fun wakeScreen(why: String = "toucher") {
         noteActivity()
+        val now = System.currentTimeMillis()
+        if (sleeping || now - lastWakeLog > 60_000) {
+            lastWakeLog = now
+            app.log.write("veille", if (sleeping) "réveil : $why" else "activité : $why")
+        }
         if (!sleeping) return
         sleeping = false
         sleepView.visibility = View.GONE
+        KnobLight.stop()
         window.attributes = window.attributes.apply {
             screenBrightness = WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
         }
+    }
+
+    /**
+     * Code couleur de l'anneau de la molette : rouge (problème), orange (pause), vert (à vous :
+     * programme terminé, ou recette guidée affichée qui attend un geste), cyan (en cours). Coupé
+     * dans les réglages : l'anneau reprend son état d'origine.
+     */
+    fun refreshKnob(s: Snapshot = snapshot) {
+        if (!prefs.knobColours) { KnobLight.show(null); return }
+        KnobLight.show(RingColour.of(s, current?.cookWaiting == true))
     }
 
     override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
@@ -166,6 +192,7 @@ class MainActivity : Activity() {
             }.apply { priority = Thread.MIN_PRIORITY }.start()
         }, 4_000)
 
+        KnobLight.log = { m -> app.log.write("molette", m) }
         sounds = Sounds(this, app.log)
         sounds.load()
         Ui.tapSound = { if (prefs.sound && prefs.keySound) sounds.play(Sounds.Kind.TAP) }
@@ -214,6 +241,23 @@ class MainActivity : Activity() {
         if (app.compilerProblem.isNotEmpty()) app.compilerListener?.invoke(app.compilerProblem)
         // Programmation de la synchro : après l'ouverture, rien ne presse.
         main.postDelayed({ SyncService.schedule(this) }, 6_000)
+
+        // Nouvelle version sur GitHub ? Vérifiée au plus toutes les 6 heures, jamais pendant un
+        // programme ; on le signale seulement, l'installation se lance depuis Réglages › Mises à jour.
+        main.postDelayed({
+            if (snapshot.busy || System.currentTimeMillis() - prefs.lastUpdateCheck < 6 * 3_600_000L) return@postDelayed
+            prefs.lastUpdateCheck = System.currentTimeMillis()
+            Thread {
+                try {
+                    val u = Updater(this)
+                    val r = u.latest()
+                    if (u.isNewer(r)) main.post {
+                        toast(tr("Nouvelle version disponible : %s", r.version) + " · " + tr("Réglages") + " › " + tr("Mises à jour"), Ui.OK)
+                    }
+                } catch (_: Exception) {
+                }
+            }.apply { priority = Thread.MIN_PRIORITY }.start()
+        }, 20_000)
         open(reopen ?: Section.HOME)
     }
 
@@ -251,15 +295,23 @@ class MainActivity : Activity() {
         noteActivity()
         main.removeCallbacks(sleepCheck)
         main.postDelayed(sleepCheck, 10_000)
+        refreshKnob()
     }
 
     private fun dispatchSnapshot(s: Snapshot) {
         // Quelqu'un pèse, ouvre le couvercle, ou une cuisson tourne : ce n'est pas l'inactivité.
-        val weighing = lastWeightG != Int.MIN_VALUE && kotlin.math.abs(s.weightG - lastWeightG) >= 10
+        // La balance bouge de quelques grammes au repos : seul un vrai ajout ou retrait compte.
+        val weighing = lastWeightG != Int.MIN_VALUE && kotlin.math.abs(s.weightG - lastWeightG) >= WAKE_WEIGHT_G
         val lid = lastLidOpen != null && lastLidOpen != s.lidOpen
         lastWeightG = s.weightG
         lastLidOpen = s.lidOpen
-        if (s.busy || s.faultCode.isNotEmpty() || lid) wakeScreen() else if (weighing) wakeScreen()
+        when {
+            s.busy -> wakeScreen("cuisson en cours")
+            s.faultCode.isNotEmpty() -> wakeScreen("alerte ${s.faultCode}")
+            lid -> wakeScreen("couvercle")
+            weighing -> wakeScreen("balance")
+        }
+        refreshKnob(s)
         topBar.update(s)
         machineBar.update(s)
         stack.lastOrNull()?.onSnapshot(s)
@@ -278,7 +330,8 @@ class MainActivity : Activity() {
         unsubscribeEvents?.invoke()
         main.removeCallbacks(themeCheck)
         main.removeCallbacks(sleepCheck)
-        wakeScreen()
+        wakeScreen("appli en arrière-plan")
+        KnobLight.release()
         super.onStop()
     }
 
@@ -387,7 +440,7 @@ class MainActivity : Activity() {
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         if (sleeping) {
-            if (event.action == KeyEvent.ACTION_DOWN) wakeScreen()
+            if (event.action == KeyEvent.ACTION_DOWN) wakeScreen("molette")
             return true
         }
         noteActivity()
@@ -414,7 +467,7 @@ class MainActivity : Activity() {
 
     override fun dispatchGenericMotionEvent(event: MotionEvent): Boolean {
         if (sleeping) {
-            if (event.action == MotionEvent.ACTION_SCROLL) wakeScreen()
+            if (event.action == MotionEvent.ACTION_SCROLL) wakeScreen("molette")
             return true
         }
         noteActivity()
@@ -433,7 +486,9 @@ class MainActivity : Activity() {
     // ------------------------------------------------------------------ évènements machine
 
     private fun onMachineEvent(e: MachineEvent) {
-        wakeScreen()
+        // Seuls les évènements qui demandent un regard rallument l'écran ; l'état de la liaison
+        // (qui peut changer tout seul, robot au repos) ne compte pas comme une activité.
+        if (e.type !in QUIET_EVENTS) wakeScreen(e.type.name)
         current?.onEvent(e)
         when (e.type) {
             EventType.JOB_STARTED -> sound(Sounds.Kind.START)
@@ -611,6 +666,7 @@ class MainActivity : Activity() {
                             prefs.vendorSession = true
                             prefs.returnBubble = true
                             ReturnBubble.start(this)
+                            KnobLight.release()
                             startActivity(launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
                         }
                     }
@@ -666,6 +722,12 @@ class MainActivity : Activity() {
     companion object {
         /** Partie à rouvrir après une reconstruction (langue, thème). */
         private var reopenSection: Section? = null
+
+        /** Variation de poids qui compte comme une pesée pour la veille de l'écran. */
+        private const val WAKE_WEIGHT_G = 30
+
+        /** Évènements qui ne rallument pas l'écran : rien à regarder. */
+        private val QUIET_EVENTS = setOf(EventType.LINK_CHANGED, EventType.FAULT_CLEARED, EventType.PHASE_CHANGED)
 
         /** Température du bol telle qu'on l'affiche : sur le Smart, la base répond 0 sous 37 °C. */
         fun bowlTemperature(a: MainActivity, s: Snapshot): String =

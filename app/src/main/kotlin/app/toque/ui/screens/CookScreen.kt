@@ -39,6 +39,8 @@ import app.toque.ui.WeighSession
 class CookScreen(a: MainActivity, private val recipe: Recipe, startStep: Int) : Screen(a) {
     override val title = recipe.title
     override val section = Section.RECIPES
+    /** Aucun programme ne tourne : la recette attend la personne (pesée, geste, étape à lancer). */
+    override val cookWaiting: Boolean get() = !a.snapshot.busy
     override val subtitle: String
         get() = if (recipe.steps.isEmpty()) "" else tr("Étape %d sur %d", index + 1, recipe.steps.size)
     private var index = startStep.coerceIn(0, maxOf(0, recipe.steps.size - 1))

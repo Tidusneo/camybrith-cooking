@@ -44,4 +44,26 @@ class UpdateTest {
         assertNull(r.apkUrl)
         assertEquals("", r.notes)
     }
+
+    @Test fun camybrithReleasePicksVariantAndPilot() {
+        val json = """
+            {"tag_name":"v1.3.0","name":"Camybrith Cooking 1.3.0","body":"",
+             "assets":[
+               {"name":"Camybrith-1.3.0-prudente.apk","size":20,"browser_download_url":"https://x.invalid/p.apk"},
+               {"name":"Camybrith-1.3.0-rapide.apk","size":10,"browser_download_url":"https://x.invalid/r.apk"},
+               {"name":"Camybrith-pilote-1.2.apk","size":5,"browser_download_url":"https://x.invalid/pilote.apk"},
+               {"name":"camybrith_animation.zip","size":3,"browser_download_url":"https://x.invalid/a.zip"}
+             ]}
+        """.trimIndent()
+        val fast = Releases.parse(json, Releases.variantOf("1.2.0-rapide"))
+        assertEquals("Camybrith-1.3.0-rapide.apk", fast.apkName)
+        assertEquals(10L, fast.apkSize)
+        assertEquals("Camybrith-pilote-1.2.apk", fast.pilotName)
+        val safe = Releases.parse(json, Releases.variantOf("1.2.0-prudente"))
+        assertEquals("Camybrith-1.3.0-prudente.apk", safe.apkName)
+        assertEquals("https://x.invalid/pilote.apk", safe.pilotUrl)
+        assertEquals("prudente", Releases.variantOf("0.8.3-prudent"))
+        assertTrue(Releases.isNewer("v1.3.0", "1.2.0-rapide"))
+        assertFalse(Releases.isNewer("v1.2.0", "1.2.0-prudente"))
+    }
 }

@@ -69,8 +69,8 @@ Issue with the log (**Settings**, **Tools**, **Log**).
 
 * **Lidl recipes**: **Settings**, **Lidl recipes**, **Sync**. On the Connect you can also import
   the stock app's recipes.
-* **Updates**: `bash outils/telecharger.sh` then `bash outils/installer.sh`. In-app updates are
-  disabled so that the interface and the pilot always stay on the same version.
+* **Updates**: `bash outils/telecharger.sh` then `bash outils/installer.sh`. Or, simpler,
+  **Settings › Updates** in the app.
 * **Back to Toque**: uninstall Camybrith Cooking, then reinstall Toque with its own script.
   ```
   ~/platform-tools/adb -s ROBOT_ADDRESS:5555 uninstall app.toque

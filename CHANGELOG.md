@@ -1,0 +1,151 @@
+# Nouveautés · Changelog
+
+🇫🇷 Français, puis 🇬🇧 English.
+
+## 1.3.1
+
+* **Veille de l'écran corrigée** : le choix du délai s'affiche bien quand on appuie dessus, et
+  l'écran s'éteint vraiment. Il restait allumé à cause des petits changements d'état de la liaison
+  avec la base et des quelques grammes de variation de la balance au repos. Seul un vrai ajout ou
+  retrait (30 g) le rallume maintenant.
+* **Journal** : chaque mise en veille et chaque réveil y est noté avec sa raison, pour comprendre
+  facilement si l'écran ne s'éteint pas.
+* **Résumé des nouveautés** dans *Réglages › Mises à jour*, dans la langue de l'appli.
+* Tous les sélecteurs des réglages montrent le nouveau choix dès l'appui.
+
+> **Tu es sur une version d'avant la 1.3.0 ?** Fais cette mise à jour une dernière fois depuis
+> l'ordinateur (`git pull`, `bash outils/telecharger.sh`, `bash outils/installer.sh`). C'est
+> indispensable pour profiter ensuite des mises à jour directement depuis le robot, par son Wi‑Fi,
+> sans ordinateur. Déjà en 1.3.0 ? Elle t'attend dans *Réglages › Mises à jour*.
+
+🇬🇧
+* **Screen sleep fixed**: the delay selector now shows your choice when you tap it, and the screen
+  really turns off. It stayed on because of small link state changes with the base and the few
+  grams the scale drifts at rest. Only a real addition or removal (30 g) wakes it now.
+* **Log**: every sleep and wake is written to the log with its reason, to make it easy to see why
+  the screen stays on.
+* **What's new summary** in *Settings › Updates*, in the app's language.
+* All settings selectors show the new choice as soon as you tap.
+
+> **On a version older than 1.3.0?** Do this update one last time from the computer (`git pull`,
+> `bash outils/telecharger.sh`, `bash outils/installer.sh`). It's required to get all future
+> updates straight from the robot, over its Wi‑Fi, with no computer. Already on 1.3.0? It's waiting
+> for you in *Settings › Updates*.
+
+## 1.3.0
+
+### ⭐ Plus besoin de l'ordinateur pour les mises à jour
+
+**Le robot se met à jour tout seul, depuis son Wi‑Fi, ordinateur éteint.** Plus de câble, plus
+d'ADB, plus de commandes à taper.
+
+* **Il vérifie tout seul** : à l'ouverture de l'appli (au plus toutes les 6 h), il regarde s'il y a
+  une nouvelle version et te le signale.
+* **Un appui pour installer** dans *Réglages › Mises à jour*, avec le résumé des nouveautés. L'appli
+  télécharge la bonne variante (rapide ou prudente), met à jour le pilote moteur s'il a changé,
+  installe le tout avec le root, recompile et se relance.
+* **Sans risque** : jamais pendant une cuisson, jamais sans ton accord, et en cas d'échec l'ancienne
+  version reste en place.
+
+> **Tu as une version plus ancienne ?** Il faut une toute dernière mise à jour depuis l'ordinateur
+> pour recevoir cette nouveauté (`git pull`, `bash outils/telecharger.sh`,
+> `bash outils/installer.sh`). Ensuite, tout se fait depuis le robot.
+
+### Aussi dans cette version
+
+* **Couleurs sur la molette** : l'anneau montre l'état du robot. Rouge pour un problème, orange en
+  pause, vert quand c'est à toi (cuisson terminée, ou recette guidée qui attend que tu pèses ou que
+  tu lances l'étape), cyan pendant la cuisson. Pendant la veille de l'écran, il reste normal, passe
+  en veilleuse ou s'éteint. *Réglages › Affichage et sons › Molette.* Code repris de Toque 0.9.0
+  (Wuki60) : le Smart a les mêmes LED que le Connect.
+
+🇬🇧
+
+### ⭐ No more computer needed for updates
+
+**The robot now updates itself over its Wi‑Fi, with the computer switched off.** No cable, no ADB,
+no commands to type.
+
+* **It checks on its own**: when the app opens (at most every 6 hours), it looks for a new version
+  and lets you know.
+* **One tap to install** in *Settings › Updates*, with a summary of what's new. The app downloads
+  the right variant (fast or safe), updates the motor pilot if it changed, installs everything with
+  root, recompiles and restarts.
+* **Safe**: never while cooking, never without your OK, and if anything fails the previous version
+  stays.
+
+> **On an older version?** One very last update from the computer is needed to get this
+> (`git pull`, `bash outils/telecharger.sh`, `bash outils/installer.sh`). From then on, everything
+> happens on the robot.
+
+### Also in this version
+
+* **Colours on the knob**: the ring shows the robot's state. Red for a problem, orange when paused,
+  green when it's your turn (cooking finished, or a guided recipe waiting for you to weigh or start
+  the step), cyan while cooking. During screen sleep it stays normal, dims to a night light or turns
+  off. *Settings › Display and sounds › Knob.* Code taken from Toque 0.9.0 (Wuki60): the Smart has
+  the same LEDs as the Connect.
+
+## 1.2.0
+
+* **Mise en veille de l'écran** : sans cuisson en cours, l'écran passe au noir après 2, 5, 10 ou
+  30 minutes (ou jamais). Un appui sur l'écran ou un tour de molette le rallume, sans déclencher de
+  bouton. Une cuisson, une pause, une alerte, le couvercle ou une pesée le rallument.
+  *Réglages › Affichage et sons.* Avant, l'écran restait toujours allumé.
+
+🇬🇧
+* **Screen sleep**: when nothing is cooking, the screen goes dark after 2, 5, 10 or 30 minutes (or
+  never). A touch or a turn of the knob wakes it, without pressing any button. Cooking, a pause, an
+  alert, the lid or weighing wake it up. *Settings › Display and sounds.* Before, the screen never
+  turned off.
+
+## 1.1.0
+
+* **L'appli en espagnol**, en entier. Avec l'appli en espagnol, les recettes Lidl sont téléchargées
+  en espagnol. Présentation du projet en espagnol (`README.es.md`).
+* **Monsieur Cuisine Connect, en bêta** : Camybrith Cooking peut aussi tourner sur le Connect, avec
+  son guide (`docs/CONNECT.md`). Pas encore essayé sur un vrai Connect.
+* **Assistant Claude prêt à l'emploi** (`camybrith-assistant-claude.zip`) : il guide l'installation
+  étape par étape, vérifie les tailles et les photos d'écran, et parle français, anglais ou espagnol.
+* **Documentation en anglais**, captures d'écran, animation de démarrage et animation de la pesée
+  dans la présentation.
+* Installateur : pas de compilation à l'avance sous Android 6 (Connect).
+
+🇬🇧
+* **The app in Spanish**, fully. With the app in Spanish, Lidl recipes are downloaded in Spanish.
+  Project overview in Spanish (`README.es.md`).
+* **Monsieur Cuisine Connect, beta**: Camybrith Cooking can also run on the Connect, with its guide
+  (`docs/CONNECT.en.md`). Not tried on a real Connect yet.
+* **Ready-to-use Claude assistant** (`camybrith-assistant-claude.zip`): it guides the install step
+  by step, checks file sizes and screen photos, and speaks French, English or Spanish.
+* **English documentation**, screenshots, boot animation and weighing animation in the overview.
+* Installer: no ahead-of-time compile on Android 6 (Connect).
+
+## 1.0.0
+
+Première version publique : Toque (Wuki60) adapté au Monsieur Cuisine Smart.
+
+* Protocole du Smart relevé sur un vrai robot : trames de 38 et 53 octets, programmes, table des
+  températures, chien de garde de la base.
+* **Pilote moteur dans une appli séparée** : si l'interface plante, la cuisson continue.
+* **Couvercle ouvert = pause**, reprise d'un appui.
+* Interface **rapide** (compilée à l'avance) ou **prudente**.
+* Recettes Monsieur Cuisine du Smart, recherche tolérante aux fautes, cuisson guidée avec pesée à
+  la molette, cuisson manuelle, programmes, balance.
+* Import de tes propres recettes écrites pour un autre robot.
+* Sons et animation de démarrage personnalisables.
+* Guide de root pas à pas pour débutants, et scripts d'installation par le Wi-Fi.
+
+🇬🇧
+First public version: Toque (Wuki60) ported to the Monsieur Cuisine Smart.
+
+* Smart protocol captured on a real robot: 38 and 53 byte frames, programs, temperature table,
+  base watchdog.
+* **Motor pilot in a separate app**: if the interface crashes, cooking keeps going.
+* **Lid open = pause**, resumed with one tap.
+* **Fast** (ahead-of-time compiled) or **safe** interface.
+* Monsieur Cuisine recipes for the Smart, typo-tolerant search, guided cooking with knob weighing,
+  manual cooking, programs, scale.
+* Import your own recipes written for another robot.
+* Customizable sounds and boot animation.
+* Step by step rooting guide for beginners, and install scripts over Wi-Fi.

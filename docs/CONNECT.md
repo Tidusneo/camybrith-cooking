@@ -70,8 +70,8 @@ ouvre une Issue avec le journal (**Réglages**, **Outils**, **Journal**).
 
 * **Recettes Lidl** : **Réglages**, **Recettes Lidl**, **Synchroniser**. Sur le Connect, tu peux
   aussi importer celles de l'appli d'origine.
-* **Mises à jour** : `bash outils/telecharger.sh` puis `bash outils/installer.sh`. Les mises à jour
-  depuis l'appli sont désactivées, pour que l'interface et le pilote restent de la même version.
+* **Mises à jour** : `bash outils/telecharger.sh` puis `bash outils/installer.sh`. Ou, plus simple,
+  **Réglages › Mises à jour** dans l'appli.
 * **Revenir à Toque** : désinstalle Camybrith Cooking puis réinstalle Toque avec son propre script.
   ```
   ~/platform-tools/adb -s ADRESSE_DU_ROBOT:5555 uninstall app.toque
