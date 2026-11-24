@@ -71,16 +71,13 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           v="${{ steps.version.outputs.name }}"
-          prev=$(git describe --tags --abbrev=0 2>/dev/null || true)
-          {
-            echo "Mode d'emploi complet : [docs/GUIDE.md](https://github.com/${{ github.repository }}/blob/main/docs/GUIDE.md)."
-            echo
-            echo "* \`Camybrith-pilote-*.apk\` et \`Camybrith-$v-rapide.apk\` : à installer avec \`outils/installer.sh\`."
-            echo "* \`Camybrith-$v-prudente.apk\` : version de secours, plus lente, si la rapide fait des bêtises."
-            echo "* \`camybrith_animation.zip\` : animation de démarrage (module Magisk), avec \`outils/animation.sh installer\`."
-            echo "* \`camybrith-assistant-claude.zip\` : assistant Claude qui guide l'installation pas à pas (voir le README)."
-            echo
-            echo "Changements :"
-            if [ -n "$prev" ]; then git log --no-merges --pretty='- %s' "$prev..HEAD"; else echo "- Première version publique."; fi
-          } > notes.md
+          if ! bash outils/notes_version.sh "$v" > notes.md; then
+            prev=$(git describe --tags --abbrev=0 2>/dev/null || true)
+            {
+              echo "Mode d'emploi : [docs/GUIDE.md](https://github.com/${{ github.repository }}/blob/main/docs/GUIDE.md)."
+              echo
+              echo "Changements :"
+              if [ -n "$prev" ]; then git log --no-merges --pretty='- %s' "$prev..HEAD"; else echo "- Première version publique."; fi
+            } > notes.md
+          fi
           gh release create "v$v" dist/* --title "Camybrith Cooking $v" --notes-file notes.md --target "$GITHUB_SHA"

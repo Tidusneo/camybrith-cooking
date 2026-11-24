@@ -1,0 +1,27 @@
+# Remet à jour les notes des versions déjà publiées quand CHANGELOG.md change.
+name: Notes de version
+
+on:
+  push:
+    branches: [main]
+    paths: [CHANGELOG.md, outils/notes_version.sh]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  notes:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Notes depuis CHANGELOG.md
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for tag in $(gh release list --limit 100 --json tagName -q '.[].tagName'); do
+            v=${tag#v}
+            if bash outils/notes_version.sh "$v" > notes.md; then
+              gh release edit "$tag" --notes-file notes.md && echo "$tag : notes mises à jour"
+            fi
+          done
