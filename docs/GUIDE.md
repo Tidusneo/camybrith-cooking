@@ -519,8 +519,11 @@ Si l'un de ces essais ne se passe pas comme décrit, coupe le robot à l'interru
 
 ## 11. Mettre à jour
 
-Les mises à jour automatiques de l'appli sont désactivées sur le Smart, par sécurité. Pour passer
-à une nouvelle version :
+**Depuis le robot (le plus simple)** : quand une nouvelle version sort, l'appli le signale à
+l'ouverture. Va dans **Réglages › Mises à jour**, puis **Installer** : elle télécharge le pilote et
+l'interface, les installe et redémarre (environ une minute, jamais pendant une cuisson).
+
+**Depuis l'ordinateur** (si le robot n'a pas Internet, ou en dépannage) :
 
 ```
 cd ~/camybrith-cooking
