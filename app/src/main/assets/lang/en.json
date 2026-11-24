@@ -90,7 +90,6 @@
   "Camybrith Cooking libère le moteur et lance l'appli Monsieur Cuisine d'origine, qui se synchronise avec les serveurs Lidl comme d'habitude.\n\nRevenez ensuite à Camybrith Cooking avec le bouton « Retour à Camybrith Cooking » affiché par-dessus (vous pouvez le déplacer) : les recettes seront importées automatiquement.": "Camybrith Cooking releases the motor and opens the stock Monsieur Cuisine app, which syncs with Lidl's servers as usual.\n\nThen come back to Camybrith Cooking with the “Back to Camybrith Cooking” button shown on top of it (you can drag it): the recipes will be imported automatically.",
   "Camybrith Cooking libère le moteur, rend l'accès à l'appli Monsieur Cuisine d'origine et passe en mode Démo. Camybrith Cooking ne s'ouvrira plus au démarrage du robot.": "Camybrith Cooking releases the motor, gives access back to the stock Monsieur Cuisine app and switches to Demo mode. Camybrith Cooking will no longer open when the robot starts.",
   "Camybrith Cooking télécharge lui-même les recettes officielles du %s sur monsieur-cuisine.com (sans compte).": "Camybrith Cooking downloads the official %s recipes from monsieur-cuisine.com by itself (no account needed).",
-  "Camybrith Cooking va la télécharger depuis GitHub, l'installer puis redémarrer (environ une minute). Le moteur reste arrêté pendant l'opération.": "Camybrith Cooking will download it from GitHub, install it and restart (about a minute). The motor stays stopped meanwhile.",
   "Camybrith Cooking va prendre le contrôle du moteur et de la chauffe à la place de l'appli d'origine.\n\nPremier essai : bol vide, couvercle fermé, à portée de l'interrupteur principal. Si quoi que ce soit semble anormal, coupez l'interrupteur.": "Camybrith Cooking will take control of the motor and heater instead of the stock app.\n\nFirst test: empty bowl, lid closed, within reach of the main switch. If anything seems wrong, switch it off.",
   "Capteur du bol en ce moment : %s. Vérifiez qu'il change quand vous retirez le bol avant d'activer cette option.": "Bowl sensor right now: %s. Check that it changes when you remove the bowl before turning this on.",
   "Cette recette ne contient pas d'étapes.": "This recipe has no steps.",
@@ -204,7 +203,6 @@
   "Ingrédient": "Ingredient",
   "Ingrédients": "Ingredients",
   "Installation annulée": "Installation cancelled",
-  "Installation de la version %s… Camybrith Cooking va redémarrer.\nSi Android demande une confirmation, touchez « Installer ».": "Installing version %s… Camybrith Cooking will restart.\nIf Android asks for confirmation, tap “Install”.",
   "Installation refusée : %s": "Installation refused: %s",
   "Installer": "Install",
   "Installer la version %s": "Install version %s",
@@ -558,5 +556,7 @@
   "Sujet (camybrith)": "Topic (camybrith)",
   "Enregistrer": "Save",
   "Home Assistant : réglages enregistrés": "Home Assistant: settings saved",
-  "Envoi MQTT arrêté": "MQTT sending stopped"
+  "Envoi MQTT arrêté": "MQTT sending stopped",
+  "Installation de la version %s… Le robot va redémarrer tout seul, puis Camybrith Cooking se rouvre.": "Installing version %s… The robot will restart on its own, then Camybrith Cooking reopens.",
+  "Camybrith Cooking va la télécharger depuis GitHub, l'installer puis redémarrer le robot (une à deux minutes). Le moteur reste arrêté pendant l'opération.": "Camybrith Cooking will download it from GitHub, install it, then restart the robot (one to two minutes). The motor stays off throughout."
 }

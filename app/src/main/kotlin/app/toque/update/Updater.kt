@@ -151,7 +151,7 @@ class Updater(private val context: Context) {
 
     /**
      * Installe la mise à jour avec le root : pilote d'abord, puis interface, compilation de la
-     * variante rapide, et relance. Android arrête l'appli pendant l'installation : en cas de
+     * variante rapide, et redémarrage du robot. Android arrête l'appli pendant l'installation : en cas de
      * succès, la fonction ne revient pas.
      */
     fun install(d: Download) {
@@ -169,15 +169,16 @@ class Updater(private val context: Context) {
         if (!copy.out.contains("ok")) throw Failure(tr("Copie de la mise à jour impossible : %s", copy.err.trim()))
         log.write("maj", "installation (root)" + (if (d.pilot != null) " du pilote et" else "") + " de l'interface")
         val pkg = context.packageName
-        val launch = "am start -n $pkg/${MainActivity::class.java.name}"
         // Pas de compilation pour la variante prudente, ni sous Android 6 (déjà compilée à l'installation).
         val compile = if (!safeMode && android.os.Build.VERSION.SDK_INT >= 24)
             "echo compilation >> $out; cmd package compile -m speed -f $pkg >> $out 2>&1; am force-stop $pkg; " else ""
         val pilotStep = if (d.pilot != null)
             "echo pilote >> $out; pm install -r $pilot >> $out 2>&1 || exit 1; " else ""
         // Lancé en arrière-plan : Android arrête l'appli pendant l'installation, la suite continue sans elle.
+        // Puis le robot redémarre : relancer seulement l'appli laissait parfois la liaison avec la base
+        // coupée (« Base absente », 24/11/2026) ; au démarrage, le pilote rouvre le port proprement.
         val script = "( ${pilotStep}echo interface >> $out; pm install -r $ui >> $out 2>&1 || exit 1; " +
-            "$compile sleep 1; $launch > /dev/null 2>&1; rm -f $ui $pilot ) < /dev/null > /dev/null 2>&1 &"
+            "${compile}rm -f $ui $pilot; echo redemarrage >> $out; sync; sleep 2; svc power reboot || reboot ) < /dev/null > /dev/null 2>&1 &"
         RootShell.run(script, 10_000)
         val deadline = System.currentTimeMillis() + 240_000
         while (System.currentTimeMillis() < deadline) {
