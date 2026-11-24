@@ -13,8 +13,10 @@
 * **Résumé des nouveautés** dans *Réglages › Mises à jour*, dans la langue de l'appli.
 * Tous les sélecteurs des réglages montrent le nouveau choix dès l'appui.
 
-> Première mise à jour qui passe par l'appli : depuis la 1.3.0, *Réglages › Mises à jour*, sans
-> ordinateur.
+> **Tu es sur une version d'avant la 1.3.0 ?** Fais cette mise à jour une dernière fois depuis
+> l'ordinateur (`git pull`, `bash outils/telecharger.sh`, `bash outils/installer.sh`). C'est
+> indispensable pour profiter ensuite des mises à jour directement depuis le robot, par son Wi‑Fi,
+> sans ordinateur. Déjà en 1.3.0 ? Elle t'attend dans *Réglages › Mises à jour*.
 
 🇬🇧
 * **Screen sleep fixed**: the delay selector now shows your choice when you tap it, and the screen
@@ -25,7 +27,10 @@
 * **What's new summary** in *Settings › Updates*, in the app's language.
 * All settings selectors show the new choice as soon as you tap.
 
-> First update delivered through the app: from 1.3.0 on, *Settings › Updates*, no computer needed.
+> **On a version older than 1.3.0?** Do this update one last time from the computer (`git pull`,
+> `bash outils/telecharger.sh`, `bash outils/installer.sh`). It's required to get all future
+> updates straight from the robot, over its Wi‑Fi, with no computer. Already on 1.3.0? It's waiting
+> for you in *Settings › Updates*.
 
 ## 1.3.0
 
