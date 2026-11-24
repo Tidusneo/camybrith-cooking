@@ -2,6 +2,31 @@
 
 🇫🇷 Français, puis 🇬🇧 English.
 
+## 1.3.1
+
+* **Veille de l'écran corrigée** : le choix du délai s'affiche bien quand on appuie dessus, et
+  l'écran s'éteint vraiment. Il restait allumé à cause des petits changements d'état de la liaison
+  avec la base et des quelques grammes de variation de la balance au repos. Seul un vrai ajout ou
+  retrait (30 g) le rallume maintenant.
+* **Journal** : chaque mise en veille et chaque réveil y est noté avec sa raison, pour comprendre
+  facilement si l'écran ne s'éteint pas.
+* **Résumé des nouveautés** dans *Réglages › Mises à jour*, dans la langue de l'appli.
+* Tous les sélecteurs des réglages montrent le nouveau choix dès l'appui.
+
+> Première mise à jour qui passe par l'appli : depuis la 1.3.0, *Réglages › Mises à jour*, sans
+> ordinateur.
+
+🇬🇧
+* **Screen sleep fixed**: the delay selector now shows your choice when you tap it, and the screen
+  really turns off. It stayed on because of small link state changes with the base and the few
+  grams the scale drifts at rest. Only a real addition or removal (30 g) wakes it now.
+* **Log**: every sleep and wake is written to the log with its reason, to make it easy to see why
+  the screen stays on.
+* **What's new summary** in *Settings › Updates*, in the app's language.
+* All settings selectors show the new choice as soon as you tap.
+
+> First update delivered through the app: from 1.3.0 on, *Settings › Updates*, no computer needed.
+
 ## 1.3.0
 
 ### ⭐ Plus besoin de l'ordinateur pour les mises à jour

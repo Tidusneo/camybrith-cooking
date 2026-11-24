@@ -83,6 +83,7 @@ class MainActivity : Activity() {
     private fun sleepScreen() {
         if (sleeping) return
         sleeping = true
+        app.log.write("veille", "écran éteint après ${prefs.screenSleepMin} min")
         sleepView.visibility = View.VISIBLE
         sleepView.bringToFront()
         window.attributes = window.attributes.apply { screenBrightness = 0f }
@@ -92,8 +93,16 @@ class MainActivity : Activity() {
         }
     }
 
-    fun wakeScreen() {
+    /** Dernière raison qui a empêché ou interrompu la veille, notée au journal une fois par minute. */
+    private var lastWakeLog = 0L
+
+    fun wakeScreen(why: String = "toucher") {
         noteActivity()
+        val now = System.currentTimeMillis()
+        if (sleeping || now - lastWakeLog > 60_000) {
+            lastWakeLog = now
+            app.log.write("veille", if (sleeping) "réveil : $why" else "activité : $why")
+        }
         if (!sleeping) return
         sleeping = false
         sleepView.visibility = View.GONE
@@ -291,11 +300,17 @@ class MainActivity : Activity() {
 
     private fun dispatchSnapshot(s: Snapshot) {
         // Quelqu'un pèse, ouvre le couvercle, ou une cuisson tourne : ce n'est pas l'inactivité.
-        val weighing = lastWeightG != Int.MIN_VALUE && kotlin.math.abs(s.weightG - lastWeightG) >= 10
+        // La balance bouge de quelques grammes au repos : seul un vrai ajout ou retrait compte.
+        val weighing = lastWeightG != Int.MIN_VALUE && kotlin.math.abs(s.weightG - lastWeightG) >= WAKE_WEIGHT_G
         val lid = lastLidOpen != null && lastLidOpen != s.lidOpen
         lastWeightG = s.weightG
         lastLidOpen = s.lidOpen
-        if (s.busy || s.faultCode.isNotEmpty() || lid) wakeScreen() else if (weighing) wakeScreen()
+        when {
+            s.busy -> wakeScreen("cuisson en cours")
+            s.faultCode.isNotEmpty() -> wakeScreen("alerte ${s.faultCode}")
+            lid -> wakeScreen("couvercle")
+            weighing -> wakeScreen("balance")
+        }
         refreshKnob(s)
         topBar.update(s)
         machineBar.update(s)
@@ -315,7 +330,7 @@ class MainActivity : Activity() {
         unsubscribeEvents?.invoke()
         main.removeCallbacks(themeCheck)
         main.removeCallbacks(sleepCheck)
-        wakeScreen()
+        wakeScreen("appli en arrière-plan")
         KnobLight.release()
         super.onStop()
     }
@@ -425,7 +440,7 @@ class MainActivity : Activity() {
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         if (sleeping) {
-            if (event.action == KeyEvent.ACTION_DOWN) wakeScreen()
+            if (event.action == KeyEvent.ACTION_DOWN) wakeScreen("molette")
             return true
         }
         noteActivity()
@@ -452,7 +467,7 @@ class MainActivity : Activity() {
 
     override fun dispatchGenericMotionEvent(event: MotionEvent): Boolean {
         if (sleeping) {
-            if (event.action == MotionEvent.ACTION_SCROLL) wakeScreen()
+            if (event.action == MotionEvent.ACTION_SCROLL) wakeScreen("molette")
             return true
         }
         noteActivity()
@@ -471,7 +486,9 @@ class MainActivity : Activity() {
     // ------------------------------------------------------------------ évènements machine
 
     private fun onMachineEvent(e: MachineEvent) {
-        wakeScreen()
+        // Seuls les évènements qui demandent un regard rallument l'écran ; l'état de la liaison
+        // (qui peut changer tout seul, robot au repos) ne compte pas comme une activité.
+        if (e.type !in QUIET_EVENTS) wakeScreen(e.type.name)
         current?.onEvent(e)
         when (e.type) {
             EventType.JOB_STARTED -> sound(Sounds.Kind.START)
@@ -705,6 +722,12 @@ class MainActivity : Activity() {
     companion object {
         /** Partie à rouvrir après une reconstruction (langue, thème). */
         private var reopenSection: Section? = null
+
+        /** Variation de poids qui compte comme une pesée pour la veille de l'écran. */
+        private const val WAKE_WEIGHT_G = 30
+
+        /** Évènements qui ne rallument pas l'écran : rien à regarder. */
+        private val QUIET_EVENTS = setOf(EventType.LINK_CHANGED, EventType.FAULT_CLEARED, EventType.PHASE_CHANGED)
 
         /** Température du bol telle qu'on l'affiche : sur le Smart, la base répond 0 sous 37 °C. */
         fun bowlTemperature(a: MainActivity, s: Snapshot): String =
