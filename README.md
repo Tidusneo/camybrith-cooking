@@ -89,6 +89,12 @@ assistant et lui demander de te guider pas à pas.
 * **Tout se personnalise** : les sons, l'animation de démarrage avec ton logo, et même le nom et
   l'icône (voir [personnalisation/LISEZMOI.md](personnalisation/LISEZMOI.md)).
 
+## Home Assistant
+
+Camybrith peut envoyer l'état du robot à Home Assistant par MQTT (état, programme, température,
+poids, temps restant, couvercle, alerte), avec la découverte automatique des capteurs. En lecture
+seule : rien ne peut démarrer le robot à distance. Voir [docs/HOME-ASSISTANT.md](docs/HOME-ASSISTANT.md).
+
 ## Sécurité de la cuisson
 
 Les limites de l'appli d'origine sont toutes conservées (vitesse 3 au plus en chauffe et en sens

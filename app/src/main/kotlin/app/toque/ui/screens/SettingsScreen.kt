@@ -144,6 +144,43 @@ class SettingsScreen(a: MainActivity) : Screen(a) {
         machine.addView(Ui.button(c, tr("Appliquer"), Ui.Style.PRIMARY, Icon.Kind.CHECK, height = 58) { applyMode() }, Ui.lp(Ui.WRAP, Ui.WRAP, t = 14))
         renderModes()
 
+        // ---- Home Assistant
+        val ha = section(tr("Home Assistant"), Icon.Kind.HOME)
+        ha.addView(Ui.text(c, tr("Envoie l'état du robot à Home Assistant en MQTT : état, programme, température, vitesse, poids, temps restant, couvercle, alerte. " +
+            "Les capteurs apparaissent tout seuls (découverte MQTT). Lecture seule : rien ne peut démarrer le robot à distance."),
+            15f, Ui.TEXT3).apply { setLineSpacing(0f, 1.15f) }, Ui.lp(b = 10))
+        var mqttOn = a.prefs.mqttEnabled
+        ha.addView(toggle(tr("Envoyer l'état en MQTT"), mqttOn) { mqttOn = it })
+        val mqttRow = Ui.horizontal(c)
+        val mqttHost = field(a.prefs.mqttHost, tr("Serveur MQTT (ex. 192.168.1.10)"))
+        val mqttPort = field(a.prefs.mqttPort.toString(), "Port").apply { inputType = InputType.TYPE_CLASS_NUMBER }
+        mqttRow.addView(mqttHost, LinearLayout.LayoutParams(0, Ui.u(58), 1f).apply { rightMargin = Ui.u(10) })
+        mqttRow.addView(mqttPort, LinearLayout.LayoutParams(Ui.u(120), Ui.u(58)))
+        ha.addView(mqttRow, Ui.lp(t = 12))
+        val credRow = Ui.horizontal(c)
+        val mqttUser = field(a.prefs.mqttUser, tr("Utilisateur"))
+        val mqttPass = field(a.prefs.mqttPassword, tr("Mot de passe")).apply {
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+        }
+        credRow.addView(mqttUser, LinearLayout.LayoutParams(0, Ui.u(58), 1f).apply { rightMargin = Ui.u(10) })
+        credRow.addView(mqttPass, LinearLayout.LayoutParams(0, Ui.u(58), 1f))
+        ha.addView(credRow, Ui.lp(t = 10))
+        val mqttTopic = field(a.prefs.mqttTopic, tr("Sujet (camybrith)"))
+        ha.addView(mqttTopic, Ui.lp(Ui.MATCH, Ui.u(58), t = 10))
+        val mqttStatus = Ui.text(c, a.app.homeAssistant.status, 15f, Ui.TEXT2).apply { setLineSpacing(0f, 1.1f) }
+        ha.addView(mqttStatus, Ui.lp(t = 10))
+        a.app.homeAssistant.listener = { mqttStatus.text = it }
+        ha.addView(Ui.button(c, tr("Enregistrer"), Ui.Style.PRIMARY, Icon.Kind.CHECK, height = 54) {
+            a.prefs.mqttEnabled = mqttOn
+            a.prefs.mqttHost = mqttHost.text.toString().trim()
+            a.prefs.mqttPort = mqttPort.text.toString().trim().toIntOrNull() ?: 1883
+            a.prefs.mqttUser = mqttUser.text.toString().trim()
+            a.prefs.mqttPassword = mqttPass.text.toString()
+            a.prefs.mqttTopic = mqttTopic.text.toString().trim().trimEnd('/').ifEmpty { "camybrith" }
+            a.app.homeAssistant.restart()
+            a.toast(if (mqttOn) tr("Home Assistant : réglages enregistrés") else tr("Envoi MQTT arrêté"), Ui.OK)
+        }, Ui.lp(Ui.WRAP, Ui.WRAP, t = 12))
+
         // ---- Sécurité
         val safety = section(tr("Sécurité"), Icon.Kind.WARNING)
         safety.addView(toggle(tr("Exiger la détection du bol"), a.prefs.requireBowl) { on ->

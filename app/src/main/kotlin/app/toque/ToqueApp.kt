@@ -22,6 +22,7 @@ class ToqueApp : Application() {
         private set
     val machine: MachineClient by lazy { MachineClient(this) }
     val recipes: RecipeRepo by lazy { RecipeRepo(this) }
+    val homeAssistant: HomeAssistant by lazy { HomeAssistant(this) }
     /** Dernière anomalie du compilateur repérée (vide si aucune) : affichée par l'interface. */
     @Volatile var compilerProblem = ""
     val compilerWatch: CompilerWatch by lazy { CompilerWatch(log) { what -> compilerProblem = what; compilerListener?.invoke(what) } }
@@ -56,6 +57,7 @@ class ToqueApp : Application() {
         log.write("interface", "démarrage")
         TimeSync.start(this, prefs, log)
         if (prefs.editorEnabled) WebEditor.apply(this)
+        homeAssistant.restart()
         // Version prudente (tout interprété) : rien à surveiller.
         if (applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_VM_SAFE_MODE == 0) compilerWatch.start()
     }
