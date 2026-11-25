@@ -25,7 +25,7 @@ class UpdateTest {
              "assets":[
                {"name":"notes.txt","size":12,"browser_download_url":"https://example.invalid/notes.txt"},
                {"name":"Toque-0.2.0.apk","size":2345678,
-                "browser_download_url":"https://github.com/Wuki60/MrCuisineVibeConnect/releases/download/v0.2.0/Toque-0.2.0.apk"}
+                "browser_download_url":"https://github.com/Tidusneo/camybrith-cooking/releases/download/v0.2.0/Toque-0.2.0.apk"}
              ]}
         """.trimIndent()
         val r = Releases.parse(json)
@@ -36,6 +36,15 @@ class UpdateTest {
         assertEquals("Toque-0.2.0.apk", r.apkName)
         assertEquals(2345678L, r.apkSize)
         assertTrue(r.apkUrl!!.endsWith("/v0.2.0/Toque-0.2.0.apk"))
+    }
+
+    @Test fun linksOutsideThisRepositoryAreIgnored() {
+        val json = """{"tag_name":"v9.0.0","assets":[
+            {"name":"Camybrith-9.0.0-rapide.apk","size":10,"browser_download_url":"https://github.com/Tidusneo24150/camybrith-cooking/releases/download/v9.0.0/r.apk"},
+            {"name":"Camybrith-pilote-9.apk","size":5,"browser_download_url":"https://evil.example/pilote.apk"}]}"""
+        val r = Releases.parse(json, "rapide")
+        assertNull(r.apkUrl)
+        assertNull(r.pilotUrl)
     }
 
     @Test fun releaseWithoutApk() {
@@ -49,9 +58,9 @@ class UpdateTest {
         val json = """
             {"tag_name":"v1.3.0","name":"Camybrith Cooking 1.3.0","body":"",
              "assets":[
-               {"name":"Camybrith-1.3.0-prudente.apk","size":20,"browser_download_url":"https://x.invalid/p.apk"},
-               {"name":"Camybrith-1.3.0-rapide.apk","size":10,"browser_download_url":"https://x.invalid/r.apk"},
-               {"name":"Camybrith-pilote-1.2.apk","size":5,"browser_download_url":"https://x.invalid/pilote.apk"},
+               {"name":"Camybrith-1.3.0-prudente.apk","size":20,"browser_download_url":"https://github.com/Tidusneo/camybrith-cooking/releases/download/v1.3.0/p.apk"},
+               {"name":"Camybrith-1.3.0-rapide.apk","size":10,"browser_download_url":"https://github.com/Tidusneo/camybrith-cooking/releases/download/v1.3.0/r.apk"},
+               {"name":"Camybrith-pilote-1.2.apk","size":5,"browser_download_url":"https://github.com/Tidusneo/camybrith-cooking/releases/download/v1.3.0/pilote.apk"},
                {"name":"camybrith_animation.zip","size":3,"browser_download_url":"https://x.invalid/a.zip"}
              ]}
         """.trimIndent()
@@ -61,7 +70,7 @@ class UpdateTest {
         assertEquals("Camybrith-pilote-1.2.apk", fast.pilotName)
         val safe = Releases.parse(json, Releases.variantOf("1.2.0-prudente"))
         assertEquals("Camybrith-1.3.0-prudente.apk", safe.apkName)
-        assertEquals("https://x.invalid/pilote.apk", safe.pilotUrl)
+        assertEquals("https://github.com/Tidusneo/camybrith-cooking/releases/download/v1.3.0/pilote.apk", safe.pilotUrl)
         assertEquals("prudente", Releases.variantOf("0.8.3-prudent"))
         assertTrue(Releases.isNewer("v1.3.0", "1.2.0-rapide"))
         assertFalse(Releases.isNewer("v1.2.0", "1.2.0-prudente"))

@@ -20,7 +20,7 @@ data class Release(
 
 /** Lecture de l'API GitHub « dernière version » et comparaison de numéros de version. */
 object Releases {
-    const val REPO = "Tidusneo24150/camybrith-cooking"
+    const val REPO = "Tidusneo/camybrith-cooking"
     const val LATEST_URL = "https://api.github.com/repos/$REPO/releases/latest"
     const val PAGE_URL = "https://github.com/$REPO/releases"
 
@@ -51,6 +51,11 @@ object Releases {
      * Analyse la réponse de `GET /repos/{dépôt}/releases/latest`. [variant] choisit l'interface
      * (« Camybrith-1.2.0-rapide.apk » ou « …-prudente.apk ») ; le pilote est « Camybrith-pilote-*.apk ».
      */
+    /** Préfixe des fichiers publiés par ce dépôt : un lien ailleurs n'est jamais téléchargé. */
+    const val DOWNLOAD_PREFIX = "https://github.com/$REPO/releases/download/"
+
+    private fun ours(url: String?): String? = url?.takeIf { it.startsWith(DOWNLOAD_PREFIX) }
+
     fun parse(json: String, variant: String = "rapide"): Release {
         @Suppress("UNCHECKED_CAST")
         val o = Json.parse(json) as? Map<String, Any?> ?: throw IllegalArgumentException("réponse GitHub illisible")
@@ -70,10 +75,10 @@ object Releases {
             title = (o["name"] as? String)?.takeIf { it.isNotBlank() } ?: tag,
             notes = (o["body"] as? String).orEmpty().trim(),
             apkName = apk?.get("name") as? String,
-            apkUrl = apk?.get("browser_download_url") as? String,
+            apkUrl = ours(apk?.get("browser_download_url") as? String),
             apkSize = (apk?.get("size") as? Number)?.toLong() ?: 0L,
             pilotName = pilot?.get("name") as? String,
-            pilotUrl = pilot?.get("browser_download_url") as? String,
+            pilotUrl = ours(pilot?.get("browser_download_url") as? String),
             pilotSize = (pilot?.get("size") as? Number)?.toLong() ?: 0L,
         )
     }

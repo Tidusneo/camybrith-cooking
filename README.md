@@ -57,7 +57,7 @@ connaît tout le guide, te fait avancer une étape à la fois, vérifie avec toi
 fichiers et les photos d'écran avant chaque étape délicate, et s'arrête si quelque chose cloche.
 
 1. Télécharge `camybrith-assistant-claude.zip` sur la page
-   [Releases](https://github.com/Tidusneo24150/camybrith-cooking/releases/latest).
+   [Releases](https://github.com/Tidusneo/camybrith-cooking/releases/latest).
 2. Sur claude.ai ou dans l'appli Claude : vérifie que l'exécution de code et la création de
    fichiers sont activées dans **Réglages > Capacités**, puis va dans **Personnaliser > Skills**,
    bouton **+**, **Créer un skill**, **Importer un skill**, et choisis le ZIP.

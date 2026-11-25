@@ -2,6 +2,26 @@
 
 🇫🇷 Français, puis 🇬🇧 English.
 
+## 1.4.2
+
+* **Nouvelle adresse du projet** : [github.com/Tidusneo/camybrith-cooking](https://github.com/Tidusneo/camybrith-cooking).
+  Les mises à jour depuis le robot, les guides et les scripts pointent vers elle.
+* **Mises à jour plus sûres** : le robot ne télécharge plus que des fichiers publiés par ce dépôt.
+* Après l'installation, le robot redémarre tout seul (nouveauté de la 1.4.1, dont c'est le premier
+  essai en vrai).
+
+> Si tu as cloné le projet sur ton ordinateur, mets son adresse à jour une fois :
+> `git remote set-url origin https://github.com/Tidusneo/camybrith-cooking`
+
+🇬🇧
+* **New project address**: [github.com/Tidusneo/camybrith-cooking](https://github.com/Tidusneo/camybrith-cooking).
+  Updates from the robot, the guides and the scripts now point to it.
+* **Safer updates**: the robot only downloads files published by this repository.
+* After installing, the robot restarts on its own (new in 1.4.1, first real test here).
+
+> If you cloned the project on your computer, update its address once:
+> `git remote set-url origin https://github.com/Tidusneo/camybrith-cooking`
+
 ## 1.4.1
 
 * **Mise à jour depuis le robot plus fiable** : après l'installation, le robot redémarre tout seul

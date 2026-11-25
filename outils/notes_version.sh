@@ -8,7 +8,7 @@ RACINE=$(cd "$(dirname "$0")/.." && pwd)
 SECTION=$(awk -v v="## $V" '$0==v{on=1;next} /^## /{if(on)exit} on' "$RACINE/CHANGELOG.md")
 [ -n "$(echo "$SECTION" | tr -d '[:space:]')" ] || exit 1
 cat <<NOTES
-Mode d'emploi : [docs/GUIDE.md](https://github.com/Tidusneo24150/camybrith-cooking/blob/main/docs/GUIDE.md) · [English](https://github.com/Tidusneo24150/camybrith-cooking/blob/main/docs/GUIDE.en.md)
+Mode d'emploi : [docs/GUIDE.md](https://github.com/Tidusneo/camybrith-cooking/blob/main/docs/GUIDE.md) · [English](https://github.com/Tidusneo/camybrith-cooking/blob/main/docs/GUIDE.en.md)
 
 ## Nouveautés · What's new
 $SECTION
