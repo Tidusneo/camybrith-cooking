@@ -21,9 +21,10 @@ rebuild, no risk. Each file must have exactly one of these names, as `.wav`, `.o
 | `pesee` | when the requested weight is reached on the scale |
 | `trop` | when the requested weight is exceeded |
 | `appui` | on every button press (keep it very short) |
+| `compte` | optional, no default sound: end-of-program countdown. It starts when its own length is left (a 9 s sound starts 9 s before the end) so it ends exactly with the program. Not for turbo, nor for a program shorter than the sound |
 
 Example: `fin.mp3` replaces the end sound. Missing names keep the sound shipped with the app. Keep
-files short (under 10 seconds, except `demarrage`) and not too loud. In the app, then use
+files short (under 10 seconds, except `demarrage` and `compte`) and not too loud. In the app, then use
 **Settings**, **Reload sounds** (or reopen it). To go back to the default sounds:
 `bash outils/sons.sh retirer` (remove).
 

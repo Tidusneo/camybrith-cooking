@@ -21,6 +21,7 @@ import app.toque.recipes.FileImport
 import app.toque.ToqueApp
 import app.toque.core.i18n.I18n
 import app.toque.core.i18n.tr
+import app.toque.core.machine.EndCue
 import app.toque.core.machine.EventType
 import app.toque.core.machine.JobSpec
 import app.toque.core.machine.MachineEvent
@@ -65,6 +66,8 @@ class MainActivity : Activity() {
     private var swallowGesture = false
     private var lastWeightG = Int.MIN_VALUE
     private var lastLidOpen: Boolean? = null
+    /** Son « compte » : il part quand il reste sa durée, pour finir pile avec le programme. */
+    private val endCue = EndCue()
     private val sleepCheck = object : Runnable {
         override fun run() {
             val min = prefs.screenSleepMin
@@ -315,6 +318,16 @@ class MainActivity : Activity() {
         topBar.update(s)
         machineBar.update(s)
         stack.lastOrNull()?.onSnapshot(s)
+        countdown(s)
+    }
+
+    private fun countdown(s: Snapshot) {
+        val length = if (prefs.sound) sounds.lengthMs(Sounds.Kind.COUNTDOWN) else null
+        when (val act = endCue.update(s, length)) {
+            is EndCue.Action.Start -> sounds.playFrom(Sounds.Kind.COUNTDOWN, act.offsetMs)
+            EndCue.Action.Stop -> sounds.stop(Sounds.Kind.COUNTDOWN)
+            EndCue.Action.None -> Unit
+        }
     }
 
     override fun onResume() {

@@ -319,7 +319,7 @@
   "Poids à atteindre": "Target weight",
   "Pont série arrêté (code %d) %s": "Serial bridge stopped (code %d) %s",
   "Pour %d %s": "For %d %s",
-  "Pour mettre vos propres sons, déposez dans %s des fichiers .wav, .ogg ou .mp3 nommés demarrage, debut, fin, recette, alerte, pause, appui, pesee ou trop, puis rechargez.": "To use your own sounds, put .wav, .ogg or .mp3 files named demarrage, debut, fin, recette, alerte, pause, appui, pesee or trop in %s, then reload.",
+  "Pour mettre vos propres sons, déposez dans %s des fichiers .wav, .ogg ou .mp3 nommés demarrage, debut, fin, recette, alerte, pause, appui, pesee, trop ou compte, puis rechargez.": "To use your own sounds, put .wav, .ogg or .mp3 files named demarrage, debut, fin, recette, alerte, pause, appui, pesee, trop or compte in %s, then reload.",
   "Presque : %d g": "Almost: %d g to go",
   "Presque : %s": "Almost: %s to go",
   "Programme": "Program",

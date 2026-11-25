@@ -355,7 +355,7 @@ class SettingsScreen(a: MainActivity) : Screen(a) {
 
     private fun soundsInfo(count: Int): String {
         val dir = "Android/data/${c.packageName}/files/sons/"
-        val base = tr("Pour mettre vos propres sons, déposez dans %s des fichiers .wav, .ogg ou .mp3 nommés demarrage, debut, fin, recette, alerte, pause, appui, pesee ou trop, puis rechargez.").format(dir)
+        val base = tr("Pour mettre vos propres sons, déposez dans %s des fichiers .wav, .ogg ou .mp3 nommés demarrage, debut, fin, recette, alerte, pause, appui, pesee, trop ou compte, puis rechargez.").format(dir)
         return if (count == 0) base else base + " " + tr("Sons personnels : %d").format(count)
     }
 

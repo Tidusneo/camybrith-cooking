@@ -3,8 +3,10 @@ package app.toque
 import android.content.Context
 import android.media.AudioAttributes
 import android.media.AudioManager
+import android.media.MediaMetadataRetriever
 import android.media.MediaPlayer
 import android.media.SoundPool
+import android.os.SystemClock
 import android.provider.Settings
 import java.io.File
 import java.util.zip.ZipFile
@@ -17,12 +19,17 @@ import java.util.zip.ZipFile
  * Les sons de l'appli, courts, passent par SoundPool. Les sons personnels (sauf l'appui) passent par
  * MediaPlayer : SoundPool coupe sur Android 8 tout son qui dépasse 1 Mo une fois décodé (environ 6 s
  * en stéréo 44,1 kHz), et un son de démarrage de console dure bien plus.
+ * Le son « compte » n'existe que s'il est fourni : il part quand il reste sa durée dans un programme,
+ * pour finir pile avec lui (voir EndCue).
  */
 class Sounds(private val c: Context, private val log: Logbook? = null) {
-    enum class Kind(val file: String) {
+    /** [builtIn] : fourni avec l'appli (sinon joué seulement si on dépose le sien). */
+    enum class Kind(val file: String, val builtIn: Boolean = true) {
         STARTUP("demarrage"), START("debut"), END("fin"), RECIPE("recette"), ALERT("alerte"), PAUSE("pause"), TAP("appui"),
         /** Pesée : cible atteinte, cible dépassée. */
         WEIGH_OK("pesee"), WEIGH_OVER("trop"),
+        /** Compte à rebours de fin de programme, calé pour finir avec lui. */
+        COUNTDOWN("compte", builtIn = false),
     }
 
     private var pool: SoundPool? = null
@@ -31,6 +38,9 @@ class Sounds(private val c: Context, private val log: Logbook? = null) {
     private val waiting = HashMap<Int, (() -> Unit)?>()
     private val files = HashMap<Kind, File>()
     private val players = ArrayList<MediaPlayer>()
+    /** Sons longs en cours qu'on peut couper (compte à rebours). */
+    private val held = HashMap<Kind, MediaPlayer>()
+    private val lengths = HashMap<Kind, Long>()
     private val attributes = AudioAttributes.Builder()
         .setUsage(AudioAttributes.USAGE_MEDIA)
         .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
@@ -71,9 +81,11 @@ class Sounds(private val c: Context, private val log: Logbook? = null) {
         for (k in Kind.values()) {
             try {
                 val file = own(k)
+                if (file == null && !k.builtIn) continue
                 if (file != null && k != Kind.TAP) {
                     mine += k
                     files[k] = file
+                    if (k == Kind.COUNTDOWN) durationOf(file)?.let { lengths[k] = it }
                     continue
                 }
                 val id = if (file != null) {
@@ -135,6 +147,70 @@ class Sounds(private val c: Context, private val log: Logbook? = null) {
         }
     }
 
+    /** Durée d'un son personnel, en millisecondes (null s'il n'y en a pas). */
+    @Synchronized
+    fun lengthMs(k: Kind): Long? = lengths[k]
+
+    /**
+     * Joue un son personnel à partir de [offsetMs], en le gardant sous la main pour [stop].
+     * Le temps de préparation est rattrapé : le son finit là où on l'attend.
+     */
+    @Synchronized
+    fun playFrom(k: Kind, offsetMs: Long) {
+        stop(k)
+        val file = files[k] ?: return
+        val asked = SystemClock.elapsedRealtime()
+        val mp = MediaPlayer()
+        try {
+            mp.setAudioAttributes(attributes)
+            mp.setDataSource(file.path)
+            mp.setOnPreparedListener { p ->
+                val at = offsetMs + (SystemClock.elapsedRealtime() - asked)
+                if (at >= MIN_SEEK_MS) {
+                    p.setOnSeekCompleteListener { it.start() }
+                    p.seekTo(at.coerceAtMost(Int.MAX_VALUE.toLong()).toInt())
+                } else p.start()
+            }
+            mp.setOnCompletionListener { finish(k, it) }
+            mp.setOnErrorListener { player, what, _ ->
+                log?.write("sons", "${file.name} : erreur $what")
+                finish(k, player)
+                true
+            }
+            held[k] = mp
+            players += mp
+            mp.prepareAsync()
+        } catch (e: Exception) {
+            log?.write("sons", "${file.name} : ${e.message}")
+            finish(k, mp)
+        }
+    }
+
+    /** Coupe un son lancé par [playFrom]. */
+    @Synchronized
+    fun stop(k: Kind) {
+        held.remove(k)?.let { done(it) }
+    }
+
+    @Synchronized
+    private fun finish(k: Kind, mp: MediaPlayer) {
+        if (held[k] === mp) held.remove(k)
+        done(mp)
+    }
+
+    private fun durationOf(f: File): Long? {
+        val r = MediaMetadataRetriever()
+        return try {
+            r.setDataSource(f.path)
+            r.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLongOrNull()?.takeIf { it > 0 }
+        } catch (e: Exception) {
+            log?.write("sons", "${f.name} : durée illisible (${e.message})")
+            null
+        } finally {
+            try { r.release() } catch (_: Exception) {}
+        }
+    }
+
     @Synchronized
     private fun done(mp: MediaPlayer) {
         players.remove(mp)
@@ -178,12 +254,19 @@ class Sounds(private val c: Context, private val log: Logbook? = null) {
         get() = audio.getStreamVolume(AudioManager.STREAM_MUSIC)
         set(v) = audio.setStreamVolume(AudioManager.STREAM_MUSIC, v.coerceIn(0, maxVolume), 0)
 
+    private companion object {
+        /** En dessous, on ne cherche pas dans le fichier : on part du début. */
+        const val MIN_SEEK_MS = 60L
+    }
+
     @Synchronized
     fun release() {
         pool?.release()
         pool = null
         players.forEach { it.release() }
         players.clear()
+        held.clear()
+        lengths.clear()
         files.clear()
         ids.clear()
         ready.clear()

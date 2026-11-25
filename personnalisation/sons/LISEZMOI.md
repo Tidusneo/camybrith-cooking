@@ -15,10 +15,11 @@ Chaque fichier doit porter exactement l'un de ces noms, en `.wav`, `.ogg` ou `.m
 | `pesee` | quand le poids demandé est atteint sur la balance |
 | `trop` | quand on a dépassé le poids demandé |
 | `appui` | à chaque appui sur un bouton (garde-le très court) |
+| `compte` | facultatif, aucun son fourni : compte à rebours de fin de programme. Il démarre quand il reste sa durée (un son de 9 s part à 9 s de la fin) pour se terminer pile avec le programme. Rien pour le turbo ni pour un programme plus court que le son |
 
 Exemple : `fin.mp3` remplace le son de fin. Les noms absents gardent le son fourni avec l'appli.
 
-Conseils : des fichiers courts (moins de 10 secondes, sauf `demarrage`) et pas trop forts. Pour
+Conseils : des fichiers courts (moins de 10 secondes, sauf `demarrage` et `compte`) et pas trop forts. Pour
 revenir aux sons d'origine : `bash outils/sons.sh retirer`.
 
 Les fichiers de ce dossier restent sur ton ordinateur : ils ne sont jamais envoyés sur GitHub.

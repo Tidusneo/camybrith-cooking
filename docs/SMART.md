@@ -156,7 +156,7 @@ le sens renvoyé reste celui de la dernière marche ; les programmes sont décri
   2,4 s, un appui la passe. Pas d'animation après un changement de langue.
 * **Sons** (`Sounds.kt`, fichiers dans `assets/sons`, fabriqués par `personnalisation/marque/sons.py`, tous
   synthétisés) : `demarrage` (ouverture), `debut` (lancement), `fin` (programme terminé), `recette`
-  (recette terminée), `alerte` (défaut), `pause` (pause imposée : couvercle, bol…), `appui` (touches), `pesee` (poids atteint), `trop` (poids dépassé).
+  (recette terminée), `alerte` (défaut), `pause` (pause imposée : couvercle, bol…), `appui` (touches), `pesee` (poids atteint), `trop` (poids dépassé), et `compte` (facultatif, sans son fourni : compte à rebours calé pour finir pile avec le programme).
   Chacun se remplace par un fichier du même nom en .wav, .ogg ou .mp3 dans
   `Android/data/app.toque/files/sons/`, puis « Recharger les sons » dans les réglages
   (`outils/sons.sh` envoie ceux du dossier `personnalisation/sons`). Les sons

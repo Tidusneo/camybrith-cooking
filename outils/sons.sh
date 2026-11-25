@@ -1,6 +1,7 @@
 #!/bin/bash
 # Sons personnels. Tout fichier .wav, .ogg ou .mp3 du dossier personnalisation/sons nommé
 # demarrage, debut, fin, recette, alerte, pause, pesee, trop ou appui remplace le son de l'appli du même nom.
+# compte (facultatif) est joué quand il reste sa durée dans un programme, pour finir pile avec lui.
 #
 #   bash outils/sons.sh envoyer   → envoie tes sons au robot
 #   bash outils/sons.sh retirer   → enlève tous les sons personnels (retour aux sons fournis)
@@ -17,7 +18,7 @@ case "${1:-}" in
   envoyer)
     $A shell "mkdir -p $R"
     n=0
-    for k in demarrage debut fin recette alerte pause pesee trop appui; do
+    for k in demarrage debut fin recette alerte pause pesee trop appui compte; do
       for e in wav ogg mp3; do
         f="$S/$k.$e"
         [ -s "$f" ] || continue

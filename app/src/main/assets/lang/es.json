@@ -319,7 +319,7 @@
   "Poids à atteindre": "Peso objetivo",
   "Pont série arrêté (code %d) %s": "Puente serie detenido (código %d) %s",
   "Pour %d %s": "Para %d %s",
-  "Pour mettre vos propres sons, déposez dans %s des fichiers .wav, .ogg ou .mp3 nommés demarrage, debut, fin, recette, alerte, pause, appui, pesee ou trop, puis rechargez.": "Para usar tus propios sonidos, pon en %s archivos .wav, .ogg o .mp3 llamados demarrage, debut, fin, recette, alerte, pause, appui, pesee o trop, y luego recárgalos.",
+  "Pour mettre vos propres sons, déposez dans %s des fichiers .wav, .ogg ou .mp3 nommés demarrage, debut, fin, recette, alerte, pause, appui, pesee, trop ou compte, puis rechargez.": "Para usar tus propios sonidos, pon en %s archivos .wav, .ogg o .mp3 llamados demarrage, debut, fin, recette, alerte, pause, appui, pesee, trop o compte, y luego recárgalos.",
   "Presque : %d g": "Casi: faltan %d g",
   "Presque : %s": "Casi: faltan %s",
   "Programme": "Programa",
