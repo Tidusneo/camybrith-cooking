@@ -119,6 +119,7 @@ personnalisation/    tes sons, ton logo, et les outils pour les fabriquer
 core/                logique en Kotlin pur, testée sans Android (protocole, sécurité, recettes)
 commun/              code partagé entre l'interface et le pilote
 pilote/              appli « pilote moteur » (app.toque.pilote)
+editeur/             éditeur de recettes web (Ktor + Compose HTML), lancé par l'appli
 app/                 appli interface (app.toque)
 ```
 
@@ -128,7 +129,7 @@ Les APK sont fabriqués et publiés automatiquement par GitHub (onglet **Actions
 **Releases**). Pour les fabriquer sur ton ordinateur : JDK 17, SDK Android, puis
 
 ```
-./gradlew :core:test :pilote:assembleRelease :app:assembleRelease
+./gradlew :core:test :editeur:jvmTest :pilote:assembleRelease :app:assembleRelease
 ./gradlew -Pprudent=true :app:assembleRelease     # version prudente
 ```
 
@@ -136,6 +137,14 @@ La version **rapide** est compilée par Android avant la première ouverture (c'
 `outils/installer.sh`) : sur ce robot, la compilation « au fil de l'eau » d'Android fait planter
 l'interface. La version **prudente** n'est jamais compilée : plus lente, mais à l'abri de ce
 problème.
+
+Pour essayer l'éditeur de recettes web sans le robot (http://localhost:8099, code 123456 ; les
+recettes sont gardées dans le dossier donné ; ajoute `EDITEUR_LANG=es` ou `en` pour une autre
+langue, `EDITEUR_DARK=1` pour le thème sombre) :
+
+```
+EDITEUR_DEV=/tmp/recettes ./gradlew :editeur:jvmTest --tests app.toque.editeur.DevRun
+```
 
 ## Ajouter une langue
 

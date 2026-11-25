@@ -120,6 +120,7 @@ personnalisation/    your sounds, your logo, and the tools to make them
 core/                pure Kotlin logic, tested without Android (protocol, safety, recipes)
 commun/              code shared by the interface and the pilot
 pilote/              "motor pilot" app (app.toque.pilote)
+editeur/             web recipe editor (Ktor + Compose HTML), started by the app
 app/                 interface app (app.toque)
 ```
 
@@ -129,7 +130,7 @@ The APKs are built and published automatically by GitHub (**Actions** tab, **Rel
 build them on your computer: JDK 17, Android SDK, then
 
 ```
-./gradlew :core:test :pilote:assembleRelease :app:assembleRelease
+./gradlew :core:test :editeur:jvmTest :pilote:assembleRelease :app:assembleRelease
 ./gradlew -Pprudent=true :app:assembleRelease     # "prudente" (safe) version
 ```
 
@@ -137,6 +138,14 @@ The **fast** version ("rapide") is compiled ahead of time by Android before its 
 (that is what `outils/installer.sh` does): on this robot, Android's just-in-time compiler makes the
 interface crash. The **safe** version ("prudente") is never compiled: slower, but immune to that
 problem.
+
+To try the web recipe editor without the robot (http://localhost:8099, code 123456; recipes kept
+in the given folder; add `EDITEUR_LANG=es` or `en` for another language, `EDITEUR_DARK=1` for the
+dark theme):
+
+```
+EDITEUR_DEV=/tmp/recipes ./gradlew :editeur:jvmTest --tests app.toque.editeur.DevRun
+```
 
 ## Adding a language
 

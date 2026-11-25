@@ -24,7 +24,8 @@ class I18nTest {
         I18n.select("fr")
     }
 
-    private val roots = listOf(File("src/main/kotlin"), File("../app/src/main/kotlin"), File("../commun/src/main/kotlin"), File("../pilote/src/main/kotlin"))
+    private val roots = listOf(File("src/main/kotlin"), File("../app/src/main/kotlin"), File("../commun/src/main/kotlin"), File("../pilote/src/main/kotlin"),
+        File("../editeur/src/commonMain/kotlin"), File("../editeur/src/jvmMain/kotlin"), File("../editeur/src/jsMain/kotlin"))
     private val langDir = File("../app/src/main/assets/lang")
     private val call = Regex("""\btr(?:Key)?\(\s*""")
     private val placeholder = Regex("""%(?:\d+\$)?[-#+ 0,(]*\d*(?:\.\d+)?[a-zA-Z%]""")

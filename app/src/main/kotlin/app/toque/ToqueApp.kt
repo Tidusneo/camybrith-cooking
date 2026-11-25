@@ -11,6 +11,7 @@ import app.toque.core.i18n.I18n
 import app.toque.core.machine.TemperatureTable
 import app.toque.machine.MachineClient
 import app.toque.recipes.RecipeRepo
+import app.toque.recipes.WebEditor
 import app.toque.ui.MainActivity
 import java.util.Locale
 
@@ -55,6 +56,7 @@ class ToqueApp : Application() {
         }
         log.write("interface", "démarrage")
         TimeSync.start(this, prefs, log)
+        if (prefs.editorEnabled) WebEditor.apply(this)
         homeAssistant.restart()
         // Version prudente (tout interprété) : rien à surveiller.
         if (applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_VM_SAFE_MODE == 0) compilerWatch.start()

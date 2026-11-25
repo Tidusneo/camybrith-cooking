@@ -312,6 +312,25 @@ class RecipeRepo(private val context: Context) {
         }.get()
     }
 
+    /** Supprime ces recettes (et leurs favoris). */
+    fun remove(ids: Collection<String>, rebuild: Boolean = true) {
+        exec.submit {
+            val db = helper.writableDatabase
+            db.beginTransaction()
+            try {
+                for (id in ids) {
+                    db.delete("recipes", "id = ?", arrayOf(id))
+                    db.delete("favorites", "id = ?", arrayOf(id))
+                }
+                db.setTransactionSuccessful()
+            } finally {
+                db.endTransaction()
+            }
+            synchronized(favorites) { favorites.removeAll(ids.toSet()) }
+            if (rebuild) rebuild()
+        }.get()
+    }
+
     /** Recharge l'index de recherche (après des mises à jour sans [rebuild]). */
     fun refresh() {
         exec.submit { rebuild() }.get()
