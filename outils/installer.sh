@@ -3,20 +3,30 @@
 #
 #   bash outils/installer.sh              → version rapide (conseillée)
 #   bash outils/installer.sh prudente     → version prudente, à utiliser si la rapide fait des bêtises
+#   bash outils/installer.sh beta         → dernière bêta de test (ajouter prudente si besoin)
 #
 # Les APK sont pris dans le dossier apk/ à côté de ce dossier outils (téléchargés depuis la page
 # « Releases » du projet) : Camybrith-pilote-*.apk et Camybrith-*-rapide.apk ou *-prudente.apk.
+# La bêta est prise dans apk/beta/ (bash outils/telecharger.sh beta).
 # À lancer robot à l'arrêt, sans cuisson en cours.
 set -u
 . "$(dirname "$0")/commun.sh"
-MODE=${1:-rapide}
-case "$MODE" in rapide|prudente) ;; *) echo "Usage : bash $0 [rapide|prudente]"; exit 1 ;; esac
-
+MODE=rapide
 D="$RACINE/apk"
+TELE="bash outils/telecharger.sh"
+for a in "$@"; do
+  case "$a" in
+    rapide|prudente) MODE=$a ;;
+    beta|bêta) D="$RACINE/apk/beta"; TELE="bash outils/telecharger.sh beta" ;;
+    *) echo "Usage : bash $0 [rapide|prudente] [beta]"; exit 1 ;;
+  esac
+done
+[ "$D" = "$RACINE/apk" ] || echo "Installation de la bêta : $(cat "$D/VERSION.txt" 2>/dev/null || echo 'version inconnue')"
+
 PILOTE=$(ls -t "$D"/Camybrith-pilote-*.apk 2>/dev/null | head -1)
 APP=$(ls -t "$D"/Camybrith-*-"$MODE".apk 2>/dev/null | head -1)
-[ -n "$PILOTE" ] || { echo "Il manque Camybrith-pilote-….apk dans le dossier apk/ : lance d'abord bash outils/telecharger.sh."; exit 1; }
-[ -n "$APP" ] || { echo "Il manque Camybrith-…-$MODE.apk dans le dossier apk/ : lance d'abord bash outils/telecharger.sh."; exit 1; }
+[ -n "$PILOTE" ] || { echo "Il manque Camybrith-pilote-….apk dans le dossier ${D#"$RACINE"/}/ : lance d'abord $TELE."; exit 1; }
+[ -n "$APP" ] || { echo "Il manque Camybrith-…-$MODE.apk dans le dossier ${D#"$RACINE"/}/ : lance d'abord $TELE."; exit 1; }
 
 connecter
 exiger_root

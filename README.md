@@ -137,6 +137,10 @@ La version **rapide** est compilée par Android avant la première ouverture (c'
 l'interface. La version **prudente** n'est jamais compilée : plus lente, mais à l'abri de ce
 problème.
 
+Les nouveautés passent d'abord par la branche **`beta`** : chaque push y publie une préversion de
+test que seul celui qui la demande installe (`bash outils/telecharger.sh beta`). Le détail est dans
+[docs/BETA.md](docs/BETA.md).
+
 ## Ajouter une langue
 
 L'appli est écrite en français, avec l'anglais et l'espagnol en plus. Chaque langue est un fichier de

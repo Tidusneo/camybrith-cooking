@@ -1,11 +1,15 @@
 # Publie une version de Camybrith Cooking quand versionName change dans app/build.gradle.kts
 # (ou à la demande, onglet Actions > « Publier une version » > Run workflow).
 # Fichiers joints : le pilote moteur, l'interface rapide et prudente, et l'animation de démarrage.
+#
+# Branche beta : chaque push publie une préversion « latest-beta » (remplacée à chaque fois),
+# jamais marquée « dernière version » : ni l'appli ni telecharger.sh ne la proposent au public.
+# Pour la tester : bash outils/telecharger.sh beta puis bash outils/installer.sh beta (docs/BETA.md).
 name: Publier une version
 
 on:
   push:
-    branches: [main]
+    branches: [main, beta]
   workflow_dispatch:
 
 permissions:
@@ -28,7 +32,12 @@ jobs:
         run: |
           v=$(grep -oP 'versionName = if \(prudent\) "[^"]+" else "\K[0-9.]+' app/build.gradle.kts)
           echo "name=$v" >> "$GITHUB_OUTPUT"
-          if git rev-parse -q --verify "refs/tags/v$v" >/dev/null; then
+          if [ "$GITHUB_REF_NAME" = "beta" ]; then
+            echo "Bêta $v (${GITHUB_SHA::7}) : publiée en préversion latest-beta."
+            echo "beta=true" >> "$GITHUB_OUTPUT"
+            echo "suffix=-beta" >> "$GITHUB_OUTPUT"
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+          elif git rev-parse -q --verify "refs/tags/v$v" >/dev/null; then
             echo "La version $v est déjà publiée : rien à faire."
             echo "publish=false" >> "$GITHUB_OUTPUT"
           else
@@ -45,13 +54,14 @@ jobs:
         if: steps.version.outputs.publish == 'true'
         run: |
           v="${{ steps.version.outputs.name }}"
+          s="${{ steps.version.outputs.suffix }}"
           mkdir -p dist
           ./gradlew --no-daemon :core:test :pilote:assembleRelease :app:assembleRelease
           p=$(grep -oP 'versionName = "\K[^"]+' pilote/build.gradle.kts)
-          cp pilote/build/outputs/apk/release/pilote-release.apk "dist/Camybrith-pilote-$p.apk"
-          cp app/build/outputs/apk/release/app-release.apk "dist/Camybrith-$v-rapide.apk"
+          cp pilote/build/outputs/apk/release/pilote-release.apk "dist/Camybrith-pilote-$p$s.apk"
+          cp app/build/outputs/apk/release/app-release.apk "dist/Camybrith-$v$s-rapide.apk"
           ./gradlew --no-daemon -Pprudent=true :app:assembleRelease
-          cp app/build/outputs/apk/release/app-release.apk "dist/Camybrith-$v-prudente.apk"
+          cp app/build/outputs/apk/release/app-release.apk "dist/Camybrith-$v$s-prudente.apk"
 
       - name: Animation de démarrage
         if: steps.version.outputs.publish == 'true'
@@ -62,17 +72,38 @@ jobs:
           mv modules/camybrith_animation-perso.zip dist/camybrith_animation.zip
 
       - name: Assistant Claude
-        if: steps.version.outputs.publish == 'true'
+        if: steps.version.outputs.publish == 'true' && steps.version.outputs.beta != 'true'
         run: bash outils/fabriquer_assistant.sh dist
 
+      - name: Publier la bêta (préversion)
+        if: steps.version.outputs.publish == 'true' && steps.version.outputs.beta == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          v="${{ steps.version.outputs.name }}"
+          prev=$(git describe --tags --abbrev=0 --exclude latest-beta 2>/dev/null || true)
+          {
+            echo "**Bêta de test**, construite depuis la branche \`beta\` (commit ${GITHUB_SHA::7}). Elle n'est pas proposée au public : ni l'appli ni \`telecharger.sh\` ne la voient."
+            echo
+            echo "Pour l'essayer : \`bash outils/telecharger.sh beta\` puis \`bash outils/installer.sh beta\`. Retour à la version publique : \`bash outils/telecharger.sh\` puis \`bash outils/installer.sh\`."
+            echo
+            if [ -n "$prev" ]; then
+              echo "Changements depuis $prev :"
+              git log --no-merges --pretty='- %s' "$prev..HEAD"
+            fi
+          } > notes.md
+          gh release delete latest-beta --cleanup-tag --yes 2>/dev/null || true
+          gh release create latest-beta dist/* --prerelease --latest=false \
+            --title "Camybrith Cooking $v bêta (${GITHUB_SHA::7})" --notes-file notes.md --target "$GITHUB_SHA"
+
       - name: Publier sur GitHub
-        if: steps.version.outputs.publish == 'true'
+        if: steps.version.outputs.publish == 'true' && steps.version.outputs.beta != 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           v="${{ steps.version.outputs.name }}"
           if ! bash outils/notes_version.sh "$v" > notes.md; then
-            prev=$(git describe --tags --abbrev=0 2>/dev/null || true)
+            prev=$(git describe --tags --abbrev=0 --exclude latest-beta 2>/dev/null || true)
             {
               echo "Mode d'emploi : [docs/GUIDE.md](https://github.com/${{ github.repository }}/blob/main/docs/GUIDE.md)."
               echo
