@@ -139,6 +139,13 @@ class Prefs(context: Context) {
             p.edit().putLong("lastUpdateCheck", v).commit()
         }
 
+    /** Canal bêta : proposer aussi les versions de test de la branche beta (docs/BETA.md). */
+    var betaUpdates: Boolean
+        get() = p.getBoolean("betaUpdates", false)
+        set(v) {
+            p.edit().putBoolean("betaUpdates", v).commit()
+        }
+
     /** Code couleur sur l'anneau de la molette (problème, pause, à vous, en cours). */
     var knobColours: Boolean
         get() = p.getBoolean("knobColours", true)

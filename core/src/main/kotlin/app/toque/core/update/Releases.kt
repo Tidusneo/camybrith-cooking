@@ -16,6 +16,10 @@ data class Release(
     val pilotName: String? = null,
     val pilotUrl: String? = null,
     val pilotSize: Long = 0L,
+    /** Commit d'où vient la version (target_commitish), utile pour reconnaître une bêta. */
+    val commit: String = "",
+    /** Préversion de test (branche beta, docs/BETA.md), jamais proposée hors du canal bêta. */
+    val beta: Boolean = false,
 )
 
 /** Lecture de l'API GitHub « dernière version » et comparaison de numéros de version. */
@@ -23,6 +27,33 @@ object Releases {
     const val REPO = "Tidusneo/camybrith-cooking"
     const val LATEST_URL = "https://api.github.com/repos/$REPO/releases/latest"
     const val PAGE_URL = "https://github.com/$REPO/releases"
+
+    /** Préversion « latest-beta », reconstruite à chaque push sur la branche beta. */
+    const val BETA_TAG = "latest-beta"
+    const val BETA_URL = "https://api.github.com/repos/$REPO/releases/tags/$BETA_TAG"
+
+    private val NUMBER = Regex("\\d+(?:\\.\\d+)+")
+    private val BETA_BUILD = Regex("-beta-([0-9a-f]{7,40})", RegexOption.IGNORE_CASE)
+
+    /** Commit d'une bêta installée (« 1.4.2-rapide-beta-6eb3b1d » → « 6eb3b1d »), null pour une version publique. */
+    fun betaCommitOf(versionName: String): String? = BETA_BUILD.find(versionName)?.groupValues?.get(1)?.lowercase()
+
+    /**
+     * La version à proposer, ou null si l'appli est à jour.
+     * - Canal public : la dernière version publiée, si son numéro est plus grand.
+     * - Canal bêta : la bêta si c'est une autre construction que celle installée et que son numéro
+     *   n'est pas en retard (ni sur l'installée, ni sur la publique) ; sinon la publique si elle est
+     *   plus récente. Une bêta laissée derrière une publication n'est donc jamais proposée.
+     */
+    fun pick(public: Release?, beta: Release?, installedVersion: String, betaChannel: Boolean): Release? {
+        val newerPublic = public?.takeIf { isNewer(it.version, installedVersion) }
+        if (!betaChannel || beta == null || beta.apkUrl == null || beta.commit.isBlank()) return newerPublic
+        val installedCommit = betaCommitOf(installedVersion)
+        val sameBuild = installedCommit != null && beta.commit.lowercase().startsWith(installedCommit)
+        val behindInstalled = compare(beta.version, installedVersion) < 0
+        val behindPublic = public != null && compare(beta.version, public.version) < 0
+        return if (!sameBuild && !behindInstalled && !behindPublic) beta else newerPublic
+    }
 
     /** « v0.2.0 » → « 0.2.0 ». */
     fun versionOf(tag: String): String = tag.trim().removePrefix("v").removePrefix("V").trim()
@@ -69,9 +100,14 @@ object Releases {
         val apk = uis.firstOrNull { name(it).contains("-$variant", ignoreCase = true) }
             ?: uis.firstOrNull { !name(it).contains("prudent", ignoreCase = true) && variant == "rapide" }
             ?: uis.singleOrNull()
+        // La bêta a un tag fixe (« latest-beta ») : son numéro est pris dans le nom de ses fichiers.
+        val version = versionOf(tag).takeIf { it.firstOrNull()?.isDigit() == true }
+            ?: NUMBER.find(apk?.get("name") as? String ?: "")?.value
+            ?: NUMBER.find(o["name"] as? String ?: "")?.value
+            ?: versionOf(tag)
         return Release(
             tag = tag,
-            version = versionOf(tag),
+            version = version,
             title = (o["name"] as? String)?.takeIf { it.isNotBlank() } ?: tag,
             notes = (o["body"] as? String).orEmpty().trim(),
             apkName = apk?.get("name") as? String,
@@ -80,6 +116,8 @@ object Releases {
             pilotName = pilot?.get("name") as? String,
             pilotUrl = ours(pilot?.get("browser_download_url") as? String),
             pilotSize = (pilot?.get("size") as? Number)?.toLong() ?: 0L,
+            commit = (o["target_commitish"] as? String).orEmpty().trim(),
+            beta = o["prerelease"] == true,
         )
     }
 }

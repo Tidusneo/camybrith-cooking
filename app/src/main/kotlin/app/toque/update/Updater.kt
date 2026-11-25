@@ -51,18 +51,37 @@ class Updater(private val context: Context) {
     private val pilotCode: Int = try { context.packageManager.getPackageInfo(Ipc.PILOT_PACKAGE, 0).versionCode } catch (_: Exception) { -1 }
 
     /** Dernière version publiée (lève [Failure] avec un message lisible). */
-    fun latest(): Release {
-        val c = open(Releases.LATEST_URL, "application/vnd.github+json")
+    fun latest(): Release = fetchRelease(Releases.LATEST_URL)!!
+
+    /** Dernière bêta (branche beta), ou null s'il n'y en a pas. */
+    fun latestBeta(): Release? = fetchRelease(Releases.BETA_URL, missingOk = true)
+
+    /**
+     * La version à proposer, ou null si l'appli est à jour. Avec [beta], la bêta est proposée dès
+     * que c'est une autre construction que celle installée (voir Releases.pick).
+     */
+    fun check(beta: Boolean): Release? {
+        // Canal bêta : la bêta suffit si la version publique ne répond pas.
+        val stable: Release? = if (beta) (try { latest() } catch (_: Failure) { null }) else latest()
+        val b = if (beta) latestBeta() else null
+        val r = Releases.pick(stable, b, installedVersion, beta)
+        log.write("maj", "proposée : ${r?.let { if (it.beta) "bêta ${it.version} (${it.commit.take(7)})" else it.version } ?: "aucune"}" +
+            " (installée : $installedVersion${if (beta) ", canal bêta" else ""})")
+        return r
+    }
+
+    private fun fetchRelease(url: String, missingOk: Boolean = false): Release? {
+        val c = open(url, "application/vnd.github+json")
         try {
             when (val code = c.responseCode) {
                 200 -> {}
-                404 -> throw Failure(tr("Aucune version publiée sur GitHub pour l'instant"))
+                404 -> if (missingOk) return null else throw Failure(tr("Aucune version publiée sur GitHub pour l'instant"))
                 403, 429 -> throw Failure(tr("GitHub limite les vérifications : réessayez dans une heure"))
                 else -> throw Failure(tr("GitHub a répondu %d", code))
             }
             val text = c.inputStream.bufferedReader().use { it.readText() }
             val r = try { Releases.parse(text, variant) } catch (e: IllegalArgumentException) { throw Failure(tr("Réponse GitHub illisible")) }
-            log.write("maj", "dernière version publiée : ${r.version} (installée : $installedVersion)")
+            log.write("maj", "${if (r.beta) "bêta" else "dernière version publiée"} : ${r.version} ${r.commit.take(7)}")
             return r
         } catch (e: IOException) {
             throw network(e)
@@ -84,12 +103,12 @@ class Updater(private val context: Context) {
         var before = 0L
         fun part(n: Long) { if (total > 0) progress(((before + n) * 100 / total).toInt().coerceIn(0, 100)) }
         val ui = fetch(uiUrl, File(dir, "interface.apk"), r.apkSize, ::part)
-        verify(ui)
+        verify(ui, sameCodeOk = r.beta)
         before += ui.length()
         var pilot: File? = null
         if (withPilot) {
             val f = fetch(r.pilotUrl!!, File(dir, "pilote.apk"), r.pilotSize, ::part)
-            pilot = verifyPilot(f)
+            pilot = verifyPilot(f, sameCodeOk = r.beta)
         }
         progress(100)
         log.write("maj", "téléchargée : ${r.apkName} (${ui.length() / 1024} Ko)" +
@@ -128,25 +147,34 @@ class Updater(private val context: Context) {
         }
     }
 
-    /** Le pilote téléchargé, ou null s'il n'est pas plus récent que celui déjà installé. */
+    /**
+     * Le pilote téléchargé, ou null s'il n'est pas plus récent que celui déjà installé. Pour une bêta
+     * ([sameCodeOk]), un pilote de même numéro est réinstallé : il peut avoir changé sans changer de numéro.
+     */
     @Suppress("DEPRECATION")
-    private fun verifyPilot(file: File): File? {
+    private fun verifyPilot(file: File, sameCodeOk: Boolean = false): File? {
         val pi = context.packageManager.getPackageArchiveInfo(file.path, 0)
         if (pi == null || pi.packageName != Ipc.PILOT_PACKAGE) {
             file.delete()
             throw Failure(tr("Le fichier téléchargé n'est pas le pilote moteur de Camybrith Cooking"))
         }
         if (pi.versionCode < pilotCode) { file.delete(); throw Failure(tr("Cette version est plus ancienne que celle installée")) }
-        if (pi.versionCode == pilotCode) { file.delete(); return null }
+        if (pi.versionCode == pilotCode && !sameCodeOk) { file.delete(); return null }
         return file
     }
 
+    /**
+     * Vérifie l'interface téléchargée. Une bêta ([sameCodeOk]) garde le numéro de la version dont elle
+     * part : elle s'installe par-dessus une version de même numéro, jamais par-dessus une plus récente.
+     */
     @Suppress("DEPRECATION")
-    private fun verify(file: File) {
+    private fun verify(file: File, sameCodeOk: Boolean = false) {
         val pi = context.packageManager.getPackageArchiveInfo(file.path, 0)
         if (pi == null) { file.delete(); throw Failure(tr("Le fichier téléchargé n'est pas une appli valide")) }
         if (pi.packageName != context.packageName) { file.delete(); throw Failure(tr("Le fichier téléchargé n'est pas Camybrith Cooking")) }
-        if (pi.versionCode <= installedCode) { file.delete(); throw Failure(tr("Cette version n'est pas plus récente que celle installée")) }
+        if (pi.versionCode < installedCode || (pi.versionCode == installedCode && !sameCodeOk)) {
+            file.delete(); throw Failure(tr("Cette version n'est pas plus récente que celle installée"))
+        }
     }
 
     /**

@@ -20,6 +20,9 @@ android {
         val prudent = (project.findProperty("prudent") as String?) == "true"
         versionCode = if (prudent) 50 else 49
         versionName = if (prudent) "1.4.2-prudente" else "1.4.2-rapide"
+        // Bêta (branche beta, -Pbeta=<commit>, voir docs/BETA.md) : le commit s'ajoute au nom de
+        // version (« 1.4.2-rapide-beta-6eb3b1d ») pour que l'appli reconnaisse la bêta installée.
+        (project.findProperty("beta") as String?)?.takeIf { it.isNotBlank() }?.let { versionNameSuffix = "-beta-$it" }
         manifestPlaceholders["safeMode"] = prudent.toString()
     }
 

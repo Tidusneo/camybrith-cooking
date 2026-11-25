@@ -56,11 +56,13 @@ jobs:
           v="${{ steps.version.outputs.name }}"
           s="${{ steps.version.outputs.suffix }}"
           mkdir -p dist
-          ./gradlew --no-daemon :core:test :pilote:assembleRelease :app:assembleRelease
+          b=""
+          [ -n "$s" ] && b="-Pbeta=${GITHUB_SHA::7}"
+          ./gradlew --no-daemon $b :core:test :pilote:assembleRelease :app:assembleRelease
           p=$(grep -oP 'versionName = "\K[^"]+' pilote/build.gradle.kts)
           cp pilote/build/outputs/apk/release/pilote-release.apk "dist/Camybrith-pilote-$p$s.apk"
           cp app/build/outputs/apk/release/app-release.apk "dist/Camybrith-$v$s-rapide.apk"
-          ./gradlew --no-daemon -Pprudent=true :app:assembleRelease
+          ./gradlew --no-daemon $b -Pprudent=true :app:assembleRelease
           cp app/build/outputs/apk/release/app-release.apk "dist/Camybrith-$v$s-prudente.apk"
 
       - name: Animation de démarrage
@@ -83,14 +85,18 @@ jobs:
           v="${{ steps.version.outputs.name }}"
           prev=$(git describe --tags --abbrev=0 --exclude latest-beta 2>/dev/null || true)
           {
-            echo "**Bêta de test**, construite depuis la branche \`beta\` (commit ${GITHUB_SHA::7}). Elle n'est pas proposée au public : ni l'appli ni \`telecharger.sh\` ne la voient."
+            echo "**Bêta de test**, construite depuis la branche \`beta\` (commit ${GITHUB_SHA::7}). Elle n'est proposée qu'aux robots qui ont activé « Recevoir les bêtas » (Réglages › Mises à jour)."
             echo
-            echo "Pour l'essayer : \`bash outils/telecharger.sh beta\` puis \`bash outils/installer.sh beta\`. Retour à la version publique : \`bash outils/telecharger.sh\` puis \`bash outils/installer.sh\`."
-            echo
+            echo "## Nouveautés · What's new"
             if [ -n "$prev" ]; then
-              echo "Changements depuis $prev :"
-              git log --no-merges --pretty='- %s' "$prev..HEAD"
+              git log --no-merges --pretty='* %s' "$prev..HEAD"
+            else
+              git log --no-merges --pretty='* %s' -10
             fi
+            echo
+            echo "## Essayer depuis l'ordinateur"
+            echo
+            echo "\`bash outils/telecharger.sh beta\` puis \`bash outils/installer.sh beta\`. Retour à la version publique : \`bash outils/telecharger.sh\` puis \`bash outils/installer.sh\`."
           } > notes.md
           gh release delete latest-beta --cleanup-tag --yes 2>/dev/null || true
           gh release create latest-beta dist/* --prerelease --latest=false \

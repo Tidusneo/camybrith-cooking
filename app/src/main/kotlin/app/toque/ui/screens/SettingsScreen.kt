@@ -263,6 +263,13 @@ class SettingsScreen(a: MainActivity) : Screen(a) {
         updates.addView(updText)
         updButtons = Ui.horizontal(c)
         updates.addView(updButtons, Ui.lp(t = 12))
+        updates.addView(toggle(tr("Recevoir les bêtas"), a.prefs.betaUpdates) { on ->
+            a.prefs.betaUpdates = on
+            a.prefs.lastUpdateCheck = 0L
+            if (upd != Upd.DOWNLOADING && upd != Upd.INSTALLING) { release = null; upd = Upd.IDLE; renderUpdate() }
+        }, Ui.lp(t = 18))
+        updates.addView(Ui.text(c, tr("Versions de test, publiées avant les versions publiques. Elles peuvent contenir des erreurs : à réserver aux essais."),
+            15f, Ui.TEXT3).apply { setLineSpacing(0f, 1.1f) }, Ui.lp(t = 6))
         Updater.onInstallError = { msg -> updateFailed(msg) }
         renderUpdate()
 
@@ -562,6 +569,10 @@ class SettingsScreen(a: MainActivity) : Screen(a) {
 
     // ------------------------------------------------------------------ mises à jour
 
+    /** Nom affiché d'une version : son numéro, ou « 1.4.2 bêta (6eb3b1d) » pour une bêta. */
+    private fun label(r: Release?): String =
+        if (r == null) "" else if (r.beta) tr("%s bêta (%s)", r.version, r.commit.take(7)) else r.version
+
     private fun renderUpdate() {
         val r = release
         val installed = tr("Version installée : %s", updater.installedVersion)
@@ -570,9 +581,9 @@ class SettingsScreen(a: MainActivity) : Screen(a) {
             Upd.IDLE -> installed + "\n" + tr("Les nouvelles versions sont publiées sur GitHub.")
             Upd.CHECKING -> installed + "\n" + tr("Recherche sur GitHub…")
             Upd.UP_TO_DATE -> installed + "\n" + tr("Camybrith Cooking est à jour.")
-            Upd.AVAILABLE -> installed + "\n" + tr("Nouvelle version disponible : %s", r?.version) + notes(r)
-            Upd.DOWNLOADING -> tr("Téléchargement de la version %s… %d %%", r?.version, updPercent)
-            Upd.INSTALLING -> tr("Installation de la version %s… Le robot va redémarrer tout seul, puis Camybrith Cooking se rouvre.", r?.version)
+            Upd.AVAILABLE -> installed + "\n" + tr("Nouvelle version disponible : %s", label(r)) + notes(r)
+            Upd.DOWNLOADING -> tr("Téléchargement de la version %s… %d %%", label(r), updPercent)
+            Upd.INSTALLING -> tr("Installation de la version %s… Le robot va redémarrer tout seul, puis Camybrith Cooking se rouvre.", label(r))
             Upd.ERROR -> installed + "\n" + updMessage
         }
         updButtons.removeAllViews()
@@ -580,7 +591,7 @@ class SettingsScreen(a: MainActivity) : Screen(a) {
             Upd.IDLE, Upd.UP_TO_DATE, Upd.ERROR ->
                 updButtons.addView(Ui.button(c, tr("Rechercher une mise à jour"), Ui.Style.PRIMARY, Icon.Kind.SYNC, height = 58) { checkUpdate() })
             Upd.AVAILABLE -> {
-                updButtons.addView(Ui.button(c, tr("Installer la version %s", r?.version), Ui.Style.PRIMARY, Icon.Kind.CHECK, height = 58) { installUpdate() },
+                updButtons.addView(Ui.button(c, tr("Installer la version %s", label(r)), Ui.Style.PRIMARY, Icon.Kind.CHECK, height = 58) { installUpdate() },
                     Ui.lp(Ui.WRAP, Ui.WRAP, r = 10))
                 updButtons.addView(Ui.button(c, tr("Plus tard"), Ui.Style.GHOST, height = 58) { upd = Upd.IDLE; renderUpdate() })
             }
@@ -617,10 +628,10 @@ class SettingsScreen(a: MainActivity) : Screen(a) {
         renderUpdate()
         Thread {
             try {
-                val r = updater.latest()
+                val r = updater.check(a.prefs.betaUpdates)
                 view.post {
                     release = r
-                    upd = if (updater.isNewer(r)) Upd.AVAILABLE else Upd.UP_TO_DATE
+                    upd = if (r != null) Upd.AVAILABLE else Upd.UP_TO_DATE
                     renderUpdate()
                     if (upd == Upd.AVAILABLE) installUpdate()
                 }
@@ -641,7 +652,7 @@ class SettingsScreen(a: MainActivity) : Screen(a) {
             return
         }
         a.confirm(
-            tr("Version %s disponible", r.version),
+            tr("Version %s disponible", label(r)),
             notes(r).trim().let { if (it.isEmpty()) "" else it + "\n\n" } +
                 tr("Camybrith Cooking va la télécharger depuis GitHub, l'installer puis redémarrer le robot (une à deux minutes). " +
                     "Le moteur reste arrêté pendant l'opération."),

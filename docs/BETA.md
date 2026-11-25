@@ -21,13 +21,22 @@ Deux branches, deux publics :
 2. **Attendre la construction** : onglet **Actions** du dépôt, « Publier une version », une dizaine
    de minutes. La préversion apparaît ensuite dans **Releases** avec le numéro du commit.
 
-3. **L'installer sur ton robot**
-   ```
-   bash outils/telecharger.sh beta
-   bash outils/installer.sh beta
-   ```
-   `installer.sh beta prudente` installe l'interface prudente de la bêta. Les fichiers de la bêta
-   vont dans `apk/beta/`, ceux de la version publique restent dans `apk/`.
+3. **L'installer sur ton robot**, au choix :
+   * **depuis le robot** : Réglages › Mises à jour, active **Recevoir les bêtas**, puis
+     « Rechercher une mise à jour ». Le robot propose chaque nouvelle bêta comme une mise à jour
+     (« 1.4.2 bêta (6eb3b1d) »), la télécharge, l'installe et redémarre ;
+   * **depuis l'ordinateur** :
+     ```
+     bash outils/telecharger.sh beta
+     bash outils/installer.sh beta
+     ```
+     `installer.sh beta prudente` installe l'interface prudente de la bêta. Les fichiers de la bêta
+     vont dans `apk/beta/`, ceux de la version publique restent dans `apk/`.
+
+   Une bêta installée affiche son commit dans le numéro de version (Réglages › Mises à jour :
+   « 1.4.2-rapide-beta-6eb3b1d »). Elle garde le `versionCode` de la version dont elle part, ce qui
+   lui permet de s'installer par-dessus. Quand une version publique plus récente sort, le robot la
+   propose, bêtas activées ou non.
 
 4. **Tester**, recommencer 1 à 3 autant que nécessaire.
 

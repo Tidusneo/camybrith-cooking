@@ -249,10 +249,10 @@ class MainActivity : Activity() {
             prefs.lastUpdateCheck = System.currentTimeMillis()
             Thread {
                 try {
-                    val u = Updater(this)
-                    val r = u.latest()
-                    if (u.isNewer(r)) main.post {
-                        toast(tr("Nouvelle version disponible : %s", r.version) + " · " + tr("Réglages") + " › " + tr("Mises à jour"), Ui.OK)
+                    val r = Updater(this).check(prefs.betaUpdates)
+                    if (r != null) main.post {
+                        val name = if (r.beta) tr("%s bêta (%s)", r.version, r.commit.take(7)) else r.version
+                        toast(tr("Nouvelle version disponible : %s", name) + " · " + tr("Réglages") + " › " + tr("Mises à jour"), Ui.OK)
                     }
                 } catch (_: Exception) {
                 }

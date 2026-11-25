@@ -2,6 +2,15 @@
 
 🇫🇷 Français, puis 🇬🇧 English.
 
+## 1.4.3
+
+* **Recevoir les bêtas** (Réglages › Mises à jour) : le robot propose aussi les versions de test,
+  publiées avant les versions publiques. Désactivé par défaut, à réserver aux essais.
+
+🇬🇧
+* **Get beta versions** (Settings › Updates): the robot also offers test versions, published before
+  public releases. Off by default, for testing only.
+
 ## 1.4.2
 
 * **Nouvelle adresse du projet** : [github.com/Tidusneo/camybrith-cooking](https://github.com/Tidusneo/camybrith-cooking).
