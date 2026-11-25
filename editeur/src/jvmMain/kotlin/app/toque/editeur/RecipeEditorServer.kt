@@ -3,6 +3,7 @@ package app.toque.editeur
 import app.toque.core.i18n.I18n
 import app.toque.core.i18n.tr
 import app.toque.core.recipes.Cookidoo
+import app.toque.core.recipes.PastedText
 import app.toque.core.recipes.Recipe
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
@@ -84,6 +85,8 @@ class RecipeEditorServer(private val host: EditorHost, val port: Int = DEFAULT_P
         const val DEFAULT_PORT = 8080
         const val COOKIE = "editeur"
         const val MAX_IMAGE = 8 * 1024 * 1024
+        /** Texte collé : une recette, pas un livre. */
+        const val MAX_PASTE = 60_000
     }
 }
 
@@ -114,6 +117,49 @@ internal object Conversion {
     }
 
     fun review(recipe: Recipe?): Int = recipe?.steps?.count { it.needsReview } ?: 0
+}
+
+/**
+ * Clé d'accès : 8 caractères parmi 31 (sans 0, O, 1, I, L), affichée « ABCD‑EFGH ». Tirets, espaces
+ * et casse ne comptent pas à la saisie. Environ 850 milliards de possibilités : avec 10 essais par
+ * minute, impossible à deviner.
+ */
+object AccessCode {
+    const val ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"
+
+    fun normalize(code: String?): String = code.orEmpty().uppercase().filter { it in ALPHABET }
+
+    fun matches(given: String?, expected: String): Boolean {
+        val e = normalize(expected)
+        val g = normalize(given)
+        if (e.isEmpty() || g.length != e.length) return false
+        // Comparaison en temps constant.
+        var diff = 0
+        for (i in e.indices) diff = diff or (e[i].code xor g[i].code)
+        return diff == 0
+    }
+
+    fun generate(random: java.util.Random = java.security.SecureRandom()): String {
+        val raw = (1..8).map { ALPHABET[random.nextInt(ALPHABET.length)] }.joinToString("")
+        return raw.substring(0, 4) + "-" + raw.substring(4)
+    }
+
+    /** Ancienne clé à 6 chiffres (1.5.0 de test) : à remplacer. */
+    fun isLegacy(code: String): Boolean = code.length == 6 && code.all { it.isDigit() }
+}
+
+/** Recette collée : brouillon à relire dans l'éditeur, jamais enregistré tel quel. */
+internal object Pasting {
+    fun draft(text: String): EditorRecipe {
+        val p = PastedText.parse(text)
+        val steps = p.steps.map { EditorStep.fromText(it) }.ifEmpty { listOf(EditorStep()) }
+        return EditorRecipe(
+            title = p.title,
+            servings = p.servings,
+            ingredients = p.ingredients,
+            sections = listOf(EditorSection(steps = steps)),
+        )
+    }
 }
 
 /** Limite les essais de code : 10 erreurs, puis une minute d'attente. */
@@ -148,7 +194,7 @@ internal fun Application.editorModule(store: RecipeStore, host: EditorHost) {
 
     fun authorized(call: RoutingCall): Boolean {
         val code = cookie(call.request.headers[HttpHeaders.Cookie], RecipeEditorServer.COOKIE) ?: call.request.headers["X-Code"]
-        return host.accessCode.isNotEmpty() && code == host.accessCode
+        return AccessCode.matches(code, host.accessCode)
     }
 
     fun summary(r: EditorRecipe): RecipeSummary {
@@ -183,8 +229,8 @@ internal fun Application.editorModule(store: RecipeStore, host: EditorHost) {
             get("strings") { call.respond(Strings(I18n.current.texts)) }
             post("login") {
                 if (throttle.locked()) return@post call.respond(HttpStatusCode.TooManyRequests)
-                val code = call.receive<Login>().code.trim()
-                if (host.accessCode.isNotEmpty() && code == host.accessCode) {
+                val code = call.receive<Login>().code
+                if (AccessCode.matches(code, host.accessCode)) {
                     throttle.success()
                     call.respond(HttpStatusCode.NoContent)
                 } else {
@@ -243,6 +289,13 @@ internal fun Application.editorModule(store: RecipeStore, host: EditorHost) {
                 store.setImage(id, bytes)
                 publish(id)
                 call.respond(HttpStatusCode.NoContent)
+            }
+            post("paste") {
+                if (!authorized(call)) return@post call.respond(HttpStatusCode.Unauthorized)
+                val text = call.receive<Paste>().text
+                if (text.isBlank()) return@post call.respond(HttpStatusCode.BadRequest, tr("Collez d'abord le texte d'une recette"))
+                if (text.length > RecipeEditorServer.MAX_PASTE) return@post call.respond(HttpStatusCode.BadRequest, tr("Texte trop long pour une recette"))
+                call.respond(Pasting.draft(text))
             }
             post("preview") {
                 if (!authorized(call)) return@post call.respond(HttpStatusCode.Unauthorized)

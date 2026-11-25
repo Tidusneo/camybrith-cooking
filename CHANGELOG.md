@@ -2,6 +2,53 @@
 
 🇫🇷 Français, puis 🇬🇧 English.
 
+## 1.5.0
+
+### ⭐ Éditeur de recettes, depuis ton téléphone ou ton ordinateur
+
+**Écris tes recettes dans un navigateur, elles arrivent sur le robot.** Active l'éditeur dans
+*Réglages › Éditeur de recettes*, scanne le QR code avec ton téléphone : c'est tout.
+
+* **Créer, modifier, supprimer** tes recettes : ingrédients, étapes avec le réglage du robot
+  (durée, température, vitesse, sens, programmes) ou une pesée, photo.
+* **Coller une recette** trouvée ailleurs : le robot la découpe (titre, portions, ingrédients,
+  étapes) et convertit les réglages écrits à la manière Thermomix (« 20 min/100°C/vit. 1 »,
+  « vit. mijotage », « Varoma », « Pétrin »…) pour le Monsieur Cuisine Smart. Tu relis le résultat
+  avant d'enregistrer, avec les réglages adaptés marqués « à vérifier ».
+* **Aperçu « Sur le robot »** : ce que le robot fera vraiment de chaque étape, avec les règles de
+  sécurité. Un réglage impossible ne pourra jamais être lancé.
+* **Accès protégé** : désactivé par défaut, clé aléatoire de 8 caractères (dans le QR code),
+  blocage après 10 mauvaises clés, une nouvelle clé déconnecte tout le monde. Fonctionne
+  uniquement sur ton Wi‑Fi, sans internet ni compte.
+
+Éditeur proposé et programmé par **miguelangellv**, merci à lui ! Mode d'emploi :
+[docs/RECETTES.md](docs/RECETTES.md).
+
+> Mise à jour directement depuis le robot, *Réglages › Mises à jour*.
+
+🇬🇧
+
+### ⭐ Recipe editor, from your phone or computer
+
+**Write your recipes in a browser, they land on the robot.** Turn the editor on in *Settings ›
+Recipe editor*, scan the QR code with your phone: that's it.
+
+* **Create, edit, delete** your recipes: ingredients, steps with the robot's setting (time,
+  temperature, speed, direction, programs) or a weighing, photo.
+* **Paste a recipe** found elsewhere: the robot splits it (title, servings, ingredients, steps)
+  and converts settings written the Thermomix way ("20 min/100°C/speed 1", "simmer speed",
+  "Varoma", "Dough"…) for the Monsieur Cuisine Smart. You review the result before saving, with
+  adapted settings marked "to check".
+* **"On the robot" preview**: what the robot will really do with each step, with the safety
+  rules. An impossible setting can never be started.
+* **Protected access**: off by default, random 8‑character key (inside the QR code), blocked after
+  10 wrong keys, a new key signs everyone out. Works only on your Wi‑Fi, no internet or account.
+
+Editor suggested and built by **miguelangellv**, many thanks! How‑to:
+[docs/RECIPES.en.md](docs/RECIPES.en.md).
+
+> Update straight from the robot, *Settings › Updates*.
+
 ## 1.4.2
 
 * **Nouvelle adresse du projet** : [github.com/Tidusneo/camybrith-cooking](https://github.com/Tidusneo/camybrith-cooking).

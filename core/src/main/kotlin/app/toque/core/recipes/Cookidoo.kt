@@ -262,7 +262,7 @@ object Cookidoo {
         for (p0 in parts) {
             val p = p0.lowercase()
             when {
-                p == REVERSE.toString() -> reverse = true
+                p == REVERSE.toString() || p == "sens inverse" -> reverse = true
                 p.startsWith("pétrin") || p.startsWith("petrin") || p.contains(DOUGH) -> dough = true
                 p.startsWith("mixage") || p.contains(BLEND) -> blend = true
                 p == "turbo" -> turbo = true
@@ -270,7 +270,7 @@ object Cookidoo {
                 p.endsWith("°c") -> tempC = p.removeSuffix("°c").trim().replace(',', '.').toDoubleOrNull()?.toInt() ?: 0
                 p.startsWith("vitesse") -> {
                     val v = p.removePrefix("vitesse").trim()
-                    if (v.isEmpty() || v.contains(SPOON)) spoon = true
+                    if (v.isEmpty() || v.contains(SPOON) || v.startsWith("mijot")) spoon = true
                     else {
                         // « vitesse 5-10 » : monter progressivement ; le Smart démarre doucement tout seul.
                         val r = range(v)

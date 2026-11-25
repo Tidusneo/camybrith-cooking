@@ -99,8 +99,11 @@ L'appli peut servir un éditeur de recettes sur le réseau local, pour écrire t
 ordinateur, une tablette ou un téléphone au lieu de préparer `data.json` à la main.
 
 1. Sur le robot : **Réglages**, **Éditeur de recettes**, active **Activer l'éditeur sur le réseau
-   local**. L'appli affiche l'adresse (`http://<IP du robot>:8080`) et un code d'accès à 6 chiffres.
-2. Dans un navigateur sur le même réseau Wi-Fi, ouvre cette adresse et saisis le code.
+   local**. L'appli affiche un QR code, l'adresse (`http://<IP du robot>:8080`) et une clé d'accès
+   de 8 caractères (par exemple `K7M4-Q9TX`).
+2. Scanne le QR code avec ton téléphone : la page s'ouvre déjà connectée. Sinon, ouvre l'adresse
+   dans un navigateur sur le même réseau Wi-Fi et saisis la clé (tirets, espaces et majuscules ne
+   comptent pas).
 3. La liste montre les recettes déjà écrites (y compris celles importées avant avec `data.json`).
    Crées-en une ou ouvre-la pour la modifier : informations, ingrédients (un par ligne), photo, et
    les étapes, groupées en parties facultatives. Pour chaque étape, choisis **Sans le robot**,
@@ -108,6 +111,12 @@ ordinateur, une tablette ou un téléphone au lieu de préparer `data.json` à l
    de 40 à 130 °C de 5 en 5, vitesse de 1 à 10, sens inverse, fouet, impulsions turbo ; les valeurs
    que le robot refuserait ne sont pas proposées) ou **Peser** (ingrédient et grammes). Les étapes
    Thermomix d'un ancien `data.json` restent en **Texte libre** et sont toujours converties.
+   **Coller une recette** : colle le texte d'une recette trouvée ailleurs (titre, ingrédients,
+   étapes). Le robot la découpe et repère les réglages écrits à la manière Thermomix
+   (« 5 sec/vit. 5 », « 20 min/100°C/sens inverse/vit. mijotage », « cuire 10 minutes à 100 degrés
+   vitesse 2 », « Varoma », « Pétrin/3 min », « Turbo/0.5 sec/3 fois »). Le résultat s'ouvre comme
+   une nouvelle recette, à relire avant d'enregistrer. Colle uniquement des recettes que tu as le
+   droit d'utiliser : l'éditeur ne va jamais chercher une recette sur internet.
 4. Le panneau **Sur le robot** montre, pendant la saisie et dans la langue de l'appli, ce que
    l'importeur fera de chaque étape, et lesquelles sont à vérifier ou se feront à la main.
 5. **Enregistrer** : la recette est convertie par le même importeur que `data.json` et apparaît
@@ -115,5 +124,6 @@ ordinateur, une tablette ou un téléphone au lieu de préparer `data.json` à l
 
 Les recettes sont gardées dans le stockage privé de l'appli (`files/editeur/data.json` et
 `files/editeur/images/`), au même format que ci-dessus. L'éditeur ne tourne que s'il est activé et
-n'est fait que pour un réseau domestique de confiance : pas de HTTPS, seulement le code d'accès
-(**Nouveau code** dans les réglages le change et déconnecte les navigateurs).
+n'est fait que pour un réseau domestique de confiance : pas de HTTPS, seulement la clé d'accès
+(**Nouvelle clé** dans les réglages la change et déconnecte les navigateurs ; après 10 mauvaises
+clés, l'accès se bloque une minute ; un navigateur reste connecté 30 jours au plus).

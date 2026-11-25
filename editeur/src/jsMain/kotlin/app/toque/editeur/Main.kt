@@ -34,6 +34,9 @@ class AppState {
     /** Modifications non enregistrées : on demande avant de quitter l'écran. */
     var dirty = false
 
+    /** Recette collée et découpée, que l'écran « Nouvelle » ouvre à la place d'une recette vide. */
+    var draft: EditorRecipe? = null
+
     fun go(hash: String) {
         if (window.location.hash == hash) route = hash else window.location.hash = hash
     }
@@ -85,6 +88,13 @@ fun main() {
             document.title = tr("Éditeur de recettes") + " · Camybrith Cooking"
         } catch (_: Throwable) {
         }
+        // QR code du robot : la clé arrive après « #k= » (jamais envoyée au serveur dans l'adresse).
+        val fromQr = window.location.hash.takeIf { it.startsWith("#k=") }?.removePrefix("#k=")
+        if (fromQr != null) {
+            window.history.replaceState(null, "", "#/")
+            app.route = "#/"
+            try { Api.login(decodeURIComponent(fromQr)) } catch (_: Throwable) {}
+        }
         app.needLogin = !Api.hasCode
         app.ready = true
     }
@@ -115,7 +125,7 @@ private fun Shell(app: AppState) {
             }
             A(href = "#/", {
                 classes(S.navItem)
-                if (!route.startsWith("/new") && !route.startsWith("/r/")) classes(S.navActive)
+                if (!route.startsWith("/new") && !route.startsWith("/r/") && !route.startsWith("/paste")) classes(S.navActive)
             }) {
                 Icon.Show(Icon.BOOK, 26)
                 Text(tr("Recettes"))
@@ -123,6 +133,10 @@ private fun Shell(app: AppState) {
             A(href = "#/new", { classes(S.navItem); if (route.startsWith("/new")) classes(S.navActive) }) {
                 Icon.Show(Icon.PLUS, 26)
                 Text(tr("Nouvelle"))
+            }
+            A(href = "#/paste", { classes(S.navItem); if (route.startsWith("/paste")) classes(S.navActive) }) {
+                Icon.Show(Icon.COPY, 24)
+                Text(tr("Coller"))
             }
             Div({ style { property("flex", "1") } })
             Div({
@@ -141,6 +155,7 @@ private fun Shell(app: AppState) {
         Div({ classes(S.main) }) {
             when {
                 route.startsWith("/new") -> EditorScreen(app, null)
+                route.startsWith("/paste") -> PasteScreen(app)
                 route.startsWith("/r/") -> EditorScreen(app, decodeURIComponent(route.removePrefix("/r/")))
                 else -> ListScreen(app)
             }
@@ -157,7 +172,7 @@ private fun LoginScreen(app: AppState) {
         Div({ style { property("color", "var(--accent)") } }) { Icon.Show(Icon.POT, 64) }
         H1({ classes(S.title) }) { Text(tr("Éditeur de recettes")) }
         P({ classes(S.muted) }) {
-            Text(tr("Saisissez le code affiché dans l'appli, dans Réglages › Éditeur de recettes."))
+            Text(tr("Scannez le QR code affiché sur le robot, ou saisissez la clé de Réglages › Éditeur de recettes."))
         }
         Form(attrs = {
             classes(S.card)
@@ -172,7 +187,7 @@ private fun LoginScreen(app: AppState) {
                             app.needLogin = false
                             app.route = window.location.hash
                         } else {
-                            error = tr("Code incorrect")
+                            error = tr("Clé incorrecte")
                         }
                     } catch (e: Throwable) {
                         error = e.message ?: ""
@@ -183,12 +198,14 @@ private fun LoginScreen(app: AppState) {
         }) {
             Input(InputType.Text) {
                 classes(S.input, S.codeInput)
-                attr("inputmode", "numeric")
-                attr("autocomplete", "one-time-code")
+                attr("autocapitalize", "characters")
+                attr("autocomplete", "off")
+                attr("spellcheck", "false")
+                attr("placeholder", "ABCD-EFGH")
                 attr("maxlength", "12")
                 attr("autofocus", "")
                 value(code)
-                onInput { code = it.value.filter { c -> c.isDigit() } }
+                onInput { code = it.value.uppercase().filter { c -> c.isLetterOrDigit() || c == '-' } }
             }
             if (error.isNotEmpty()) P({ classes(S.error) }) { Text(error) }
             Div({ style { property("margin-top", "16px") } }) {

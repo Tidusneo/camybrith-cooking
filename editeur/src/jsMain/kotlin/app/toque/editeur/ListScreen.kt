@@ -44,7 +44,10 @@ fun ListScreen(app: AppState) {
 
     Div({ classes(S.header) }) {
         H1({ classes(S.title) }) { Text(tr("Mes recettes")) }
-        PillButton(tr("Nouvelle recette"), Icon.PLUS, "primary") { app.go("#/new") }
+        Div({ classes(S.row) }) {
+            PillButton(tr("Nouvelle recette"), Icon.PLUS, "primary") { app.go("#/new") }
+            PillButton(tr("Coller une recette"), Icon.COPY) { app.go("#/paste") }
+        }
     }
     Div({ classes(S.search) }) {
         Icon.Show(Icon.SEARCH, 24)

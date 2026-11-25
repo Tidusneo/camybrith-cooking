@@ -94,8 +94,10 @@ The app can serve a recipe editor on the local network, to write recipes from a 
 phone instead of preparing `data.json` by hand.
 
 1. On the robot: **Settings**, **Recipe editor**, enable **Enable the editor on the local network**.
-   The app shows the address (`http://<robot IP>:8080`) and a 6-digit access code.
-2. In a browser on the same Wi-Fi network, open that address and enter the code.
+   The app shows a QR code, the address (`http://<robot IP>:8080`) and an 8‑character access key
+   (for example `K7M4-Q9TX`).
+2. Scan the QR code with your phone: the page opens already signed in. Otherwise, open the address
+   in a browser on the same Wi-Fi network and enter the key (dashes, spaces and case don't matter).
 3. The list shows the recipes already written (including those imported earlier with `data.json`).
    Create one or open one to edit it: details, ingredients (one per line), photo, and the steps,
    grouped in optional parts. For each step, choose **Without the robot**, **With the robot** (the
@@ -103,6 +105,11 @@ phone instead of preparing `data.json` by hand.
    speed 1–10, reverse, whisk, turbo pulses; values the robot would refuse cannot be picked) or
    **Weigh** (ingredient and grams). Thermomix steps from an older `data.json` stay as **Free
    text** and are still converted by the importer.
+   **Paste a recipe**: paste the text of a recipe found elsewhere (title, ingredients, steps). The
+   robot splits it and spots settings written the Thermomix way ("5 sec/vit. 5",
+   "20 min/100°C/sens inverse/vit. mijotage", "Varoma", "Pétrin/3 min", "Turbo/0.5 sec/3 fois";
+   French wording for now). The result opens as a new recipe, to review before saving. Only paste
+   recipes you have the right to use: the editor never fetches a recipe from the internet.
 4. The **On the robot** panel shows, while you type and in the app's language, what the importer
    will make of each step, and which ones need checking or will be done manually.
 5. **Save**: the recipe is converted by the same importer as `data.json` and immediately appears in
@@ -110,5 +117,6 @@ phone instead of preparing `data.json` by hand.
 
 The recipes are kept in the app's private storage (`files/editeur/data.json` and
 `files/editeur/images/`), in the same format as above. The editor only runs while it is enabled and
-is only meant for a trusted home network: there is no HTTPS, only the access code (**New code** in
-the settings changes it and disconnects the browsers).
+is only meant for a trusted home network: there is no HTTPS, only the access key (**New key** in the
+settings changes it and disconnects the browsers; after 10 wrong keys access is blocked for a
+minute; a browser stays signed in for 30 days at most).

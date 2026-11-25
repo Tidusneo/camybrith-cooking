@@ -18,8 +18,8 @@ android {
         // Version prudente (tout interprété, -Pprudent=true) : numéro au-dessus de la rapide, pour
         // pouvoir l'installer par-dessus en cas d'anomalie du compilateur.
         val prudent = (project.findProperty("prudent") as String?) == "true"
-        versionCode = if (prudent) 50 else 49
-        versionName = if (prudent) "1.4.2-prudente" else "1.4.2-rapide"
+        versionCode = if (prudent) 52 else 51
+        versionName = if (prudent) "1.5.0-prudente" else "1.5.0-rapide"
         manifestPlaceholders["safeMode"] = prudent.toString()
     }
 
@@ -43,6 +43,18 @@ android {
             isMinifyEnabled = false
             signingConfig = signingConfigs.getByName("toque")
         }
+    }
+
+    // Éditeur de recettes (Ktor) : ses dépendances emportent des fichiers inutiles sur Android
+    // (bibliothèques natives Windows et Mac de jansi, sondes de débogage des coroutines).
+    packaging {
+        resources.excludes += listOf(
+            "org/fusesource/**",
+            "DebugProbesKt.bin",
+            "META-INF/*.version",
+            "META-INF/INDEX.LIST",
+            "META-INF/io.netty.versions.properties",
+        )
     }
 
     compileOptions {
@@ -76,6 +88,8 @@ kotlin {
 dependencies {
     implementation(project(":commun"))
     implementation(project(":editeur"))
+    // QR code de l'éditeur de recettes (MIT, sans dépendance, ~30 Ko).
+    implementation("io.nayuki:qrcodegen:1.8.0")
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.robolectric:robolectric:4.14.1")
 }

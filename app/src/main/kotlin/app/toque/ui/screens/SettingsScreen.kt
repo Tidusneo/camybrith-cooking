@@ -27,6 +27,7 @@ import app.toque.recipes.LidlSync
 import app.toque.recipes.OnlineSync
 import app.toque.recipes.WebEditor
 import app.toque.ui.Icon
+import app.toque.ui.Qr
 import app.toque.ui.MainActivity
 import app.toque.ui.Screen
 import app.toque.ui.Section
@@ -263,17 +264,23 @@ class SettingsScreen(a: MainActivity) : Screen(a) {
         editor.addView(Ui.text(c, tr("Écrivez vos recettes depuis un ordinateur, une tablette ou un téléphone sur le même réseau Wi-Fi : ouvrez l'adresse ci-dessous dans un navigateur et saisissez le code. Les recettes enregistrées arrivent dans l'appli, converties pour le Monsieur Cuisine Smart."),
             15f, Ui.TEXT2).apply { setLineSpacing(0f, 1.15f) })
         val editorText = Ui.text(c, "", 17f, Ui.TEXT).apply { setLineSpacing(0f, 1.2f) }
+        val editorKey = Ui.text(c, "", 34f, Ui.ACCENT).apply { typeface = android.graphics.Typeface.MONOSPACE; letterSpacing = 0.08f }
+        val editorQr = android.widget.ImageView(c).apply { visibility = View.GONE }
         fun paintEditor() {
+            val urls = if (a.prefs.editorEnabled && WebEditor.running && WebEditor.error.isEmpty()) WebEditor.addresses() else emptyList()
             editorText.text = when {
                 !a.prefs.editorEnabled -> tr("Éditeur arrêté")
                 WebEditor.error.isNotEmpty() -> tr("Démarrage impossible : %s", WebEditor.error)
                 !WebEditor.running -> tr("Démarrage…")
-                else -> {
-                    val urls = WebEditor.addresses()
-                    (if (urls.isEmpty()) tr("Aucun réseau : connectez le robot au Wi-Fi") else urls.joinToString("\n")) +
-                        "\n" + tr("Code : %s", a.prefs.editorCode)
-                }
+                urls.isEmpty() -> tr("Aucun réseau : connectez le robot au Wi-Fi")
+                else -> tr("Scannez le QR code avec votre téléphone, ou ouvrez sur un appareil du même Wi-Fi :") + "\n" + urls.joinToString("\n")
             }
+            editorKey.text = if (urls.isNotEmpty()) a.prefs.editorCode else ""
+            editorKey.visibility = if (urls.isNotEmpty()) View.VISIBLE else View.GONE
+            // Le QR code ouvre la page et porte la clé après « # » : elle ne part pas dans l'adresse.
+            val qr = urls.firstOrNull()?.let { Qr.bitmap(it + "/#k=" + a.prefs.editorCode, Ui.u(220)) }
+            editorQr.setImageBitmap(qr)
+            editorQr.visibility = if (qr != null) View.VISIBLE else View.GONE
         }
         val refresh = { view.post { paintEditor() }; Unit }
         editor.addView(toggle(tr("Activer l'éditeur sur le réseau local"), a.prefs.editorEnabled) {
@@ -282,12 +289,19 @@ class SettingsScreen(a: MainActivity) : Screen(a) {
             WebEditor.apply(a.app) { refresh() }
         }, Ui.lp(t = 10))
         paintEditor()
-        editor.addView(editorText, Ui.lp(t = 10))
-        editor.addView(Ui.button(c, tr("Nouveau code"), Ui.Style.SECONDARY, Icon.Kind.SYNC, height = 52) {
+        val editorRow = Ui.horizontal(c)
+        editorRow.addView(editorQr, LinearLayout.LayoutParams(Ui.u(220), Ui.u(220)).apply { rightMargin = Ui.u(20) })
+        val editorInfo = Ui.vertical(c)
+        editorInfo.addView(editorText)
+        editorInfo.addView(Ui.text(c, tr("Clé d'accès"), 13f, Ui.TEXT3), Ui.lp(t = 12))
+        editorInfo.addView(editorKey)
+        editorRow.addView(editorInfo, LinearLayout.LayoutParams(0, Ui.WRAP, 1f))
+        editor.addView(editorRow, Ui.lp(t = 10))
+        editor.addView(Ui.button(c, tr("Nouvelle clé"), Ui.Style.SECONDARY, Icon.Kind.SYNC, height = 52) {
             a.prefs.newEditorCode()
             paintEditor()
         }, Ui.lp(Ui.WRAP, Ui.WRAP, t = 10))
-        editor.addView(Ui.text(c, tr("Le nouveau code est demandé aux navigateurs déjà connectés. N'activez l'éditeur que sur un réseau de confiance."),
+        editor.addView(Ui.text(c, tr("Une nouvelle clé déconnecte les navigateurs déjà connectés. Après 10 mauvaises clés, l'accès se bloque une minute. Sur le réseau local, la clé circule en clair : n'activez l'éditeur que sur le Wi-Fi de la maison."),
             14f, Ui.TEXT3).apply { setLineSpacing(0f, 1.1f) }, Ui.lp(t = 10))
 
         // ---- Mises à jour

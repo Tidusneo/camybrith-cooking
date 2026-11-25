@@ -19,7 +19,7 @@ class DevRun {
         val host = object : EditorHost {
             override val dataDir = File(dir)
             override val importDir: File? = null
-            override val accessCode = "123456"
+            override val accessCode = "ABCD-EFGH"
             override val dark = System.getenv("EDITEUR_DARK") != null
             override val version = "dev"
             override fun publish(recipe: Recipe, image: File?) { println("publish ${recipe.id}") }

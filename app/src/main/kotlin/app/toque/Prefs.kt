@@ -208,16 +208,16 @@ class Prefs(context: Context) {
             p.edit().putBoolean("editorEnabled", v).commit()
         }
 
-    /** Code à saisir dans la page de l'éditeur ; tiré au hasard à la première lecture. */
+    /** Clé à saisir dans la page de l'éditeur (ou portée par le QR code) ; tirée au hasard à la première lecture. */
     var editorCode: String
-        get() = p.getString("editorCode", null)?.takeIf { it.isNotEmpty() } ?: newEditorCode()
+        get() = p.getString("editorCode", null)?.takeIf { it.isNotEmpty() && !app.toque.editeur.AccessCode.isLegacy(it) } ?: newEditorCode()
         set(v) {
             p.edit().putString("editorCode", v).commit()
         }
 
     /** Nouveau code de l'éditeur (les navigateurs déjà connectés devront le saisir). */
     fun newEditorCode(): String {
-        val code = (java.security.SecureRandom().nextInt(900_000) + 100_000).toString()
+        val code = app.toque.editeur.AccessCode.generate()
         editorCode = code
         return code
     }

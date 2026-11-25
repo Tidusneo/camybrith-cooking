@@ -134,5 +134,9 @@ data class Strings(val texts: Map<String, String> = emptyMap())
 @Serializable
 data class Login(val code: String)
 
+/** Recette collée en texte libre, à découper et convertir. */
+@Serializable
+data class Paste(val text: String)
+
 @Serializable
 data class SaveResult(val recipe: EditorRecipe, val preview: Preview)

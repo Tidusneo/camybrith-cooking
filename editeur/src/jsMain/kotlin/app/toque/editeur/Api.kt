@@ -49,7 +49,8 @@ object Api {
             body = format.encodeToString(Login.serializer(), Login(code)))).await()
         when (r.status.toInt()) {
             204 -> {
-                document.cookie = "$COOKIE=${encodeURIComponent(code)}; path=/; max-age=31536000; SameSite=Strict"
+                // 30 jours ; une nouvelle clé sur le robot déconnecte tout de suite.
+                document.cookie = "$COOKIE=${encodeURIComponent(code)}; path=/; max-age=2592000; SameSite=Strict"
                 return true
             }
             429 -> throw ApiError(429, tr("Trop d'essais : patientez une minute"))
@@ -71,6 +72,8 @@ object Api {
         else sendJson("PUT", "/api/recipes/" + encodeURIComponent(r.id), r, EditorRecipe.serializer(), SaveResult.serializer())
 
     suspend fun delete(id: String) { send("DELETE", "/api/recipes/" + encodeURIComponent(id)) }
+
+    suspend fun paste(text: String): EditorRecipe = sendJson("POST", "/api/paste", Paste(text), Paste.serializer(), EditorRecipe.serializer())
 
     suspend fun preview(r: EditorRecipe): Preview = sendJson("POST", "/api/preview", r, EditorRecipe.serializer(), Preview.serializer())
 

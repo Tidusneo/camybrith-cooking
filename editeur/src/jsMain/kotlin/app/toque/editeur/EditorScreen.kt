@@ -64,18 +64,20 @@ private suspend fun shrink(file: File): Blob {
 
 @Composable
 fun EditorScreen(app: AppState, id: String?) {
-    var recipe by remember { mutableStateOf<EditorRecipe?>(if (id == null) EditorRecipe(sections = listOf(EditorSection(steps = listOf(EditorStep())))) else null) }
-    var ingredients by remember { mutableStateOf("") }
+    // Une recette collée arrive ici une seule fois, comme une nouvelle recette déjà remplie.
+    val pasted = remember { if (id == null) app.draft.also { app.draft = null } else null }
+    var recipe by remember { mutableStateOf<EditorRecipe?>(if (id == null) pasted ?: EditorRecipe(sections = listOf(EditorSection(steps = listOf(EditorStep())))) else null) }
+    var ingredients by remember { mutableStateOf(pasted?.ingredients?.joinToString("\n").orEmpty()) }
     var tags by remember { mutableStateOf("") }
     var loadError by remember { mutableStateOf("") }
     var preview by remember { mutableStateOf<Preview?>(null) }
     var saving by remember { mutableStateOf(false) }
     var pendingImage by remember { mutableStateOf<Blob?>(null) }
     var imageUrl by remember { mutableStateOf<String?>(null) }
-    var changed by remember { mutableStateOf(false) }
+    var changed by remember { mutableStateOf(pasted != null) }
 
     LaunchedEffect(id) {
-        app.dirty = false
+        app.dirty = pasted != null
         if (id == null) return@LaunchedEffect
         try {
             val r = Api.recipe(id)
