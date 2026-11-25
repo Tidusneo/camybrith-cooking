@@ -356,7 +356,11 @@ class SettingsScreen(a: MainActivity) : Screen(a) {
     private fun soundsInfo(count: Int): String {
         val dir = "Android/data/${c.packageName}/files/sons/"
         val base = tr("Pour mettre vos propres sons, déposez dans %s des fichiers .wav, .ogg ou .mp3 nommés demarrage, debut, fin, recette, alerte, pause, appui, pesee, trop ou compte, puis rechargez.").format(dir)
-        return if (count == 0) base else base + " " + tr("Sons personnels : %d").format(count)
+        val mine = if (count == 0) base else base + " " + tr("Sons personnels : %d").format(count)
+        if (app.toque.Sounds.Kind.COUNTDOWN !in a.sounds.custom) return mine
+        val ms = a.sounds.lengthMs(app.toque.Sounds.Kind.COUNTDOWN)
+        return mine + " " + if (ms == null) tr("Compte à rebours : fichier illisible, ignoré.")
+        else tr("Compte à rebours : il part à %s s de la fin.").format(String.format("%.1f", ms / 1000.0))
     }
 
     /** Volume des médias du robot, celui des sons de l'appli. */

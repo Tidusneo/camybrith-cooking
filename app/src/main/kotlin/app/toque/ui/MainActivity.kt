@@ -68,6 +68,8 @@ class MainActivity : Activity() {
     private var lastLidOpen: Boolean? = null
     /** Son « compte » : il part quand il reste sa durée, pour finir pile avec le programme. */
     private val endCue = EndCue()
+    /** Le son « compte » est parti pendant le programme en cours. */
+    private var cuePlayed = false
     private val sleepCheck = object : Runnable {
         override fun run() {
             val min = prefs.screenSleepMin
@@ -324,8 +326,15 @@ class MainActivity : Activity() {
     private fun countdown(s: Snapshot) {
         val length = if (prefs.sound) sounds.lengthMs(Sounds.Kind.COUNTDOWN) else null
         when (val act = endCue.update(s, length)) {
-            is EndCue.Action.Start -> sounds.playFrom(Sounds.Kind.COUNTDOWN, act.offsetMs)
-            EndCue.Action.Stop -> sounds.stop(Sounds.Kind.COUNTDOWN)
+            is EndCue.Action.Start -> {
+                cuePlayed = true
+                app.log.write("sons", "compte : départ, reste ${s.remainingMs} ms sur ${s.totalMs} ms")
+                sounds.playFrom(Sounds.Kind.COUNTDOWN, act.offsetMs)
+            }
+            EndCue.Action.Stop -> {
+                app.log.write("sons", "compte : coupé (${s.jobState.ifEmpty { "plus de programme" }}, reste ${s.remainingMs} ms)")
+                sounds.stop(Sounds.Kind.COUNTDOWN)
+            }
             EndCue.Action.None -> Unit
         }
     }
@@ -504,8 +513,14 @@ class MainActivity : Activity() {
         if (e.type !in QUIET_EVENTS) wakeScreen(e.type.name)
         current?.onEvent(e)
         when (e.type) {
-            EventType.JOB_STARTED -> sound(Sounds.Kind.START)
-            EventType.JOB_FINISHED -> sound(Sounds.Kind.END)
+            EventType.JOB_STARTED -> { cuePlayed = false; sound(Sounds.Kind.START) }
+            EventType.JOB_FINISHED -> {
+                sound(Sounds.Kind.END)
+                val length = sounds.lengthMs(Sounds.Kind.COUNTDOWN)
+                if (!cuePlayed && Sounds.Kind.COUNTDOWN in sounds.custom)
+                    app.log.write("sons", "compte : pas joué (son ${length ?: "?"} ms, programme ${snapshot.totalMs} ms, sons ${if (prefs.sound) "activés" else "coupés"})")
+                cuePlayed = false
+            }
             EventType.FAULT -> { sound(Sounds.Kind.ALERT); toast(e.message, Ui.DANGER) }
             EventType.LID_OPENED -> if (snapshot.busy || snapshot.state != null) toast(tr("Couvercle ouvert : pause"), Ui.WARN)
             EventType.JOB_PAUSED -> if (e.message != PauseReason.USER.label) { sound(Sounds.Kind.PAUSE); toast(e.message, Ui.WARN) }

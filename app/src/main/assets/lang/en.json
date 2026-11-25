@@ -320,6 +320,8 @@
   "Pont série arrêté (code %d) %s": "Serial bridge stopped (code %d) %s",
   "Pour %d %s": "For %d %s",
   "Pour mettre vos propres sons, déposez dans %s des fichiers .wav, .ogg ou .mp3 nommés demarrage, debut, fin, recette, alerte, pause, appui, pesee, trop ou compte, puis rechargez.": "To use your own sounds, put .wav, .ogg or .mp3 files named demarrage, debut, fin, recette, alerte, pause, appui, pesee, trop or compte in %s, then reload.",
+  "Compte à rebours : fichier illisible, ignoré.": "Countdown: unreadable file, ignored.",
+  "Compte à rebours : il part à %s s de la fin.": "Countdown: starts %s s before the end.",
   "Presque : %d g": "Almost: %d g to go",
   "Presque : %s": "Almost: %s to go",
   "Programme": "Program",

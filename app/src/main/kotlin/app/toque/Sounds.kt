@@ -85,7 +85,11 @@ class Sounds(private val c: Context, private val log: Logbook? = null) {
                 if (file != null && k != Kind.TAP) {
                     mine += k
                     files[k] = file
-                    if (k == Kind.COUNTDOWN) durationOf(file)?.let { lengths[k] = it }
+                    if (k == Kind.COUNTDOWN) {
+                        val ms = durationOf(file)
+                        if (ms != null) lengths[k] = ms
+                        log?.write("sons", "${file.name} : " + (ms?.let { "$it ms, part à $it ms de la fin" } ?: "durée illisible, son ignoré"))
+                    }
                     continue
                 }
                 val id = if (file != null) {
@@ -165,11 +169,12 @@ class Sounds(private val c: Context, private val log: Logbook? = null) {
             mp.setAudioAttributes(attributes)
             mp.setDataSource(file.path)
             mp.setOnPreparedListener { p ->
+                // Pas d'attente de la fin du positionnement : certains Android 8 ne la signalent
+                // jamais avant le premier start(), et le son restait muet.
                 val at = offsetMs + (SystemClock.elapsedRealtime() - asked)
-                if (at >= MIN_SEEK_MS) {
-                    p.setOnSeekCompleteListener { it.start() }
-                    p.seekTo(at.coerceAtMost(Int.MAX_VALUE.toLong()).toInt())
-                } else p.start()
+                if (at >= MIN_SEEK_MS) p.seekTo(at.coerceAtMost(Int.MAX_VALUE.toLong()).toInt())
+                p.start()
+                log?.write("sons", "${file.name} : lecture à partir de $at ms")
             }
             mp.setOnCompletionListener { finish(k, it) }
             mp.setOnErrorListener { player, what, _ ->
@@ -198,16 +203,29 @@ class Sounds(private val c: Context, private val log: Logbook? = null) {
         done(mp)
     }
 
+    /** Durée lue dans les métadonnées, sinon en préparant le fichier. */
     private fun durationOf(f: File): Long? {
         val r = MediaMetadataRetriever()
-        return try {
+        val meta = try {
             r.setDataSource(f.path)
             r.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLongOrNull()?.takeIf { it > 0 }
         } catch (e: Exception) {
-            log?.write("sons", "${f.name} : durée illisible (${e.message})")
+            log?.write("sons", "${f.name} : métadonnées illisibles (${e.message})")
             null
         } finally {
             try { r.release() } catch (_: Exception) {}
+        }
+        if (meta != null) return meta
+        val mp = MediaPlayer()
+        return try {
+            mp.setDataSource(f.path)
+            mp.prepare()
+            mp.duration.toLong().takeIf { it > 0 }
+        } catch (e: Exception) {
+            log?.write("sons", "${f.name} : illisible (${e.message})")
+            null
+        } finally {
+            mp.release()
         }
     }
 

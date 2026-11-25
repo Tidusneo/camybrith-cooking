@@ -320,6 +320,8 @@
   "Pont série arrêté (code %d) %s": "Puente serie detenido (código %d) %s",
   "Pour %d %s": "Para %d %s",
   "Pour mettre vos propres sons, déposez dans %s des fichiers .wav, .ogg ou .mp3 nommés demarrage, debut, fin, recette, alerte, pause, appui, pesee, trop ou compte, puis rechargez.": "Para usar tus propios sonidos, pon en %s archivos .wav, .ogg o .mp3 llamados demarrage, debut, fin, recette, alerte, pause, appui, pesee, trop o compte, y luego recárgalos.",
+  "Compte à rebours : fichier illisible, ignoré.": "Cuenta atrás: archivo ilegible, ignorado.",
+  "Compte à rebours : il part à %s s de la fin.": "Cuenta atrás: empieza %s s antes del final.",
   "Presque : %d g": "Casi: faltan %d g",
   "Presque : %s": "Casi: faltan %s",
   "Programme": "Programa",
