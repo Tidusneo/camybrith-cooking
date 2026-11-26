@@ -31,7 +31,7 @@ import java.util.concurrent.TimeUnit
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @Config(sdk = [28], qualifiers = "w1280dp-h800dp-land-mdpi")
-open class Captures {
+abstract class Captures {
     protected val dir = File(System.getProperty("captures.dir") ?: "build/captures").apply { mkdirs() }
 
     protected fun activity(setup: (Prefs) -> Unit = {}): MainActivity {
@@ -39,7 +39,7 @@ open class Captures {
         // Pas de service machine : l'interface reçoit ses états par MachineClient.preview().
         val sink = android.os.Messenger(android.os.Handler(android.os.Looper.getMainLooper()) { true })
         org.robolectric.Shadows.shadowOf(application).setComponentNameAndServiceForBindService(
-            android.content.ComponentName(application, app.toque.machine.MachineService::class.java), sink.binder)
+            android.content.ComponentName(app.toque.machine.Ipc.PILOT_PACKAGE, app.toque.machine.Ipc.PILOT_SERVICE), sink.binder)
         setup(application.prefs)
         app.toque.core.machine.TemperatureTable.current = application.prefs.activeRobot.temperatures
         val a = Robolectric.buildActivity(MainActivity::class.java).setup().get()

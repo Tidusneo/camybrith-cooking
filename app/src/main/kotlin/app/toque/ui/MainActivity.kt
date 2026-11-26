@@ -203,6 +203,7 @@ class MainActivity : Activity() {
         prefs.returnBubble = false
         ReturnBubble.stop(this)
         if (prefs.vendorSession) endVendorSession()
+        if (!app.machine.connected) app.machine.connect()
     }
 
     override fun onStop() {
