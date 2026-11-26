@@ -390,7 +390,7 @@ class MachineDock(private val a: MainActivity) : FrameLayout(a) {
 }
 
 /** Modèle de robot (pour l'affichage). */
-fun MainActivity.isSmart(): Boolean = try { prefs.robotModel == RobotModel.SMART } catch (_: Exception) { false }
+fun MainActivity.isSmart(): Boolean = try { prefs.robotModel.isSmart } catch (_: Exception) { false }
 
 /** Cocotte de la marque Camybrith Cooking (même dessin que l'icône et le logo de démarrage). */
 class BrandMark(c: Context) : View(c) {
