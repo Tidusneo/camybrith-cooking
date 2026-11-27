@@ -390,6 +390,10 @@ class RescueCommand(
         journal = journal.next(Step.DONE); write(journalFile, journal.toJson())
         journalFile.delete()
         device.run("cmd", "package", "set-home-activity", RobotId.HOME_ALIAS)
+        // As for the return: let Android write the component states to disk before anything else,
+        // so that a restart right after the resume does not bring the Lidl state back.
+        device.pause(DISK_WRITE_WAIT_MS)
+        device.run("sync")
         device.run("am", "start", "-n", "${RobotId.APP}/.ui.MainActivity", "--ez", "camybrith_resume", "true")
         out(if (json) Json.write(linkedMapOf("ok" to true, "bilan" to Report.fileName(report.date))) else report.text())
         return 0

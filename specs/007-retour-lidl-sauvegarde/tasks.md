@@ -182,14 +182,14 @@ Dépôt existant (plan.md › Project Structure) : `core/` (Kotlin pur), `app/`,
 
 **Independent Test**: quickstart §B scénario B8 (partie restauration) ; §C étape 7
 
-- [ ] T059 [P] [US7] Validation dans `core/src/main/kotlin/app/toque/core/backup/Validation.kt` : `data-model.md` Sauvegarde.format connu, Sauvegarde.files complet avec empreintes exactes et aucun fichier en trop, Sauvegarde.app.versionCode ≤ version installée (via `core/update/Releases.kt`), Sauvegarde.robot différent → avertissement
-- [ ] T060 [P] [US7] Conversions de format en mémoire dans `core/src/main/kotlin/app/toque/core/backup/Migrations.kt` (`data-model.md` Sauvegarde.format), avec une conversion d'exemple pour les tests
-- [ ] T061 [US7] Tests JUnit de T059 et T060 dans `core/src/test/kotlin/app/toque/core/BackupTest.kt` (fichier modifié d'un octet refusé, version plus récente refusée, autre robot averti)
-- [ ] T062 [US7] Lecture dans `app/src/main/kotlin/app/toque/backup/BackupReader.kt` : validation, résumé de ce qui sera remplacé, secrets à ressaisir, vérification d'espace (taille de la sauvegarde + marge, `Space.kt`)
-- [ ] T063 [US7] Restauration logique dans `app/src/main/kotlin/app/toque/backup/BackupRestorer.kt` selon research.md D15 : refus pendant une cuisson ; sauvegarde automatique de l'état actuel ; fichier `data-model.md` Restauration en cours ; favoris et recettes IMPORTED/USER remplacés dans `recettes.db` en une transaction SQLite ; réglages non secrets ensuite ; reprise idempotente à l'ouverture de l'appli si le fichier existe ; aucune copie de dossier
-- [ ] T064 [US7] Écran de restauration dans `app/src/main/kotlin/app/toque/ui/screens/SettingsScreen.kt` (`contracts/ui.md` › Restaurer)
-- [ ] T065 [US7] `envoyer FICHIER` et `restaurer NOM` dans `outils/sauvegarde.sh` (la restauration est déclenchée dans l'interface, qui doit être ouverte)
-- [ ] T066 [P] [US7] Textes de T064 dans `app/src/main/assets/lang/en.json` et `app/src/main/assets/lang/es.json`
+- [X] T059 [P] [US7] Validation dans `core/src/main/kotlin/app/toque/core/backup/Validation.kt` : `data-model.md` Sauvegarde.format connu, Sauvegarde.files complet avec empreintes exactes et aucun fichier en trop, Sauvegarde.app.versionCode ≤ version installée (via `core/update/Releases.kt`), Sauvegarde.robot différent → avertissement
+- [X] T060 [P] [US7] Conversions de format en mémoire dans `core/src/main/kotlin/app/toque/core/backup/Migrations.kt` (`data-model.md` Sauvegarde.format), avec une conversion d'exemple pour les tests
+- [X] T061 [US7] Tests JUnit de T059 et T060 dans `core/src/test/kotlin/app/toque/core/BackupTest.kt` (fichier modifié d'un octet refusé, version plus récente refusée, autre robot averti)
+- [X] T062 [US7] Lecture dans `app/src/main/kotlin/app/toque/backup/BackupReader.kt` : validation, résumé de ce qui sera remplacé, secrets à ressaisir, vérification d'espace (taille de la sauvegarde + marge, `Space.kt`)
+- [X] T063 [US7] Restauration logique dans `app/src/main/kotlin/app/toque/backup/BackupRestorer.kt` selon research.md D15 : refus pendant une cuisson ; sauvegarde automatique de l'état actuel ; fichier `data-model.md` Restauration en cours ; favoris et recettes IMPORTED/USER remplacés dans `recettes.db` en une transaction SQLite ; réglages non secrets ensuite ; reprise idempotente à l'ouverture de l'appli si le fichier existe ; aucune copie de dossier
+- [X] T064 [US7] Écran de restauration dans `app/src/main/kotlin/app/toque/ui/screens/SettingsScreen.kt` (`contracts/ui.md` › Restaurer)
+- [X] T065 [US7] `envoyer FICHIER` et `restaurer NOM` dans `outils/sauvegarde.sh` (la restauration est déclenchée dans l'interface, qui doit être ouverte)
+- [X] T066 [P] [US7] Textes de T064 dans `app/src/main/assets/lang/en.json` et `app/src/main/assets/lang/es.json`
 - [ ] T067 [US7] Partie restauration du scénario B8 dans `outils/banc-essai.sh` (données revenues ; sauvegarde abîmée refusée sans rien modifier)
 - [ ] T068 [US7] Coupure pendant une restauration (entre la transaction et les réglages) dans `outils/banc-essai.sh` : à la réouverture, restauration rejouée, données complètes
 

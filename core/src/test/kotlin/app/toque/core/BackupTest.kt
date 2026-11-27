@@ -1,6 +1,9 @@
 package app.toque.core
 
 import app.toque.core.backup.BackupContent
+import app.toque.core.backup.BackupData
+import app.toque.core.backup.Migrations
+import app.toque.core.backup.Validation
 import app.toque.core.backup.BackupFile
 import app.toque.core.backup.Manifest
 import app.toque.core.backup.Secrets
@@ -60,5 +63,61 @@ class BackupTest {
         assertEquals("camybrith-20261127-100000.camybrith", BackupContent.fileName("2026-11-27T10:00:00+01:00"))
         val names = (1..7).map { "camybrith-202611%02d-100000.camybrith".format(it) }
         assertEquals(names.take(2), BackupContent.toDelete(names.shuffled()))
+    }
+
+    private fun backup(entries: Map<String, ByteArray>, versionCode: Int = 51, robot: String = "r1", format: Int = 1) = Manifest(
+        "2026-11-27T10:00:00+01:00", "1.4.3-rapide", versionCode, 2, robot, listOf("favorites", "recipes", "settings"),
+        emptyMap(), entries.map { (p, b) -> BackupFile(p, b.size.toLong(), BackupContent.sha256(b)) }, format)
+
+    private val entries = mapOf(
+        "favorites.json" to "[\"ck-a\",\"mc-1\"]".toByteArray(),
+        "recipes.json" to "[{\"id\":\"ck-a\",\"title\":\"Soupe\",\"json\":\"{}\",\"updated\":1},{\"id\":\"mc-9\",\"title\":\"Lidl\",\"json\":\"{}\",\"updated\":1}]".toByteArray(),
+        "settings.json" to "{\"theme\":\"sombre\",\"mqttPassword\":\"x\"}".toByteArray(),
+    )
+
+    @Test fun validBackup() {
+        val r = Validation.check(backup(entries), entries + (Manifest.NAME to ByteArray(1)), 51, "r1")
+        assertTrue(r.errors.toString(), r.ok)
+        assertTrue(r.warnings.isEmpty())
+    }
+
+    @Test fun oneChangedByteIsRefused() {
+        val damaged = entries.toMutableMap()
+        damaged["settings.json"] = "{\"theme\":\"sombrE\",\"mqttPassword\":\"x\"}".toByteArray()
+        val r = Validation.check(backup(entries), damaged, 51, "r1")
+        assertFalse(r.ok)
+        assertTrue(r.errors.single().contains("abîmé"))
+    }
+
+    @Test fun missingOrExtraFileIsRefused() {
+        assertFalse(Validation.check(backup(entries), entries - "recipes.json", 51, "r1").ok)
+        assertFalse(Validation.check(backup(entries), entries + ("autre.sh" to ByteArray(3)), 51, "r1").ok)
+    }
+
+    @Test fun newerVersionIsRefused() {
+        assertFalse(Validation.check(backup(entries, versionCode = 60), entries, 51, "r1").ok)
+    }
+
+    @Test fun otherRobotIsWarned() {
+        val r = Validation.check(backup(entries, robot = "r2"), entries, 51, "r1")
+        assertTrue(r.ok)
+        assertEquals(1, r.warnings.size)
+    }
+
+    @Test fun unknownFormatIsRefused() {
+        assertFalse(Validation.check(backup(entries, format = 7), entries, 51, "r1").ok)
+    }
+
+    @Test fun oldFormatIsConvertedInMemory() {
+        val old = mapOf("preferences.json" to "{\"theme\":\"clair\"}".toByteArray())
+        val data = BackupData(Migrations.toCurrent(0, old))
+        assertEquals("clair", data.settings["theme"])
+    }
+
+    @Test fun readingFiltersLidlRecipesAndSecrets() {
+        val data = BackupData(entries)
+        assertEquals(listOf("ck-a"), data.recipes.map { it["id"] })
+        assertEquals(setOf("theme"), data.settings.keys)
+        assertEquals(listOf("ck-a", "mc-1"), data.favorites)
     }
 }

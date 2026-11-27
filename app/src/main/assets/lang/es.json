@@ -622,5 +622,21 @@
   "Module de secours absent : depuis l'ordinateur, lancez bash outils/secours.sh installer": "Falta el módulo de rescate: desde el ordenador, ejecuta bash outils/secours.sh installer",
   "Pas assez de place pour une sauvegarde : supprimez d'anciennes sauvegardes ou des photos de recettes.": "No hay sitio para una copia: borra copias antiguas o fotos de recetas.",
   "Sauvegarde impossible : %s": "No se pudo hacer la copia: %s",
-  "Sauvegarde créée : %d favoris, %d recettes perso.": "Copia creada: %d favoritos, %d recetas propias."
+  "Sauvegarde créée : %d favoris, %d recettes perso.": "Copia creada: %d favoritos, %d recetas propias.",
+  "Sauvegarde illisible : %s": "Copia ilegible: %s",
+  "Sauvegarde introuvable : %s": "Copia no encontrada: %s",
+  "Sauvegarde refusée, rien n'a été modifié :": "Copia rechazada, no se ha cambiado nada:",
+  "Restauration annulée : la sauvegarde automatique de l'état actuel a échoué (%s)": "Restauración cancelada: falló la copia automática del estado actual (%s)",
+  "Restauration faite : %d favoris, %d recettes perso. Avant, l'état actuel a été sauvegardé (%s).": "Restauración hecha: %d favoritos, %d recetas propias. Antes se guardó el estado actual (%s).",
+  "Restaurer : %s": "Restaurar: %s",
+  "Supprimer : %s": "Borrar: %s",
+  "Vérification de la sauvegarde…": "Comprobando la copia…",
+  "Sauvegarde refusée": "Copia rechazada",
+  "Restaurer la sauvegarde": "Restaurar la copia",
+  "Seront remplacés : %d favoris, %d recettes perso et importées, %d réglages. Les recettes Lidl ne sont pas touchées.": "Se reemplazarán: %d favoritos, %d recetas propias e importadas, %d ajustes. Las recetas de Lidl no se tocan.",
+  "Le mot de passe MQTT n'est jamais sauvegardé : ressaisissez-le s'il n'est pas déjà réglé.": "La contraseña MQTT nunca se guarda: vuelve a escribirla si no está ya configurada.",
+  "L'état actuel est sauvegardé d'abord, puis Camybrith Cooking redémarre.": "Primero se guarda el estado actual y luego Camybrith Cooking se reinicia.",
+  "Restaurer": "Restaurar",
+  "Restauration…": "Restaurando…",
+  "Restauration": "Restauración"
 }
