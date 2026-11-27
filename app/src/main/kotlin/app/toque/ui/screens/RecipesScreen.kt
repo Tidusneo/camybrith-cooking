@@ -113,6 +113,8 @@ class RecipesScreen(
         bar.addView(field, LinearLayout.LayoutParams(0, Ui.u(58), 1f))
         count = Ui.text(c, "", 15.5f, Ui.TEXT2)
         bar.addView(count, Ui.lp(Ui.WRAP, Ui.WRAP, l = 16))
+        bar.addView(Ui.button(c, tr("Importer"), Ui.Style.SECONDARY, Icon.Kind.LINK, height = 48, textSize = 13f) { a.push(ImportScreen(a)) },
+            Ui.lp(Ui.WRAP, Ui.WRAP, l = 12))
         root.addView(bar)
 
         val scroller = HorizontalScrollView(c).apply { isHorizontalScrollBarEnabled = false; overScrollMode = View.OVER_SCROLL_NEVER }
