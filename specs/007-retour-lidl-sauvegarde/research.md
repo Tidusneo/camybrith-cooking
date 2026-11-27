@@ -208,6 +208,14 @@ l'interface, sans trace, sans vérification, et pas si l'interface est cassée.
   5. **Alerte** : espace libre de `/data` (`df`) affiché dans Réglages et `camybrith etat` ;
      alerte sous 10 % (FR-020). Seuils dans `core` (fonction pure testée).
   6. **Banc d'essai** : scénario B14, mémoire de l'émulateur remplie à 100 %.
+  7. **Constaté sur l'émulateur** : avec `/data` plein, Android 8 ne **démarre plus** (zygote :
+     « need at least 50 » Mo libres pour son cache). Aucun module ne peut l'éviter ; la vraie
+     protection est l'alerte sous 10 % (FR-020). B14 remplit donc la mémoire une fois Android
+     démarré : compteur du geste (qui libère la réserve si besoin), retour, bilan, refus de la
+     sauvegarde et alerte fonctionnent. Le module étant root, il profite des blocs réservés au root
+     par ext4 : ses écritures réussissent le plus souvent, et le bilan n'est marqué « mémoire
+     pleine » que si l'une d'elles échoue. À vérifier sur le robot (son système est peut-être
+     précompilé et moins exigeant au démarrage).
 - **Rationale**: le filet de sécurité doit marcher précisément dans les situations dégradées
   (principe VII) ; un Android dont `/data` est plein devient instable pour toutes les applis, mais
   les actions de retour (`pm`, `am`) passent par le système et restent possibles.
