@@ -253,6 +253,41 @@ class RescueCommandTest {
         assertTrue(out.last().contains("\"mode\":\"camybrith\""))
     }
 
+    @Test fun resumeCamybrith() {
+        val (f, dir, out) = setup()
+        val c = command(f, dir, out)
+        c.main(arrayOf("inscrire"))
+        assertEquals(1, c.main(arrayOf("reprendre")))      // not in Lidl mode yet
+        c.main(arrayOf("retour-lidl", "--sans-redemarrage"))
+        command(f, dir, out).main(arrayOf("demarrage"))   // next boot, in Lidl mode: bubble shown
+        assertTrue(f.commands.any { it.take(2) == listOf("am", "start-foreground-service") })
+        assertEquals(0, command(f, dir, out).main(arrayOf("reprendre")))
+        assertFalse(f.enabled("$lidl/$svc"))
+        assertTrue(f.enabled(RobotId.BOOT_RECEIVER))
+        assertTrue(f.enabled(RobotId.HOME_ALIAS))
+        assertFalse(Mode.parse(File(dir, "mode.json").readText()).lidl)
+        assertFalse(File(dir, "op.json").exists())
+        assertTrue(Registry.parse(File(dir, "registre.json").readText()).active(Scope.LIDL).size == 3)
+        assertTrue(f.commands.any { it.take(3) == listOf("am", "start", "-n") && it[3] == "app.toque/.ui.MainActivity" })
+        // And back again: the same three changes are undone a second time.
+        assertEquals(0, command(f, dir, out).main(arrayOf("retour-lidl", "--sans-redemarrage")))
+        assertTrue(f.enabled("$lidl/$svc"))
+        assertFalse(f.enabled(RobotId.HOME_ALIAS))
+    }
+
+    @Test fun interruptedResumeGoesBackToLidl() {
+        val (f, dir, out) = setup()
+        val c = command(f, dir, out)
+        c.main(arrayOf("inscrire"))
+        c.main(arrayOf("retour-lidl", "--sans-redemarrage"))
+        f.disable("$lidl/$svc")       // power cut during the reapply: half resumed
+        File(dir, "op.json").writeText("""{"type":"reprise","origine":"interface","etape":"reapplication","date":""}""")
+        assertEquals(0, command(f, dir, out).main(arrayOf("demarrage")))
+        assertTrue(f.enabled("$lidl/$svc"))
+        assertFalse(f.enabled(RobotId.HOME_ALIAS))
+        assertTrue(Mode.parse(File(dir, "mode.json").readText()).lidl)
+    }
+
     @Test fun androidOutputParsing() {
         val dump = """
             |    User 0: ceDataInode=1 installed=true

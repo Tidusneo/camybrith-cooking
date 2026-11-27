@@ -604,5 +604,10 @@
   "Appli Lidl": "Lidl app",
   "Camybrith Cooking reste en mode Démo : il ne touche pas au moteur tant que le robot est sur l'appli Lidl.": "Camybrith Cooking stays in Demo mode: it does not touch the motor while the robot is on the Lidl app.",
   "Rester sur l'appli Lidl": "Stay on the Lidl app",
-  "Écran figé ? Éteignez et rallumez le robot 3 fois de suite (moins de 2 minutes à chaque fois) : il repartira sur l'appli Lidl.": "Screen frozen? Switch the robot off and on 3 times in a row (less than 2 minutes each time): it will restart on the Lidl app."
+  "Écran figé ? Éteignez et rallumez le robot 3 fois de suite (moins de 2 minutes à chaque fois) : il repartira sur l'appli Lidl.": "Screen frozen? Switch the robot off and on 3 times in a row (less than 2 minutes each time): it will restart on the Lidl app.",
+  "Reprendre Camybrith": "Resume Camybrith",
+  "Camybrith Cooking redevient l'écran d'accueil et reprend la machine, après les vérifications habituelles.\n\nAucune cuisson ne doit être en cours avec l'appli Lidl.": "Camybrith Cooking becomes the home screen again and takes the machine back, after the usual checks.\n\nNo cooking must be running with the Lidl app.",
+  "Reprise de Camybrith…": "Resuming Camybrith…",
+  "Robot sur l'appli Lidl": "Robot on the Lidl app",
+  "Touchez la bulle « Camybrith » pour revenir à Camybrith Cooking.": "Tap the “Camybrith” bubble to go back to Camybrith Cooking."
 }

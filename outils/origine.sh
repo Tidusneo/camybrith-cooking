@@ -5,15 +5,16 @@
 #
 #   bash outils/origine.sh             → back to the Lidl app (asks for confirmation)
 #   bash outils/origine.sh registre    → copies the registry and the reports into sauvegardes/
-#   bash outils/origine.sh reprendre   → back to Camybrith (not available yet)
+#   bash outils/origine.sh reprendre   → back to Camybrith (US4)
 set -u
 . "$(dirname "$0")/commun.sh"
 connecter
 exiger_root
 require_rescue
-cam() { $A shell "su -c 'sh $RESCUE $*'" | tr -d '\r'; }
+# adb must not read this script's input (it would swallow the user's answers when piped).
+cam() { $A shell "su -c 'sh $RESCUE $*'" </dev/null | tr -d '\r'; }
 # Same, followed by a "#code=N" line with the command's exit code.
-cam_code() { $A shell "su -c 'sh $RESCUE $*'; echo \"#code=\$?\"" | tr -d '\r'; }
+cam_code() { $A shell "su -c 'sh $RESCUE $*'; echo \"#code=\$?\"" </dev/null | tr -d '\r'; }
 exit_code() { echo "$1" | sed -n 's/^#code=//p' | tail -1; }
 
 case "${1:-}" in
@@ -26,8 +27,19 @@ case "${1:-}" in
     done
     echo "Registre et bilans copiés dans $D (ce dossier n'est jamais envoyé sur GitHub)." ;;
   reprendre)
-    echo "Revenir sur Camybrith après un retour n'est pas encore disponible (spec 007, US4)."
-    exit 1 ;;
+    echo "Camybrith Cooking va redevenir l'écran d'accueil et reprendre la machine : l'appli Lidl est"
+    echo "fermée et recoupée du moteur. Camybrith s'ouvre ensuite et refait ses vérifications."
+    echo "Aucune cuisson ne doit être en cours avec l'appli Lidl (regarde le robot)."
+    read -r -p "Reprendre Camybrith ? (o/N) " answer
+    case "$answer" in o|O|oui) ;; *) echo "Rien n'a été fait."; exit 0 ;; esac
+    OUT=$(cam_code reprendre --ordinateur)
+    CODE=$(exit_code "$OUT")
+    echo "$OUT" | grep -v '^#code=' | sed 's/^/  /'
+    case "$CODE" in
+      0|'') echo; echo "Camybrith Cooking est de retour. Sur le robot, valide les vérifications de Machine réelle." ;;
+      1) echo; echo "Refusé : rien n'a été fait."; exit 1 ;;
+      *) echo; echo "La reprise n'a pas pu se faire jusqu'au bout : le robot est resté sur l'appli Lidl."; exit 2 ;;
+    esac ;;
   '')
     echo "État du robot vu par le module de secours :"
     cam etat | sed 's/^/  /'

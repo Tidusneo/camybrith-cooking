@@ -23,12 +23,23 @@ import app.toque.core.machine.RootShell
 class ReturnBubble : Service() {
     private var bubble: View? = null
     private lateinit var wm: WindowManager
+    /**
+     * Spec 007, Lidl mode (robot back on the Lidl app): the bubble is the only way back to
+     * Camybrith, so it can be moved or folded into a tab on the edge, but never closed.
+     */
+    private var lidlMode = false
 
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if (intent?.getBooleanExtra(EXTRA_LIDL_MODE, false) == true) {
+            lidlMode = true
+            // Started as root by the rescue module while Camybrith is in the background: Android 8
+            // only allows it as a foreground service, which needs a notification.
+            startAsForeground()
+        }
         // Relancé par le système alors que Toque est déjà au premier plan : rien à afficher.
-        if (!Prefs(this).returnBubble) {
+        if (!lidlMode && !Prefs(this).returnBubble) {
             stopSelf()
             return START_NOT_STICKY
         }
@@ -49,7 +60,8 @@ class ReturnBubble : Service() {
         v.background = Ui.round(Ui.ACCENT, 32f, 0x66000000, 2f)
         v.elevation = Ui.uf(8f)
         v.addView(Icon(this, Icon.Kind.BACK, DARK), LinearLayout.LayoutParams(Ui.u(26), Ui.u(26)).apply { rightMargin = Ui.u(8) })
-        v.addView(Ui.text(this, tr("Retour à Camybrith Cooking"), 19f, DARK, Ui.MEDIUM))
+        val label = Ui.text(this, if (lidlMode) "Camybrith" else tr("Retour à Camybrith Cooking"), 19f, DARK, Ui.MEDIUM)
+        v.addView(label)
 
         @Suppress("DEPRECATION")
         val type = if (Build.VERSION.SDK_INT >= 26) TYPE_APPLICATION_OVERLAY else WindowManager.LayoutParams.TYPE_PHONE
@@ -62,6 +74,14 @@ class ReturnBubble : Service() {
         val prefs = getSharedPreferences(POSITION, Context.MODE_PRIVATE)
         lp.x = prefs.getInt("x", Ui.u(16))
         lp.y = prefs.getInt("y", dm.heightPixels - Ui.u(84))
+        // Folded into a tab on the left edge (Lidl mode only): just the arrow, half hidden.
+        fun applyFolded(folded: Boolean) {
+            label.visibility = if (folded) View.GONE else View.VISIBLE
+            if (folded) lp.x = 0
+            try { if (bubble != null) wm.updateViewLayout(v, lp) } catch (_: RuntimeException) {}
+        }
+        if (lidlMode) applyFolded(prefs.getBoolean(FOLDED, false))
+        var downAt = 0L
 
         var downX = 0f
         var downY = 0f
@@ -72,6 +92,7 @@ class ReturnBubble : Service() {
             when (e.actionMasked) {
                 MotionEvent.ACTION_DOWN -> {
                     downX = e.rawX; downY = e.rawY; startX = lp.x; startY = lp.y; dragging = false
+                    downAt = e.eventTime
                     view.alpha = 0.85f
                 }
                 MotionEvent.ACTION_MOVE -> {
@@ -90,7 +111,11 @@ class ReturnBubble : Service() {
                 MotionEvent.ACTION_UP -> {
                     view.alpha = 1f
                     if (dragging) prefs.edit().putInt("x", lp.x).putInt("y", lp.y).apply()
-                    else backToToque()
+                    else if (lidlMode && e.eventTime - downAt >= LONG_PRESS_MS) {
+                        val folded = !prefs.getBoolean(FOLDED, false)
+                        prefs.edit().putBoolean(FOLDED, folded).apply()
+                        applyFolded(folded)
+                    } else backToToque()
                 }
                 MotionEvent.ACTION_CANCEL -> view.alpha = 1f
             }
@@ -108,7 +133,21 @@ class ReturnBubble : Service() {
     private fun backToToque() {
         startActivity(Intent(this, MainActivity::class.java)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT))
-        stopSelf()
+        // In Lidl mode the bubble stays: MainActivity stops it while it is in front and starts it
+        // again when it leaves, so there is always a way back.
+        if (!lidlMode) stopSelf()
+    }
+
+    private fun startAsForeground() {
+        if (Build.VERSION.SDK_INT < 26) return
+        val nm = getSystemService(Context.NOTIFICATION_SERVICE) as android.app.NotificationManager
+        nm.createNotificationChannel(android.app.NotificationChannel(CHANNEL, "Camybrith", android.app.NotificationManager.IMPORTANCE_MIN))
+        val n = android.app.Notification.Builder(this, CHANNEL)
+            .setSmallIcon(app.toque.R.drawable.ic_launcher)
+            .setContentTitle(tr("Robot sur l'appli Lidl"))
+            .setContentText(tr("Touchez la bulle « Camybrith » pour revenir à Camybrith Cooking."))
+            .build()
+        startForeground(NOTIFICATION_ID, n)
     }
 
     override fun onDestroy() {
@@ -124,6 +163,12 @@ class ReturnBubble : Service() {
 
     companion object {
         private const val POSITION = "bulle"
+        private const val FOLDED = "reduite"
+        private const val LONG_PRESS_MS = 600L
+        private const val CHANNEL = "bulle"
+        private const val NOTIFICATION_ID = 7
+        /** Extra set by the rescue module (spec 007, research.md D14). */
+        const val EXTRA_LIDL_MODE = "modeLidl"
         private const val DARK = 0xFF1A0E05.toInt()
         /** WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY (API 26), valeur fixe pour compiler en API 23. */
         private const val TYPE_APPLICATION_OVERLAY = 2038
@@ -142,6 +187,12 @@ class ReturnBubble : Service() {
 
         fun start(c: Context) {
             c.startService(Intent(c, ReturnBubble::class.java))
+        }
+
+        /** The bubble of Lidl mode, which cannot be closed (spec 007). */
+        fun startLidlMode(c: Context) {
+            val i = Intent(c, ReturnBubble::class.java).putExtra(EXTRA_LIDL_MODE, true)
+            if (Build.VERSION.SDK_INT >= 26) c.startForegroundService(i) else c.startService(i)
         }
 
         fun stop(c: Context) {

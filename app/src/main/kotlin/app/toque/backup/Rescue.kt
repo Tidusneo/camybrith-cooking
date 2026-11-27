@@ -91,6 +91,12 @@ object Rescue {
         return Result(r.code, (r.out + r.err).trim())
     }
 
+    /** Back to Camybrith (US4): the module reopens MainActivity with EXTRA_RESUMED on success. */
+    fun resume(): Result {
+        val r = run("reprendre", timeoutMs = 60_000)
+        return Result(r.code, (r.out + r.err).trim())
+    }
+
     /** Robot identity read by the module (robot.json, research.md D6). */
     fun writeRobotId(model: RobotModel) {
         write("robot.json", RobotId(model.vendorPackage, model.hardwareServiceSuffix).toJson())

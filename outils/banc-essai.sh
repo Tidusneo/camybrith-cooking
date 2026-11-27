@@ -311,6 +311,8 @@ B6() {
   cp "$ROOT/app/build/outputs/apk/debug/app-debug.apk" "$LOGS/app-crash.apk"
   (cd "$ROOT" && ./gradlew -q :app:assembleDebug) >>"$LOGS/gradle-crash.log" 2>&1
   a install -r "$LOGS/app-crash.apk" >/dev/null
+  # Reinstalling makes Android forget the chosen home app: as on the robot, Camybrith is it.
+  sh_ "cmd package set-home-activity $HOME_ALIAS" >/dev/null
   sleep 12
   restart
   local i e=""
@@ -334,6 +336,53 @@ B7() {
   grep -q "Résultat : réussi" "$LOGS/B7.txt" || e="$e bilan pas réussi (voir $LOGS/B7.txt);"
   a install "$LOGS/app-normal.apk" >/dev/null
   verdict "B7 retour depuis l'ordinateur, interface désinstallée" "$e"
+}
+
+# Back to Camybrith (US4): return, restart on the Lidl app, then resume; data untouched.
+B4() {
+  initial_state
+  local before after e=""
+  before=$(sh_ "cat /data/data/app.toque/databases/* 2>/dev/null | md5sum")
+  cam retour-lidl >/dev/null 2>&1
+  sleep 8
+  after_boot
+  in_lidl_mode || e="$e retour pas fait;"
+  cam reprendre >"$LOGS/B4.txt" 2>&1 || e="$e reprise refusée (voir $LOGS/B4.txt);"
+  sleep 5
+  in_lidl_mode && e="$e mode.json toujours en lidl;"
+  is_disabled "$SVC" || e="$e service moteur Lidl pas recoupé;"
+  is_disabled "$BOOT" && e="$e BootReceiver désactivé;"
+  is_disabled "$HOME_ALIAS" && e="$e alias d'accueil désactivé;"
+  case "$(foreground)" in app.toque/*) ;; *) e="$e appli au premier plan = $(foreground);" ;; esac
+  after=$(sh_ "cat /data/data/app.toque/databases/* 2>/dev/null | md5sum")
+  [ "$before" = "$after" ] || e="$e données de l'interface modifiées;"
+  # And it survives a restart: Camybrith again.
+  restart
+  sleep 10
+  case "$(foreground)" in app.toque/*) ;; *) e="$e après redémarrage : $(foreground);" ;; esac
+  verdict "B4 retour puis reprise de Camybrith, données intactes" "$e"
+}
+
+bubble_running() { sh_ "dumpsys activity services app.toque/.ui.ReturnBubble" | grep -q "ServiceRecord"; }
+
+# The "Camybrith" bubble in Lidl mode (US4): shown at boot, back as soon as Camybrith leaves.
+B12() {
+  initial_state
+  cam retour-lidl >/dev/null 2>&1
+  sleep 8
+  after_boot
+  local i e=""
+  for i in $(seq 1 20); do bubble_running && break; sleep 1; done
+  bubble_running || e="$e pas de bulle au démarrage;"
+  sh_ "dumpsys window windows" | grep -q "app.toque" || e="$e fenêtre de la bulle absente;"
+  # Open Camybrith (what a tap on the bubble does), then leave it with HOME.
+  sh_ "am start -n app.toque/.ui.MainActivity" >/dev/null
+  sleep 6
+  sh_ "input keyevent KEYCODE_HOME" >/dev/null
+  sleep 4
+  bubble_running || e="$e bulle pas revenue en quittant Camybrith;"
+  wait_lidl_in_front 20 || e="$e appli au premier plan = $(foreground);"
+  verdict "B12 bulle « Camybrith » en mode Lidl" "$e"
 }
 
 # A short boot: switch on, wait for the end of the boot, cut before 2 minutes.
@@ -391,7 +440,7 @@ B13() {
 case "${1:-}" in
   arreter) running && a emu kill >/dev/null; echo "Émulateur arrêté."; exit 0 ;;
 esac
-SCENARIOS=${*:-"B1 B2 B3 B5 B6 B7 B10 B13"}
+SCENARIOS=${*:-"B1 B2 B3 B4 B5 B6 B7 B10 B12 B13"}
 start_emulator
 install_all
 echo "Scénarios : $SCENARIOS"
@@ -399,7 +448,7 @@ echo "Scénarios : $SCENARIOS"
 set -- $SCENARIOS
 while [ $# -gt 0 ]; do
   case "$1" in
-    B1|B2|B3|B6|B7|B10|B11|B13) "$1" ;;
+    B1|B2|B3|B4|B6|B7|B10|B11|B12|B13) "$1" ;;
     B5) if [ "${2:-}" = aleatoire ]; then B5_random; shift; else B5; fi ;;
     *) echo "Scénario inconnu ou pas encore écrit : $1" ;;
   esac

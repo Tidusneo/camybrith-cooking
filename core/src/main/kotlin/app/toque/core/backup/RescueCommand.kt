@@ -65,7 +65,8 @@ class RescueCommand(
             "bilan" -> report(a.getOrNull(1))
             "demarrage" -> boot()
             "surveiller" -> watch(a.getOrNull(1)?.toLongOrNull() ?: throw Stop(1, "usage : surveiller <instant du démarrage, en s>"))
-            "reprendre", "retrait", "sauvegarder" -> throw Stop(1, "« ${a[0]} » n'est pas encore disponible dans cette version du module.")
+            "reprendre" -> resume(origin = if ("--ordinateur" in a) Origin.COMPUTER else Origin.INTERFACE)
+            "retrait", "sauvegarder" -> throw Stop(1, "« ${a[0]} » n'est pas encore disponible dans cette version du module.")
             else -> {
                 out("Usage : camybrith etat|noter|noter-fin|inscrire|retour-lidl|bilan [--json]")
                 1
@@ -320,7 +321,7 @@ class RescueCommand(
         journalFile.delete()
 
         out(if (json) Json.write(linkedMapOf("ok" to report.succeeded, "bilan" to Report.fileName(report.date))) else report.text())
-        if (openLidl) openLidl(robot)
+        if (openLidl) { openLidl(robot); showBubble() }
         else if (reboot) {
             if (!json) out("Redémarrage du robot…")
             // Android writes component states to disk only about 10 s after a change: give it that
@@ -331,6 +332,65 @@ class RescueCommand(
             // which the raw `reboot` command does not guarantee.
             if (!device.run("svc", "power", "reboot").ok) device.run("reboot")
         }
+        return 0
+    }
+
+    // ------------------------------------------------------------------ back to Camybrith (US4)
+
+    /**
+     * Reapplies the `lidl` changes undone by the last return (increasing id), back to Camybrith
+     * mode, then opens Camybrith, which redoes its Machine réelle checks. The module cannot know
+     * whether the Lidl app is cooking: the interface and the computer script ask the user first.
+     */
+    private fun resume(origin: Origin): Int {
+        prepare()
+        if (journalFile.isFile) throw Stop(1, "une opération est déjà en cours (${read(journalFile)})")
+        if (!Mode.parse(read(modeFile)).lidl) throw Stop(1, "aucun retour à l'appli Lidl à reprendre : le robot est déjà sur Camybrith")
+        if (!installed(RobotId.APP)) throw Stop(1, "Camybrith Cooking n'est pas installé : réinstalle-le d'abord (bash outils/installer.sh)")
+        var reg = registry()
+        val lastReturn = reports().asReversed().asSequence()
+            .mapNotNull { f -> try { Report.parse(read(f) ?: "") } catch (_: RegistryException) { null } }
+            .firstOrNull { it.type == OperationType.BACK_TO_LIDL }
+        val ids = lastReturn?.undone?.map { it.id } ?: reg.changes.filter { it.scope == Scope.LIDL && it.state == ChangeState.UNDONE }.map { it.id }
+        var journal = Journal(OperationType.RESUME, origin, Step.START, now())
+        write(journalFile, journal.toJson())
+        val robot = robot()
+        // The Lidl app lets go of the serial port before its motor service is disabled again.
+        robot?.let { device.run("am", "force-stop", it.vendorPackage) }
+        val failures = LinkedHashMap<Int, String>()
+        val redone = ArrayList<Change>()
+        for (c in reg.reapplyPlan(ids)) {
+            val r = device.run(*Undo.reapply(c).toTypedArray())
+            if (AndroidOutput.ok(r.code, r.out, r.err)) {
+                redone += c
+                reg = reg.mark(c.id, ChangeState.ACTIVE)
+            } else {
+                failures[c.id] = (r.err.ifBlank { r.out }).trim().take(200).ifEmpty { "code ${r.code}" }
+            }
+        }
+        write(registryFile, reg.toJson())
+        journal = journal.next(Step.REAPPLY); write(journalFile, journal.toJson())
+        val checks = ArrayList<Check>()
+        for ((target, name) in listOf(RobotId.BOOT_RECEIVER to "démarrage de Camybrith actif", RobotId.HOME_ALIAS to "Camybrith écran d'accueil"))
+            checks += Check(name, componentEnabled(target))
+        if (robot != null) checks += Check("appli Lidl coupée du moteur", disabledLidlService(robot) != null)
+        journal = journal.next(Step.CHECK); write(journalFile, journal.toJson())
+        if (failures.isNotEmpty() || checks.any { !it.ok }) {
+            // Half-resumed is the unsafe state: go back to the Lidl app (the safe direction).
+            journalFile.delete()
+            out("Reprise incomplète, retour à l'appli Lidl : " + (failures.values + checks.filter { !it.ok }.map { it.name }).joinToString("; "))
+            backToLidl(origin, reboot = false, resuming = true)
+            return 2
+        }
+        write(modeFile, Mode(false, now(), origin).toJson())
+        File(root, "secours.json").delete()
+        val report = Report(OperationType.RESUME, now(), origin, redone, failures, checks)
+        writeReport(report)
+        journal = journal.next(Step.DONE); write(journalFile, journal.toJson())
+        journalFile.delete()
+        device.run("cmd", "package", "set-home-activity", RobotId.HOME_ALIAS)
+        device.run("am", "start", "-n", "${RobotId.APP}/.ui.MainActivity", "--ez", "camybrith_resume", "true")
+        out(if (json) Json.write(linkedMapOf("ok" to true, "bilan" to Report.fileName(report.date))) else report.text())
         return 0
     }
 
@@ -375,6 +435,17 @@ class RescueCommand(
         }
         c += Check("processus Camybrith arrêtés", alive.isEmpty(), alive)
         return c
+    }
+
+    /**
+     * Shows the "Camybrith" bubble over the Lidl app (research.md D14). Started as root as a
+     * foreground service: Android 8 refuses a plain service start for an app in the background.
+     * If Camybrith is too broken to show it, the Lidl app simply works without it.
+     */
+    private fun showBubble() {
+        if (!installed(RobotId.APP)) return
+        device.run("appops", "set", RobotId.APP, "SYSTEM_ALERT_WINDOW", "allow")
+        device.run("am", "start-foreground-service", "-n", "${RobotId.APP}/.ui.ReturnBubble", "--ez", "modeLidl", "true")
     }
 
     private fun openLidl(robot: RobotId?) {
@@ -459,6 +530,8 @@ class RescueCommand(
                 write(last, r.copy(afterBoot = Check("appli Lidl au premier plan", ok, front ?: "rien")).toJson())
             }
         }
+        // In Lidl mode, the "Camybrith" bubble over the Lidl app is the way back (D14).
+        if (Mode.parse(read(modeFile)).lidl) showBubble()
         if (!json) out("Démarrage traité.")
         return 0
     }

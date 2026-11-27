@@ -470,7 +470,8 @@ class SettingsScreen(a: MainActivity) : Screen(a) {
         a.refreshTitle()
     }
 
-    private fun prepareHardware() {
+    /** Also called after resuming Camybrith from the Lidl app (spec 007, US4): same checks. */
+    fun prepareHardware() {
         a.toast(tr("Vérifications…"))
         Thread {
             val problems = ArrayList<String>()

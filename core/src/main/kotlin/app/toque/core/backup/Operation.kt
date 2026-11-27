@@ -112,9 +112,10 @@ data class Report(
     fun text(): String = buildString {
         appendLine("Bilan : ${type.key} du $date (origine : ${origin.key})")
         appendLine(if (succeeded) "Résultat : réussi" else "Résultat : À VÉRIFIER")
-        if (undone.isEmpty()) appendLine("Modifications annulées : aucune")
+        val what = if (type == OperationType.RESUME) "Modifications remises" else "Modifications annulées"
+        if (undone.isEmpty()) appendLine("$what : aucune")
         else {
-            appendLine("Modifications annulées :")
+            appendLine("$what :")
             undone.forEach { appendLine("  ${it.id}. ${it.type.key} ${it.target}") }
         }
         failures.forEach { (id, reason) -> appendLine("  ÉCHEC $id : $reason") }
