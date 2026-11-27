@@ -70,8 +70,11 @@ object BackupRestorer {
         val f = File(c.filesDir, PENDING)
         if (!f.isFile) return
         val name = try { Json.parse(f.readText()).obj().str("sauvegarde") } catch (_: Exception) { null }
-        val preview = name?.let { read(c, it) }
-        if (preview != null && preview.ok) apply(c, preview.data, false)
+        if (name == null) { f.delete(); return }
+        // Backup not reachable right now (root refused, still booting): keep the marker, the
+        // restore will be replayed at the next opening. A backup refused for good is given up.
+        val preview = read(c, name) ?: return
+        if (preview.ok) apply(c, preview.data, false)
         f.delete()
     }
 
@@ -96,7 +99,7 @@ object BackupRestorer {
             }
         }
         // Test bench only (B8 restore cut): stop dead between the transaction and the settings.
-        if (stopAfterTransaction) { RootShell.run("touch /data/adb/camybrith/bench-stopped", 5_000); while (true) Thread.sleep(60_000) }
+        if (stopAfterTransaction) { File(c.filesDir, "bench-stopped").writeText("1"); while (true) Thread.sleep(60_000) }
         val e = c.getSharedPreferences("toque", Context.MODE_PRIVATE).edit()
         for ((k, v) in Secrets.filter(data.settings)) when (v) {
             is Boolean -> e.putBoolean(k, v)

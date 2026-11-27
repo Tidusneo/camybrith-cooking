@@ -80,6 +80,7 @@ wait_for_boot() {
     sleep 2
   done
   su_stand_in
+  sh_ "setprop debug.camybrith.bench 1" >/dev/null
 }
 
 after_boot() {
@@ -97,6 +98,7 @@ start_emulator() {
   if running; then
     # Already on (previous bench run): restore root and the su stand-in.
     a root >/dev/null 2>&1; sleep 1; a wait-for-device; su_stand_in
+    sh_ "setprop debug.camybrith.bench 1" >/dev/null
     return
   fi
   create_avd
@@ -136,6 +138,8 @@ install_all() {
   local f
   for f in module.prop camybrith post-fs-data.sh service.sh camybrith.apk; do a push "$ROOT/modules/secours/$f" "$MOD/$f" >/dev/null; done
   sh_ "chmod 755 $MOD/camybrith $MOD/service.sh $MOD/post-fs-data.sh; touch $CAM/bench" >/dev/null
+  # Lets the interface recognise the bench without root (BackupReceiver, B8 restore only).
+  sh_ "setprop debug.camybrith.bench 1" >/dev/null
   cp "$ROOT/app/build/outputs/apk/debug/app-debug.apk" "$LOGS/app-normal.apk"
 }
 
@@ -387,13 +391,22 @@ B12() {
   verdict "B12 bulle « Camybrith » en mode Lidl" "$e"
 }
 
+# Edits the interface's settings file as root. Camybrith is the home screen, so Android restarts
+# it right after a force-stop and it would overwrite the file: its home alias is disabled during
+# the edit. restorecon gives the file back its SELinux label (the app cannot read it otherwise).
+edit_prefs() { # sed expression
+  local f=/data/data/app.toque/shared_prefs/toque.xml
+  sh_ "pm disable $HOME_ALIAS; am force-stop app.toque" >/dev/null
+  sh_ "[ -f $f ] || { mkdir -p ${f%/*}; printf '<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\" ?>\n<map>\n</map>\n' > $f; }; sed -i '$1' $f; chown \$(stat -c %u:%g ${f%/*}) $f; restorecon -F $f" >/dev/null
+  sh_ "pm enable $HOME_ALIAS" >/dev/null
+}
+
 # Backup (US6, T058): created in less than 30 s, copied to the computer, without any secret.
 B8() {
   initial_state
   local secret="banc-secret-$RANDOM" t0 t1 e="" name
-  # A secret in the settings, as an MQTT password would be (written while the app is stopped).
-  sh_ "am force-stop app.toque" >/dev/null
-  sh_ "f=/data/data/app.toque/shared_prefs/toque.xml; [ -f \$f ] || { mkdir -p \${f%/*}; printf '<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\" ?>\n<map>\n</map>\n' > \$f; }; sed -i 's#</map>#    <string name=\"mqttPassword\">$secret</string>\n    <string name=\"theme\">sombre</string>\n</map>#' \$f; chown \$(stat -c %u:%g \${f%/*}) \$f" >/dev/null
+  # A secret in the settings, as an MQTT password would be.
+  edit_prefs "s#</map>#    <string name=\"mqttPassword\">$secret</string>\\n    <string name=\"theme\">sombre</string>\\n</map>#"
   t0=$(date +%s)
   ROBOT_SERIAL=$SERIAL bash "$ROOT/outils/sauvegarde.sh" creer </dev/null >"$LOGS/B8.txt" 2>&1
   t1=$(date +%s)
@@ -420,23 +433,26 @@ B8_restore() {
   [ -n "$local_copy" ] || { verdict "B8 restauration" " pas de sauvegarde à restaurer"; return; }
   # The interface has no root on the emulator: the bench puts a copy of the backup in its cache.
   restore() {
-    sh_ "f=/data/data/app.toque/cache/$1; mkdir -p \${f%/*}; cp $CAM/sauvegardes/$1 \$f && chown \$(stat -c %u:%g /data/data/app.toque) \${f%/*} \$f" >/dev/null
+    sh_ "f=/data/data/app.toque/cache/$1; mkdir -p \${f%/*}; cp $CAM/sauvegardes/$1 \$f && chown \$(stat -c %u:%g /data/data/app.toque) \${f%/*} \$f && restorecon -F \${f%/*} \$f" >/dev/null
     sh_ "am broadcast -f 32 -n app.toque/.backup.BackupReceiver --es restaurer $1 $2" >/dev/null
   }
-  set_theme() { sh_ "am force-stop app.toque; sed -i 's#<string name=\"theme\">[^<]*</string>#<string name=\"theme\">$1</string>#' /data/data/app.toque/shared_prefs/toque.xml" >/dev/null; }
+  set_theme() { edit_prefs "s#<string name=\"theme\">[^<]*</string>#<string name=\"theme\">$1</string>#"; }
   theme() { sh_ "grep -o 'name=\"theme\">[^<]*' /data/data/app.toque/shared_prefs/toque.xml" | sed 's/.*>//'; }
   # 1. Normal restore: the setting comes back, an automatic backup of the current state is made.
   set_theme clair
   local before
-  before=$(sh_ "ls $CAM/sauvegardes | wc -l")
+  # Backups ranged by the module, plus those the interface left for it (it has no root here).
+  count_backups() { sh_ "ls $CAM/sauvegardes /data/data/app.toque/files/sauvegardes-a-ranger 2>/dev/null | grep -c camybrith-"; }
+  before=$(count_backups)
   restore "$name" ""
   sleep 15
   [ "$(theme)" = sombre ] || e="$e réglage pas restauré ($(theme));"
-  [ "$(sh_ "ls $CAM/sauvegardes | wc -l")" -gt "$before" ] || e="$e pas de sauvegarde automatique avant;"
+  [ "$(count_backups)" -gt "$before" ] || e="$e pas de sauvegarde automatique avant;"
   # 2. Damaged backup (one byte changed): refused, nothing modified.
   set_theme clair
   local bad=camybrith-20200101-000000.camybrith
-  sh_ "cp $CAM/sauvegardes/$name /data/local/tmp/$bad && printf X | dd of=/data/local/tmp/$bad bs=1 seek=40 conv=notrunc 2>/dev/null; mv /data/local/tmp/$bad $CAM/sauvegardes/$bad" >/dev/null
+  # One byte changed in the middle (toybox dd cannot do it in place: head + X + tail).
+  sh_ "S=$CAM/sauvegardes/$name; T=/data/local/tmp/$bad; h=\$(( \$(stat -c %s \$S) / 2 )); head -c \$h \$S > \$T; printf X >> \$T; tail -c +\$((h+2)) \$S >> \$T; mv \$T $CAM/sauvegardes/$bad" >/dev/null
   restore "$bad" ""
   sleep 10
   [ "$(theme)" = clair ] || e="$e sauvegarde abîmée appliquée;"
@@ -445,12 +461,16 @@ B8_restore() {
   # 3. Power cut between the transaction and the settings: replayed at the next opening.
   e=""
   set_theme clair
-  sh_ "rm -f $CAM/bench-stopped" >/dev/null
+  sh_ "rm -f /data/data/app.toque/files/bench-stopped" >/dev/null
   restore "$name" "--ez arret-apres-transaction true"
   local i
-  for i in $(seq 1 30); do sh_ "[ -f $CAM/bench-stopped ] && echo ok" | grep -q ok && break; sleep 1; done
+  for i in $(seq 1 30); do sh_ "[ -f /data/data/app.toque/files/bench-stopped ] && echo ok" | grep -q ok && break; sleep 1; done
   power_cut
   start_emulator
+  # On the robot the interface copies the backup again as root; here the bench puts it back, then
+  # restarts the interface (it already opened as the home screen, before the copy was there).
+  sh_ "am force-stop app.toque" >/dev/null
+  sh_ "f=/data/data/app.toque/cache/$name; cp $CAM/sauvegardes/$name \$f && chown \$(stat -c %u:%g /data/data/app.toque) \$f && restorecon -F \$f" >/dev/null
   sh_ "am start -n app.toque/.ui.MainActivity" >/dev/null
   sleep 10
   [ "$(theme)" = sombre ] || e="$e restauration pas rejouée ($(theme));"
