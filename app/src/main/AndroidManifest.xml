@@ -44,8 +44,8 @@
             </intent-filter>
         </activity>
 
-        <!-- Écran d'accueil du robot. Sur un alias à part pour que le retour à l'appli Lidl
-             (module de secours, spec 007) puisse le désactiver sans toucher à l'icône. -->
+        <!-- Écran d'accueil du robot. On a separate alias so that going back to the Lidl app
+             (rescue module, spec 007) can disable it without touching the launcher icon. -->
         <activity-alias
             android:name=".ui.Accueil"
             android:exported="true"

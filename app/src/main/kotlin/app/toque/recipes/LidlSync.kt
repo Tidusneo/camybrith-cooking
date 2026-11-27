@@ -60,17 +60,18 @@ class LidlSync(private val context: Context, private val prefs: Prefs, private v
     }
 
     /**
-     * Coupe (ou rétablit) l'accès de l'appli d'origine au moteur. La coupure est inscrite au
-     * registre du module de secours AVANT d'agir (spec 007), pour que le retour à l'appli Lidl
-     * sache la défaire. Module absent : la coupure se fait quand même ici, car laisser l'appli
-     * d'origine sur le port série pendant que Camybrith pilote serait dangereux ; le premier
-     * passage en Machine réelle, lui, exige le module (SettingsScreen.prepareHardware).
+     * Coupe (ou rétablit) l'accès de l'appli d'origine au moteur.
+     *
+     * Spec 007: the cut is recorded in the rescue module's registry BEFORE acting, so that going
+     * back to the Lidl app knows how to undo it. Without the module the cut still happens here,
+     * because leaving the stock app on the serial port while Camybrith drives the motor would be
+     * dangerous; the first switch to Machine réelle requires the module (SettingsScreen.prepareHardware).
      */
     fun setVendorHardware(enabled: Boolean): Boolean {
         val c = components().hardwareService ?: return false
-        val id = if (enabled) null else Rescue.noter("composant", "$pkg/$c", "enabled", "disabled", "lidl")
+        val id = if (enabled) null else Rescue.note("composant", "$pkg/$c", "enabled", "disabled", "lidl")
         val ok = su("pm ${if (enabled) "enable" else "disable"} $pkg/$c").ok
-        id?.let { Rescue.noterFin(it, ok) }
+        id?.let { Rescue.noteDone(it, ok) }
         return ok
     }
 

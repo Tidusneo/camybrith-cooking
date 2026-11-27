@@ -16,6 +16,8 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import app.toque.Prefs
 import app.toque.backup.Rescue
+import app.toque.core.backup.Iso
+import app.toque.core.backup.Mode
 import app.toque.Sounds
 import app.toque.core.machine.RootShell
 import app.toque.recipes.FileImport
@@ -77,22 +79,22 @@ class MainActivity : Activity() {
         }
     }
 
-    // ------------------------------------------------------------------ état de cuisson pour le module de secours
-    // (spec 007, research.md D12) : le module refuse un retour à l'appli Lidl pendant un programme.
-    // Écrit à chaque changement, et toutes les 30 s pendant un programme. Tourne aussi en arrière-plan.
-    private var cuissonEcrite: Boolean? = null
-    private var cuissonMaj = 0L
-    private val cuissonCheck = object : Runnable {
+    // ------------------------------------------------------------------ cooking state for the rescue module
+    // (spec 007, research.md D12): the module refuses to go back to the Lidl app during a program.
+    // Written on every change, and every 30 s during a program. Also runs in the background.
+    private var cookingWritten: Boolean? = null
+    private var cookingUpdatedMs = 0L
+    private val cookingCheck = object : Runnable {
         override fun run() {
             if (prefs.mode == Prefs.Mode.HARDWARE) {
                 val s = snapshot
                 val now = System.currentTimeMillis()
-                if (s.busy != cuissonEcrite || (s.busy && now - cuissonMaj >= 30_000)) {
-                    cuissonEcrite = s.busy
-                    cuissonMaj = now
+                if (s.busy != cookingWritten || (s.busy && now - cookingUpdatedMs >= 30_000)) {
+                    cookingWritten = s.busy
+                    cookingUpdatedMs = now
                     val busy = s.busy
                     val label = s.jobLabel
-                    Thread { Rescue.ecrireCuisson(busy, label) }.start()
+                    Thread { Rescue.writeCooking(busy, label) }.start()
                 }
             }
             main.postDelayed(this, 5_000)
@@ -181,21 +183,21 @@ class MainActivity : Activity() {
         if (prefs.mode == Prefs.Mode.HARDWARE) {
             val robot = prefs.activeRobot
             Thread {
-                Rescue.ecrireRobot(robot)
-                // L'écran d'accueil est passé de MainActivity à l'alias .ui.Accueil (spec 007) :
-                // on le déclare préféré une fois, pour qu'Android ne redemande pas quelle appli
-                // d'accueil utiliser. Jamais si l'alias est désactivé (robot revenu à l'appli Lidl).
+                Rescue.writeRobotId(robot)
+                // The home screen moved from MainActivity to the .ui.Accueil alias (spec 007): set
+                // it as preferred once, so Android does not ask again which home app to use. Never
+                // when the alias is disabled (robot back on the Lidl app).
                 if (!prefs.homeAliasSet) {
                     val alias = android.content.ComponentName(this, "app.toque.ui.Accueil")
-                    val st = packageManager.getComponentEnabledSetting(alias)
-                    if (st != android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_DISABLED &&
+                    val state = packageManager.getComponentEnabledSetting(alias)
+                    if (state != android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_DISABLED &&
                         RootShell.run("cmd package set-home-activity app.toque/app.toque.ui.Accueil", 10_000).ok)
                         prefs.homeAliasSet = true
                 }
             }.start()
         }
-        main.removeCallbacks(cuissonCheck)
-        main.post(cuissonCheck)
+        main.removeCallbacks(cookingCheck)
+        main.post(cookingCheck)
 
         root = FrameLayout(this)
         root.setBackgroundColor(Ui.BG)
@@ -220,6 +222,8 @@ class MainActivity : Activity() {
         }
         root.addView(sleepView, Ui.flp())
         setContentView(root)
+        // Spec 007: robot back on the Lidl app → explanation banner (after the home screen).
+        main.postDelayed({ checkLidlMode() }, 1_500)
 
         // Recettes déposées dans le dossier d'import (Thermomix…) : importées à l'ouverture, une fois
         // l'écran et le catalogue prêts (l'ouverture passe d'abord).
@@ -377,7 +381,7 @@ class MainActivity : Activity() {
     }
 
     override fun onDestroy() {
-        main.removeCallbacks(cuissonCheck)
+        main.removeCallbacks(cookingCheck)
         Ui.tapSound = {}
         sounds.release()
         super.onDestroy()
@@ -673,6 +677,35 @@ class MainActivity : Activity() {
             val r = sync.importNow()
             main.post { toast(r.message, if (r.ok) Ui.OK else Ui.WARN) }
         }.start()
+    }
+
+    /**
+     * Banner when the robot runs the Lidl app (spec 007, contracts/ui.md): since when, why (rescue,
+     * gesture), the report; "Rester sur l'appli Lidl" reopens the Lidl app.
+     */
+    private fun checkLidlMode() {
+        Thread {
+            val mode = Rescue.mode()
+            if (!mode.lidl) return@Thread
+            val report = Rescue.lastReport()?.lines()?.take(2)?.joinToString("\n") ?: ""
+            main.post { showLidlBanner(mode, report) }
+        }.start()
+    }
+
+    private fun showLidlBanner(mode: Mode, report: String) {
+        val since = Iso.parse(mode.since)?.let {
+            java.text.SimpleDateFormat("dd/MM/yyyy HH:mm", java.util.Locale.ROOT).format(java.util.Date(it))
+        } ?: mode.since
+        val text = when (mode.origin?.key) {
+            "secours" -> tr("Le robot fonctionne avec l'appli Lidl depuis le %s, suite à 3 plantages au démarrage.", since)
+            "geste" -> tr("Le robot fonctionne avec l'appli Lidl depuis le %s, suite au geste de l'interrupteur.", since)
+            else -> tr("Le robot fonctionne avec l'appli Lidl depuis le %s.", since)
+        }
+        confirm(tr("Appli Lidl"), text + (if (report.isNotEmpty()) "\n\n" + report else "") + "\n\n" +
+            tr("Camybrith Cooking reste en mode Démo : il ne touche pas au moteur tant que le robot est sur l'appli Lidl."),
+            tr("Rester sur l'appli Lidl"), tr("Fermer"), icon = Icon.Kind.SYNC) {
+            packageManager.getLaunchIntentForPackage(prefs.vendorPackage)?.let { startActivity(it.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+        }
     }
 
     fun openVendorApp() {

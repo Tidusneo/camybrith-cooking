@@ -1,8 +1,8 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
-// Moteur de la commande `camybrith` du module de secours (spec 007, research.md D16) : le code de
-// core/backup empaqueté en APK, jamais installé, lancé en root par app_process depuis
-// modules/secours/camybrith. Il marche donc même si l'interface est cassée ou désinstallée.
+// Engine of the rescue module's `camybrith` command (spec 007, research.md D16): the core/backup
+// code packaged as an APK, never installed, run as root by app_process from
+// modules/secours/camybrith. So it works even when the interface is broken or uninstalled.
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -58,10 +58,10 @@ dependencies {
     implementation(project(":core"))
 }
 
-// Copie l'APK dans le module Magisk (modules/secours/camybrith.apk), prêt à empaqueter.
-tasks.register<Copy>("versModule") {
+// Copies the APK into the Magisk module (modules/secours/camybrith.apk), ready to be zipped.
+tasks.register<Copy>("toModule") {
     dependsOn("assembleRelease")
-    from(layout.buildDirectory.file("outputs/apk/release/moteur-secours-release.apk"))
+    from(layout.buildDirectory.file("outputs/apk/release/rescue-engine-release.apk"))
     into(rootProject.file("modules/secours"))
     rename { "camybrith.apk" }
 }

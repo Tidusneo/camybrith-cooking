@@ -10,7 +10,7 @@ import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
 
-/** Dates ISO 8601 avec décalage (« 2026-11-27T14:03:00+01:00 »), sans java.time (Android 6). */
+/** ISO 8601 dates with offset ("2026-11-27T14:03:00+01:00"), without java.time (Android 6). */
 object Iso {
     fun format(ms: Long, zone: TimeZone = TimeZone.getDefault()): String {
         val f = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ", Locale.ROOT)
@@ -19,7 +19,7 @@ object Iso {
         return s.substring(0, s.length - 2) + ":" + s.substring(s.length - 2)
     }
 
-    /** Millisecondes, ou null si illisible. Accepte « +01:00 », « +0100 » et « Z ». */
+    /** Milliseconds, or null if unreadable. Accepts "+01:00", "+0100" and "Z". */
     fun parse(s: String?): Long? {
         if (s == null || s.length < 19) return null
         val t = when {
@@ -36,48 +36,48 @@ object Iso {
     }
 }
 
-/** État de cuisson (`cuisson.json`, écrit par l'interface ; data-model.md › État de cuisson). */
-object Cuisson {
-    enum class Etat { LIBRE, EN_COURS, INCONNU }
+/** Cooking state (`cuisson.json`, written by the interface; data-model.md › État de cuisson). */
+object Cooking {
+    enum class State { IDLE, RUNNING, UNKNOWN }
 
-    const val FRAICHEUR_MS = 60_000L
+    const val FRESHNESS_MS = 60_000L
 
-    fun json(occupe: Boolean, programme: String, maj: String): String =
-        Json.write(linkedMapOf("occupe" to occupe, "programme" to if (occupe) programme else "", "maj" to maj))
+    fun json(busy: Boolean, program: String, updated: String): String =
+        Json.write(linkedMapOf("occupe" to busy, "programme" to if (busy) program else "", "maj" to updated))
 
     /**
-     * Pilote arrêté → pas de cuisson, quel que soit le fichier. Pilote actif : `occupe` vrai et
-     * `maj` de moins de 60 s → cuisson ; `occupe` faux → libre ; fichier absent, illisible ou
-     * `occupe` vrai mais périmé → inconnu (interface plantée pendant un programme).
+     * Pilot stopped → no cooking, whatever the file says. Pilot running: `occupe` true and `maj`
+     * less than 60 s old → cooking; `occupe` false → idle; file missing, unreadable, or `occupe`
+     * true but stale → unknown (interface crashed during a program).
      */
-    fun evaluer(fichier: String?, piloteActif: Boolean, maintenant: Long): Etat {
-        if (!piloteActif) return Etat.LIBRE
-        val m = try { fichier?.let { Json.parse(it).obj() } } catch (_: Json.ParseException) { null } ?: return Etat.INCONNU
-        val occupe = m.bool("occupe") ?: return Etat.INCONNU
-        if (!occupe) return Etat.LIBRE
-        val maj = Iso.parse(m.str("maj")) ?: return Etat.INCONNU
-        return if (maintenant - maj in 0 until FRAICHEUR_MS) Etat.EN_COURS else Etat.INCONNU
+    fun evaluate(file: String?, pilotRunning: Boolean, now: Long): State {
+        if (!pilotRunning) return State.IDLE
+        val m = try { file?.let { Json.parse(it).obj() } } catch (_: Json.ParseException) { null } ?: return State.UNKNOWN
+        val busy = m.bool("occupe") ?: return State.UNKNOWN
+        if (!busy) return State.IDLE
+        val updated = Iso.parse(m.str("maj")) ?: return State.UNKNOWN
+        return if (now - updated in 0 until FRESHNESS_MS) State.RUNNING else State.UNKNOWN
     }
 
-    fun programme(fichier: String?): String =
-        try { fichier?.let { Json.parse(it).obj().str("programme") } } catch (_: Json.ParseException) { null } ?: ""
+    fun program(file: String?): String =
+        try { file?.let { Json.parse(it).obj().str("programme") } } catch (_: Json.ParseException) { null } ?: ""
 }
 
-/** Mode du robot (`mode.json`, source unique ; data-model.md › Mode du robot). */
-data class Mode(val lidl: Boolean, val depuis: String = "", val origine: Origine? = null) {
+/** Robot mode (`mode.json`, single source of truth; data-model.md › Mode du robot). */
+data class Mode(val lidl: Boolean, val since: String = "", val origin: Origin? = null) {
     fun toJson(): String = Json.write(linkedMapOf(
-        "mode" to if (lidl) "lidl" else "camybrith", "depuis" to depuis, "origine" to origine?.cle))
+        "mode" to if (lidl) "lidl" else "camybrith", "depuis" to since, "origine" to origin?.key))
 
     companion object {
-        /** Absent ou illisible = Camybrith (data-model : absent = `camybrith`). */
+        /** Missing or unreadable = Camybrith (data-model: missing = `camybrith`). */
         fun parse(text: String?): Mode {
             val m = try { text?.let { Json.parse(it).obj() } } catch (_: Json.ParseException) { null } ?: return Mode(false)
-            return Mode(m.str("mode") == "lidl", m.str("depuis") ?: "", Origine.of(m.str("origine")))
+            return Mode(m.str("mode") == "lidl", m.str("depuis") ?: "", Origin.of(m.str("origine")))
         }
     }
 }
 
-/** Identité du robot pour le module (`robot.json`, écrit par l'interface ; research.md D6). */
+/** Robot identity for the module (`robot.json`, written by the interface; research.md D6). */
 data class RobotId(
     val vendorPackage: String,
     val hardwareServiceSuffix: String,
@@ -90,19 +90,19 @@ data class RobotId(
 
     companion object {
         const val APP = "app.toque"
-        const val PILOTE = "app.toque.pilote"
+        const val PILOT = "app.toque.pilote"
         const val BOOT_RECEIVER = "app.toque/app.toque.recipes.BootReceiver"
         const val HOME_ALIAS = "app.toque/app.toque.ui.Accueil"
 
-        /** Lecture stricte : valeurs hors format refusées (elles finissent dans des commandes `pm`). */
+        /** Strict reading: off-format values are refused (they end up in `pm` commands). */
         fun parse(text: String?): RobotId? {
             val m = try { text?.let { Json.parse(it).obj() } } catch (_: Json.ParseException) { null } ?: return null
             val pkg = m.str("vendorPackage") ?: return null
             val suffix = m.str("hardwareServiceSuffix") ?: return null
             val boot = m.str("camybrithBootReceiver") ?: BOOT_RECEIVER
             val home = m.str("camybrithHomeAlias") ?: HOME_ALIAS
-            if (!Cibles.paquet(pkg) || !Regex("[A-Za-z][A-Za-z0-9_]{0,80}").matches(suffix)) return null
-            if (Cibles.erreur(TypeModif.DEMARRAGE, boot) != null || Cibles.erreur(TypeModif.DEMARRAGE, home) != null) return null
+            if (!Targets.isPackage(pkg) || !Regex("[A-Za-z][A-Za-z0-9_]{0,80}").matches(suffix)) return null
+            if (Targets.error(ChangeType.STARTUP, boot) != null || Targets.error(ChangeType.STARTUP, home) != null) return null
             return RobotId(pkg, suffix, boot, home)
         }
     }

@@ -9,12 +9,12 @@ import android.os.IBinder
 import android.view.Gravity
 import android.widget.TextView
 
-/** Écran unique de la fausse appli Lidl : reconnaissable au premier coup d'œil sur l'émulateur. */
+/** Single screen of the fake Lidl app: recognisable at a glance on the emulator. */
 class MainActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(TextView(this).apply {
-            text = "FAUSSE APPLI LIDL\n(banc d'essai Camybrith)"
+            text = "FAKE LIDL APP\n(Camybrith test bench)"
             textSize = 32f
             gravity = Gravity.CENTER
             setBackgroundColor(Color.rgb(0, 80, 170))
@@ -23,7 +23,7 @@ class MainActivity : Activity() {
     }
 }
 
-/** Service « moteur » : ne fait rien ; seul son état activé/désactivé compte. */
+/** "Motor" service: does nothing; only its enabled/disabled state matters. */
 class SerialPortMC30Service : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 }

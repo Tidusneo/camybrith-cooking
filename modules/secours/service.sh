@@ -1,9 +1,20 @@
 #!/system/bin/sh
-# Au démarrage (Magisk, sans bloquer le démarrage) : une fois Android prêt, le module termine une
-# opération interrompue (retour à l'appli Lidl), recrée sa réserve d'espace et vérifie, après un
-# retour, que l'appli Lidl est bien au premier plan. Journal : /data/adb/camybrith/demarrage.log
+# At boot (Magisk, without blocking the boot), once Android is ready:
+#  1. power switch gesture, resuming an interrupted operation, storage reserve, and check after a
+#     return to the Lidl app (camybrith demarrage);
+#  2. rescue mode: 3 interface crashes within 120 s → Lidl app (camybrith surveiller);
+#  3. robot left on for 2 minutes: the gesture counter goes back to 0.
+# Log: /data/adb/camybrith/demarrage.log
 MODDIR=${0%/*}
+D=/data/adb/camybrith
 until [ "$(getprop sys.boot_completed)" = "1" ]; do sleep 2; done
-mkdir -p /data/adb/camybrith
-chmod 700 /data/adb/camybrith
-sh "$MODDIR/camybrith" demarrage > /data/adb/camybrith/demarrage.log 2>&1
+T0=$(date +%s)
+mkdir -p "$D"
+chmod 700 "$D"
+{
+  sh "$MODDIR/camybrith" demarrage
+  sh "$MODDIR/camybrith" surveiller "$T0"
+} > "$D/demarrage.log" 2>&1
+while [ $(( $(date +%s) - T0 )) -lt 120 ]; do sleep 5; done
+echo 0 > "$D/demarrages-courts"
+sync

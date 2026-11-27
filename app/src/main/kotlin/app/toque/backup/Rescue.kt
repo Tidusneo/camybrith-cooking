@@ -1,7 +1,8 @@
 package app.toque.backup
 
-import app.toque.core.backup.Cuisson
+import app.toque.core.backup.Cooking
 import app.toque.core.backup.Iso
+import app.toque.core.backup.Mode
 import app.toque.core.backup.RobotId
 import app.toque.core.i18n.tr
 import app.toque.core.json.Json
@@ -12,92 +13,98 @@ import app.toque.core.machine.RobotModel
 import app.toque.core.machine.RootShell
 
 /**
- * Lien entre l'interface et le module de secours (spec 007) : tout passe par la commande
- * `camybrith` du module, lancée en root. L'interface ne touche jamais au registre elle-même.
+ * Link between the interface and the rescue module (spec 007): everything goes through the
+ * module's `camybrith` command, run as root. The interface never touches the registry itself.
  */
 object Rescue {
     private const val DIR = "/data/adb/camybrith"
-    private val COMMANDES = listOf(
+    private val COMMANDS = listOf(
         "/data/adb/modules/camybrith_secours/camybrith",
-        // Juste après l'installation par Magisk, avant le redémarrage.
+        // Right after installation by Magisk, before the restart.
         "/data/adb/modules_update/camybrith_secours/camybrith",
     )
 
-    @Volatile private var chemin: String? = null
+    @Volatile private var path: String? = null
 
-    private fun q(s: String) = "'" + s.replace("'", "'\\''") + "'"
+    private fun quote(s: String) = "'" + s.replace("'", "'\\''") + "'"
 
-    /** Chemin de la commande si le module est installé, sinon null. */
-    fun commande(): String? {
-        chemin?.let { return it }
-        val r = RootShell.run(COMMANDES.joinToString("; ") { "[ -f $it ] && echo $it" } + "; true", 8_000)
-        return r.out.lines().firstOrNull { it.isNotBlank() }?.trim()?.also { chemin = it }
+    /** Path of the command if the module is installed, otherwise null. */
+    fun command(): String? {
+        path?.let { return it }
+        val r = RootShell.run(COMMANDS.joinToString("; ") { "[ -f $it ] && echo $it" } + "; true", 8_000)
+        return r.out.lines().firstOrNull { it.isNotBlank() }?.trim()?.also { path = it }
     }
 
-    fun present(): Boolean = commande() != null
+    fun installed(): Boolean = command() != null
 
-    private fun cam(vararg args: String, timeoutMs: Long = 30_000): RootShell.Result {
-        val c = commande() ?: return RootShell.Result(-1, "", "module de secours absent")
-        return RootShell.run("sh $c " + args.joinToString(" ") { q(it) }, timeoutMs)
+    private fun run(vararg args: String, timeoutMs: Long = 30_000): RootShell.Result {
+        val c = command() ?: return RootShell.Result(-1, "", "module de secours absent")
+        return RootShell.run("sh $c " + args.joinToString(" ") { quote(it) }, timeoutMs)
     }
 
     /**
-     * Inscrit une modification AVANT de la faire. Rend son id, ou null si le module est absent ou
-     * refuse (dans ce cas, l'appelant ne fait pas la modification, sauf si ne pas la faire est
-     * dangereux : voir LidlSync.setVendorHardware).
+     * Records a change BEFORE making it. Returns its id, or null if the module is missing or
+     * refuses (the caller then does not make the change, unless not making it is dangerous: see
+     * LidlSync.setVendorHardware).
      */
-    fun noter(type: String, cible: String, avant: String, apres: String, portee: String): Int? {
-        val r = cam("noter", type, cible, avant, apres, portee, "interface")
+    fun note(type: String, target: String, before: String, after: String, scope: String): Int? {
+        val r = run("noter", type, target, before, after, scope, "interface")
         return if (r.ok) r.out.lines().lastOrNull { it.isNotBlank() }?.trim()?.toIntOrNull() else null
     }
 
-    fun noterFin(id: Int, ok: Boolean) {
-        cam("noter-fin", id.toString(), if (ok) "ok" else "echec")
+    fun noteDone(id: Int, ok: Boolean) {
+        run("noter-fin", id.toString(), if (ok) "ok" else "echec")
     }
 
-    class Etat(val lidl: Boolean, val depuis: String, val origine: String?, val aAnnuler: List<String>, val alerte: Boolean)
+    class Status(val lidl: Boolean, val since: String, val origin: String?, val toUndo: List<String>, val storageLow: Boolean)
 
-    fun etat(): Etat? {
-        val r = cam("etat", "--json")
+    fun status(): Status? {
+        val r = run("etat", "--json")
         if (!r.ok) return null
         val m = try { Json.parse(r.out.trim().lines().last()).obj() } catch (_: Exception) { return null }
-        return Etat(
+        return Status(
             m.str("mode") == "lidl", m.str("depuis") ?: "", m.str("origine"),
-            m["lidl"].list().map { e -> e.obj().let { libelle(it.str("type") ?: "", it.str("cible") ?: "") } },
+            m["lidl"].list().map { e -> e.obj().let { label(it.str("type") ?: "", it.str("cible") ?: "") } },
             m["alerte"] == true,
         )
     }
 
-    /** Ce que représente une modification, en mots simples (écran de confirmation). */
-    private fun libelle(type: String, cible: String): String = when {
-        cible == RobotId.BOOT_RECEIVER -> tr("Camybrith Cooking ne s'ouvrira plus au démarrage")
-        cible == RobotId.HOME_ALIAS -> tr("Camybrith Cooking ne sera plus l'écran d'accueil")
-        type == "composant" && RobotModel.isHardwareService(cible.substringAfter('/')) -> tr("l'appli Lidl retrouve l'accès au moteur")
-        else -> "$type $cible"
+    /** What a change means, in plain words (confirmation screen). */
+    private fun label(type: String, target: String): String = when {
+        target == RobotId.BOOT_RECEIVER -> tr("Camybrith Cooking ne s'ouvrira plus au démarrage")
+        target == RobotId.HOME_ALIAS -> tr("Camybrith Cooking ne sera plus l'écran d'accueil")
+        type == "composant" && RobotModel.isHardwareService(target.substringAfter('/')) -> tr("l'appli Lidl retrouve l'accès au moteur")
+        else -> "$type $target"
     }
 
-    /** Retour à l'appli Lidl par le module : le robot redémarre si tout va bien. */
-    class Resultat(val code: Int, val texte: String)
+    /** Robot mode (`mode.json`, single source of truth, data-model.md › Mode du robot). */
+    fun mode(timeoutMs: Long = 8_000): Mode = Mode.parse(RootShell.run("cat $DIR/mode.json 2>/dev/null", timeoutMs).out.ifBlank { null })
 
-    fun retourLidl(): Resultat {
-        val r = cam("retour-lidl", timeoutMs = 120_000)
-        return Resultat(r.code, (r.out + r.err).trim())
+    /** Text of the last report, or null. */
+    fun lastReport(): String? = run("bilan").let { if (it.ok) it.out.trim() else null }
+
+    class Result(val code: Int, val text: String)
+
+    /** Back to the Lidl app through the module: the robot restarts if all goes well. */
+    fun backToLidl(): Result {
+        val r = run("retour-lidl", timeoutMs = 120_000)
+        return Result(r.code, (r.out + r.err).trim())
     }
 
-    /** Identité du robot lue par le module (robot.json, research.md D6). */
-    fun ecrireRobot(model: RobotModel) {
-        ecrire("robot.json", RobotId(model.vendorPackage, model.hardwareServiceSuffix).toJson())
+    /** Robot identity read by the module (robot.json, research.md D6). */
+    fun writeRobotId(model: RobotModel) {
+        write("robot.json", RobotId(model.vendorPackage, model.hardwareServiceSuffix).toJson())
     }
 
     /**
-     * État de cuisson lu par le module (cuisson.json, research.md D12) : écrit directement, sans
-     * lancer la commande (appelé toutes les 30 s pendant un programme : il doit rester léger).
+     * Cooking state read by the module (cuisson.json, research.md D12): written directly, without
+     * starting the command (called every 30 s during a program: it must stay light).
      */
-    fun ecrireCuisson(occupe: Boolean, programme: String) {
-        ecrire("cuisson.json", Cuisson.json(occupe, programme.take(80), Iso.format(System.currentTimeMillis())))
+    fun writeCooking(busy: Boolean, program: String) {
+        write("cuisson.json", Cooking.json(busy, program.take(80), Iso.format(System.currentTimeMillis())))
     }
 
-    private fun ecrire(nom: String, texte: String) {
-        RootShell.run("[ -d $DIR ] && printf '%s' ${q(texte)} > $DIR/.$nom.tmp && mv $DIR/.$nom.tmp $DIR/$nom; true", 8_000)
+    private fun write(name: String, text: String) {
+        RootShell.run("[ -d $DIR ] && printf '%s' ${quote(text)} > $DIR/.$name.tmp && mv $DIR/.$name.tmp $DIR/$name; true", 8_000)
     }
 }

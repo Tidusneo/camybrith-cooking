@@ -234,7 +234,7 @@ class Prefs(context: Context) {
         }
 
     /** Ouvrir Toque au démarrage du robot (désactivé par « Revenir à l'appli d'origine »). */
-    /** L'alias d'accueil `.ui.Accueil` (spec 007) a été déclaré écran d'accueil préféré. */
+    /** The `.ui.Accueil` home alias (spec 007) has been set as the preferred home screen. */
     var homeAliasSet: Boolean
         get() = p.getBoolean("homeAliasSet", false)
         set(v) {

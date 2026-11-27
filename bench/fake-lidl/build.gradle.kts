@@ -1,8 +1,8 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
-// Banc d'essai (spec 007, research.md D11) : FAUSSE appli Lidl pour l'émulateur, même nom de
-// paquet que l'appli du Smart, une activité d'accueil et un « service moteur » qui ne fait rien.
-// Jamais publiée, jamais installée sur le robot.
+// Test bench (spec 007, research.md D11): FAKE Lidl app for the emulator, same package name as
+// the Smart's app, a home activity and a "motor service" that does nothing. Never published,
+// never installed on the robot.
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -17,7 +17,7 @@ android {
         minSdk = 23
         targetSdk = 28
         versionCode = 1
-        versionName = "banc"
+        versionName = "bench"
     }
 
     compileOptions {

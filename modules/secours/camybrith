@@ -1,8 +1,8 @@
 #!/system/bin/sh
-# Commande du module de secours Camybrith (spec 007, contracts/cli.md), toujours en root :
+# Command of the Camybrith rescue module (spec 007, contracts/cli.md), always run as root:
 #   su -c /data/adb/modules/camybrith_secours/camybrith etat
-# La logique est en Kotlin (core/backup/Secours.kt, testée), lancée par app_process : elle marche
-# même si l'interface Camybrith est cassée ou désinstallée.
+# The logic is in Kotlin (core/backup/RescueCommand.kt, tested), started by app_process: it works
+# even if the Camybrith interface is broken or uninstalled. Messages are in French (user-facing).
 MODDIR=${0%/*}
 if [ "$(id -u)" != 0 ]; then
   echo "À lancer en root : su -c $0 $*"
@@ -13,4 +13,4 @@ if [ ! -f "$MODDIR/camybrith.apk" ]; then
   exit 2
 fi
 export CLASSPATH="$MODDIR/camybrith.apk"
-exec app_process /system/bin app.toque.core.backup.SecoursMain "$@"
+exec app_process /system/bin app.toque.core.backup.RescueMain "$@"

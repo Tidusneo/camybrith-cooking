@@ -274,6 +274,8 @@ class SettingsScreen(a: MainActivity) : Screen(a) {
         tools.addView(link(tr("Journal")) { a.push(LogScreen(a)) })
         tools.addView(link(tr("Paramètres Android")) { a.openAndroidSettings() })
         tools.addView(link(tr("Revenir à l'appli Lidl")) { returnToLidl() })
+        tools.addView(Ui.text(c, tr("Écran figé ? Éteignez et rallumez le robot 3 fois de suite (moins de 2 minutes à chaque fois) : il repartira sur l'appli Lidl."),
+            13f, Ui.TEXT3).apply { setLineSpacing(0f, 1.1f) }, Ui.lp(t = 4, b = 8))
         val version = try { a.packageManager.getPackageInfo(a.packageName, 0).versionName } catch (_: Exception) { "?" }
         tools.addView(Ui.text(c, tr("Camybrith Cooking %s · protocole d'après le Monsieur Cuisine Developer SDK (licence MIT). " +
             "Projet indépendant, non affilié à Lidl ni à SilverCrest.", version), 14f, Ui.TEXT3).apply { setLineSpacing(0f, 1.1f) }, Ui.lp(t = 12))
@@ -474,12 +476,12 @@ class SettingsScreen(a: MainActivity) : Screen(a) {
             val problems = ArrayList<String>()
             if (!RootShell.available()) problems += tr("accès root refusé")
             val sync = LidlSync(a, a.prefs, a.app.recipes, a.app.log)
-            // Spec 007 : sans le module de secours, la coupure de l'appli Lidl ne serait pas
-            // inscrite au registre, et le retour à l'appli Lidl ne saurait pas la défaire.
-            if (problems.isEmpty() && sync.installed() && !Rescue.present())
+            // Spec 007: without the rescue module, cutting the Lidl app off would not be recorded
+            // in the registry, and going back to the Lidl app would not know how to undo it.
+            if (problems.isEmpty() && sync.installed() && !Rescue.installed())
                 problems += tr("module de secours absent : depuis l'ordinateur, lancez bash outils/secours.sh installer")
             if (problems.isEmpty() && sync.installed()) {
-                Rescue.ecrireRobot(a.prefs.activeRobot)
+                Rescue.writeRobotId(a.prefs.activeRobot)
                 if (sync.components().hardwareService != null && !sync.setVendorHardware(false))
                     problems += tr("impossible de couper l'appli d'origine du moteur")
                 sync.forceStop()
@@ -493,9 +495,9 @@ class SettingsScreen(a: MainActivity) : Screen(a) {
     }
 
     /**
-     * « Revenir à l'appli Lidl » (spec 007, contracts/ui.md) : par le module de secours, qui annule
-     * ce que Camybrith a changé, vérifie, puis redémarre le robot sur l'appli Lidl. Sans le module,
-     * mode dégradé (l'ancien « Revenir à l'appli d'origine »), signalé comme tel.
+     * "Revenir à l'appli Lidl" (spec 007, contracts/ui.md): through the rescue module, which undoes
+     * what Camybrith changed, checks, then restarts the robot on the Lidl app. Without the module,
+     * degraded mode (the former "Revenir à l'appli d'origine"), flagged as such.
      */
     private fun returnToLidl() {
         if (a.snapshot.busy) {
@@ -504,16 +506,16 @@ class SettingsScreen(a: MainActivity) : Screen(a) {
         }
         a.toast(tr("Vérifications…"))
         Thread {
-            val etat = if (Rescue.present()) Rescue.etat() else null
+            val status = if (Rescue.installed()) Rescue.status() else null
             view.post {
-                if (etat == null) restoreVendorDegraded()
+                if (status == null) restoreVendorDegraded()
                 else {
-                    val annule = if (etat.aAnnuler.isEmpty()) tr("rien à annuler (déjà fait)")
-                    else etat.aAnnuler.joinToString("\n") { "• $it" }
+                    val toUndo = if (status.toUndo.isEmpty()) tr("rien à annuler (déjà fait)")
+                    else status.toUndo.joinToString("\n") { "• $it" }
                     a.confirm(
                         tr("Revenir à l'appli Lidl"),
                         tr("Le robot va redémarrer et fonctionner avec la seule appli Lidl.") + "\n\n" +
-                            tr("Ce qui sera annulé :") + "\n" + annule + "\n\n" +
+                            tr("Ce qui sera annulé :") + "\n" + toUndo + "\n\n" +
                             tr("Ce qui reste : Camybrith Cooking installé (pour revenir), le root et l'accès Wi-Fi.") + "\n\n" +
                             tr("Ne jamais accepter de mise à jour système Lidl tant que le robot est rooté."),
                         tr("Revenir"),
@@ -530,22 +532,22 @@ class SettingsScreen(a: MainActivity) : Screen(a) {
         }
         a.prefs.mode = Prefs.Mode.DEMO
         KnobLight.release()
-        // L'interface lâche la machine avant que le module n'arrête le pilote.
+        // The interface releases the machine before the module stops the pilot.
         a.machine.reconfigure {
             a.toast(tr("Retour à l'appli Lidl… le robot va redémarrer"))
             Thread {
-                val r = Rescue.retourLidl()
-                // En cas de succès, le robot redémarre et on n'arrive pas ici.
+                val r = Rescue.backToLidl()
+                // On success the robot restarts and we never get here.
                 view.post {
                     a.confirm(tr("Retour à l'appli Lidl"),
-                        (if (r.code == 1) tr("Refusé : ") else tr("Problème : ")) + r.texte.takeLast(600),
+                        (if (r.code == 1) tr("Refusé : ") else tr("Problème : ")) + r.text.takeLast(600),
                         "OK", tr("Fermer")) {}
                 }
             }.start()
         }
     }
 
-    /** Sans module de secours : ancien comportement, sans trace ni vérification. */
+    /** Without the rescue module: former behaviour, with no record and no checks. */
     private fun restoreVendorDegraded() {
         a.confirm(
             tr("Revenir à l'appli Lidl (mode dégradé)"),

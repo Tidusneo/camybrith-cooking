@@ -19,6 +19,8 @@ else
 fi
 
 CONF="$DIR/robot.conf"
+# Test bench (outils/banc-essai.sh): ROBOT_SERIAL=emulator-5580 targets the emulator, not the robot.
+if [ -n "${ROBOT_SERIAL:-}" ]; then IP=bench; fi
 if [ -z "${IP:-}" ] && [ -s "$CONF" ]; then . "$CONF"; fi
 if [ -z "${IP:-}" ]; then
   echo "Adresse IP du robot sur ton réseau Wi-Fi (exemple : 192.168.1.42)."
@@ -31,9 +33,10 @@ if [ -z "${IP:-}" ]; then
 fi
 
 A="$ADB -s $IP:5555"
+[ -n "${ROBOT_SERIAL:-}" ] && A="$ADB -s $ROBOT_SERIAL"
 
 connecter() {
-  "$ADB" connect "$IP:5555" >/dev/null 2>&1
+  [ -n "${ROBOT_SERIAL:-}" ] || "$ADB" connect "$IP:5555" >/dev/null 2>&1
   if ! $A shell true >/dev/null 2>&1; then
     echo "Le robot ne répond pas sur $IP:5555."
     echo "Vérifie qu'il est allumé, sur le même Wi-Fi que l'ordinateur, que le module « ADB Wi-Fi »"
@@ -55,17 +58,17 @@ exiger_root() {
   fi
 }
 
-# ------------------------------------------------------------------ module de secours (spec 007)
-# Tout ce qui modifie le robot s'inscrit d'abord au registre du module, pour pouvoir être défait.
+# ------------------------------------------------------------------ rescue module (spec 007)
+# Anything that modifies the robot is first recorded in the module's registry, so it can be undone.
 
-# Chemin de la commande « camybrith » sur le robot (vide si le module n'est pas installé).
-chemin_secours() {
+# Path of the "camybrith" command on the robot (empty if the module is not installed).
+rescue_path() {
   $A shell "su -c 'for c in /data/adb/modules/camybrith_secours/camybrith /data/adb/modules_update/camybrith_secours/camybrith; do [ -f \$c ] && echo \$c && break; done'" 2>/dev/null | tr -d '\r' | head -1
 }
 
-exiger_secours() {
-  SECOURS=$(chemin_secours)
-  if [ -z "$SECOURS" ]; then
+require_rescue() {
+  RESCUE=$(rescue_path)
+  if [ -z "$RESCUE" ]; then
     echo "Le module de secours n'est pas installé : il garde la trace de ce que ce script modifie,"
     echo "pour pouvoir toujours revenir à l'appli Lidl. Installe-le d'abord :"
     echo "  bash outils/secours.sh installer"
@@ -73,12 +76,13 @@ exiger_secours() {
   fi
 }
 
-# noter TYPE CIBLE AVANT APRES PORTEE : inscrit la modification et affiche son numéro.
-noter() {
+# note TYPE TARGET BEFORE AFTER SCOPE: records the change and prints its id.
+note() {
   local id
-  id=$($A shell "su -c 'sh $SECOURS noter $1 $2 $3 $4 $5 $(basename "$0")'" 2>/dev/null | tr -d '\r' | tail -1)
+  id=$($A shell "su -c 'sh $RESCUE noter $1 $2 $3 $4 $5 $(basename "$0")'" 2>/dev/null | tr -d '\r' | tail -1)
   case "$id" in ''|*[!0-9]*) echo "Le registre a refusé la modification ($1 $2) : $id. Rien n'a été fait." >&2; exit 1 ;; esac
   echo "$id"
 }
 
-noter_fin() { $A shell "su -c 'sh $SECOURS noter-fin $1 $2'" >/dev/null 2>&1; }
+# note_done ID ok|echec: confirms the change, or removes it if the attempt failed.
+note_done() { $A shell "su -c 'sh $RESCUE noter-fin $1 $2'" >/dev/null 2>&1; }

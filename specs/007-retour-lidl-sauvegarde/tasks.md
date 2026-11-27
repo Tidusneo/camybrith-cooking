@@ -25,7 +25,7 @@ US4 à US6 en P2, US7 en P3).
 ## Path Conventions
 
 Dépôt existant (plan.md › Project Structure) : `core/` (Kotlin pur), `app/`, `modules/`,
-`outils/`, nouveau module Gradle de test `banc/fausse-lidl/`. Rien dans `pilote/`.
+`outils/`, nouveau module Gradle de test `bench/fake-lidl/`. Rien dans `pilote/`.
 
 ---
 
@@ -36,7 +36,7 @@ Dépôt existant (plan.md › Project Structure) : `core/` (Kotlin pur), `app/`,
 - [X] T001 Documenter le prérequis JDK 17 et l'installation de l'image d'émulateur Android 8.1 (API 27 `default`, à défaut API 28) dans la section « Fabriquer les APK soi-même » de `README.md` et `README.en.md`
 - [X] T002 [P] Créer le paquet `core/src/main/kotlin/app/toque/core/backup/` et les fichiers de test vides `core/src/test/kotlin/app/toque/core/RegistryTest.kt`, `RescueRuleTest.kt`, `BackupTest.kt`
 - [X] T003 [P] Créer le squelette du module Magisk `modules/secours/` : `module.prop` (id `camybrith_secours`), `META-INF/com/google/android/update-binary` et `updater-script` sur le modèle de `modules/adb-wifi/`, sans dossier `system/`
-- [X] T004 [P] Créer le module Gradle de test `banc/fausse-lidl/` (paquet identique à `RobotModel.SMART.vendorPackage`, une activité de lancement avec `HOME`, un service dont le nom finit par `RobotModel.SMART.hardwareServiceSuffix`) et l'inclure dans `settings.gradle.kts`, sans publication
+- [X] T004 [P] Créer le module Gradle de test `bench/fake-lidl/` (paquet identique à `RobotModel.SMART.vendorPackage`, une activité de lancement avec `HOME`, un service dont le nom finit par `RobotModel.SMART.hardwareServiceSuffix`) et l'inclure dans `settings.gradle.kts`, sans publication
 - [X] T005 [P] Ajouter `sauvegardes/` à `.gitignore`
 - [X] T006 [P] Ajouter `shellcheck` sur `modules/secours/*` et `outils/*.sh`, et l'empaquetage du zip du module de secours, dans `.github/workflows/release.yml`
 
@@ -49,7 +49,7 @@ Dépôt existant (plan.md › Project Structure) : `core/` (Kotlin pur), `app/`,
 **⚠️ CRITICAL**: aucun parcours ne commence avant la fin de cette phase
 
 > **Note d'implémentation (research.md D16)** : la logique de `camybrith` (T011 à T014, T021 à
-> T023) est en Kotlin dans `core/backup/Secours.kt`, lancée par `app_process` depuis le lanceur
+> T023) est en Kotlin dans `core/backup/RescueCommand.kt`, lancée par `app_process` depuis le lanceur
 > `modules/secours/camybrith` ; le journal côté shell (T013) est donc dans ce moteur. Le journal
 > est tenté avant les `pm`, sans jamais bloquer le retour (précision de D15).
 
@@ -66,7 +66,7 @@ Dépôt existant (plan.md › Project Structure) : `core/` (Kotlin pur), `app/`,
 - [X] T017 Inscrire au registre avant d'agir dans `app/src/main/kotlin/app/toque/recipes/LidlSync.kt` (`setVendorHardware` : `noter composant … portee lidl`, puis `noter-fin`), et dans `app/src/main/kotlin/app/toque/ui/screens/SettingsScreen.kt` (passage en Machine réelle) ; si le module est absent, proposer de l'installer et ne rien modifier. Le démarrage de Camybrith n'est pas inscrit ici mais à l'installation (T018, T014)
 - [X] T018 [P] Inscrire au registre avant d'agir dans `outils/installer.sh` (type `appli`, portée `retrait` ; et type `demarrage` pour `BootReceiver` et `.ui.Accueil`, portée `lidl`, `data-model.md` Modification.avant = `absent` à la première installation), la mise à jour depuis le robot (`app/src/main/kotlin/app/toque/update/Updater.kt` : même paquet, couvert par la fusion de T007), `outils/barre.sh` (type `reglage`, portée `retrait`) et `outils/animation.sh` (type `module`, portée `retrait`) ; s'arrêter et proposer `outils/secours.sh installer` si le module manque
 - [X] T019 [P] Script `outils/secours.sh` (`installer` : annonce, confirmation, installation du zip, `camybrith inscrire`, proposition de redémarrage ; `retirer` ; `etat`) sur le modèle de `outils/commun.sh`
-- [X] T020 Banc d'essai `outils/banc-essai.sh` : création de l'émulateur (research.md D11), `adb root`, installation de `banc/fausse-lidl`, de Camybrith en mode Démo, du module de secours dans `/data/adb/modules/camybrith_secours`, d'une doublure de `magisk` ; exécution d'un scénario par nom ou de tous, avec OK/ÉCHEC ; scénario B1 de `quickstart.md`
+- [X] T020 Banc d'essai `outils/banc-essai.sh` : création de l'émulateur (research.md D11), `adb root`, installation de `bench/fake-lidl`, de Camybrith en mode Démo, du module de secours dans `/data/adb/modules/camybrith_secours`, d'une doublure de `magisk` ; exécution d'un scénario par nom ou de tous, avec OK/ÉCHEC ; scénario B1 de `quickstart.md`
 
 **Checkpoint**: `./gradlew :core:test` au vert ; `bash outils/banc-essai.sh B1` OK (passage en Machine réelle inscrit au registre avant d'agir)
 
@@ -95,8 +95,8 @@ Dépôt existant (plan.md › Project Structure) : `core/` (Kotlin pur), `app/`,
 
 **Independent Test**: quickstart §B scénario B7 ; §C étape 6
 
-- [ ] T027 [US2] Script `outils/origine.sh` selon `contracts/cli.md` : connexion (`commun.sh`), robot injoignable → message clair et arrêt, état de cuisson inconnu → avertissement et confirmation avant `--forcer` (research.md D12), liste de ce qui sera annulé (lecture de `registre.json`), confirmation, `camybrith retour-lidl`, affichage du bilan et du rappel
-- [ ] T028 [US2] Sous-commande `registre` dans `outils/origine.sh` : copie de `registre.json` et des bilans dans `sauvegardes/`
+- [X] T027 [US2] Script `outils/origine.sh` selon `contracts/cli.md` : connexion (`commun.sh`), robot injoignable → message clair et arrêt, état de cuisson inconnu → avertissement et confirmation avant `--forcer` (research.md D12), liste de ce qui sera annulé (lecture de `registre.json`), confirmation, `camybrith retour-lidl`, affichage du bilan et du rappel
+- [X] T028 [US2] Sous-commande `registre` dans `outils/origine.sh` : copie de `registre.json` et des bilans dans `sauvegardes/`
 - [ ] T029 [US2] Scénario B7 (interface désinstallée à la main) dans `outils/banc-essai.sh`
 
 **Checkpoint**: B7 OK. Le retour marche sans l'interface.
@@ -109,14 +109,14 @@ Dépôt existant (plan.md › Project Structure) : `core/` (Kotlin pur), `app/`,
 
 **Independent Test**: quickstart §B scénarios B6, B10, B11, B13 ; §C étape 6 bis
 
-- [ ] T030 [P] [US3] Règle de décision dans `core/src/main/kotlin/app/toque/core/backup/RescueRule.kt` (`data-model.md` État de secours › Règle de décision)
-- [ ] T031 [US3] Tests JUnit de T030 dans `core/src/test/kotlin/app/toque/core/RescueRuleTest.kt` avec des extraits de `logcat -b crash` (2 plantages : non ; 3 en 100 s : oui ; 3 en 200 s : non ; journal d'opération en cours : non)
-- [ ] T032 [US3] Surveillance dans `modules/secours/service.sh` (après la reprise de T023) : comptage des plantages de `app.toque` pendant 120 s, à 3 `camybrith retour-lidl --secours`, écriture de `data-model.md` État de secours (secours.json : date, nombre de plantages, version en cause)
-- [ ] T033 [US3] Geste de l'interrupteur dans `modules/secours/post-fs-data.sh` (incrément de `demarrages-courts` puis `sync`, en respectant les règles de research.md D13 : aucune attente, aucun appel à `pm`/`am`, erreurs ignorées, compteur illisible remis à 0) et `modules/secours/service.sh` (remise à zéro après 2 min suivant `sys.boot_completed` ; à 3 si `data-model.md` Mode du robot.mode ≠ `lidl`, `camybrith retour-lidl --geste`) selon `data-model.md` Geste de l'interrupteur et research.md D13 ; option `--geste` dans `modules/secours/camybrith` (bilan avec `data-model.md` Journal.origine = `geste`)
-- [ ] T034 [US3] Bandeau à l'ouverture de Camybrith dans `app/src/main/kotlin/app/toque/ui/MainActivity.kt` : seulement si `data-model.md` Mode du robot.mode = `lidl`, message selon Mode du robot.origine (« suite à 3 plantages au démarrage » si `secours`, « suite au geste de l'interrupteur » si `geste`), lien vers le bilan, bouton « Rester sur l'appli Lidl » (`contracts/ui.md`)
-- [ ] T035 [US3] Ligne d'aide sur le geste de l'interrupteur sous « Revenir à l'appli Lidl » dans `app/src/main/kotlin/app/toque/ui/screens/SettingsScreen.kt` (`contracts/ui.md`)
-- [ ] T036 [P] [US3] Textes de T034 et T035 dans `app/src/main/assets/lang/en.json` et `app/src/main/assets/lang/es.json`
-- [ ] T037 [US3] Version d'essai qui plante au démarrage : propriété Gradle `-Pbanc.plante=true` dans `app/build.gradle.kts` (champ `BuildConfig.BANC_PLANTE`, faux par défaut, jamais publié) qui lève une exception dans `onCreate` de `app/src/main/kotlin/app/toque/ToqueApp.kt` ; scénario B6 dans `outils/banc-essai.sh`
+- [X] T030 [P] [US3] Règle de décision dans `core/src/main/kotlin/app/toque/core/backup/RescueRule.kt` (`data-model.md` État de secours › Règle de décision)
+- [X] T031 [US3] Tests JUnit de T030 dans `core/src/test/kotlin/app/toque/core/RescueRuleTest.kt` avec des extraits de `logcat -b crash` (2 plantages : non ; 3 en 100 s : oui ; 3 en 200 s : non ; journal d'opération en cours : non)
+- [X] T032 [US3] Surveillance dans `modules/secours/service.sh` (après la reprise de T023) : comptage des plantages de `app.toque` pendant 120 s, à 3 `camybrith retour-lidl --secours`, écriture de `data-model.md` État de secours (secours.json : date, nombre de plantages, version en cause)
+- [X] T033 [US3] Geste de l'interrupteur dans `modules/secours/post-fs-data.sh` (incrément de `demarrages-courts` puis `sync`, en respectant les règles de research.md D13 : aucune attente, aucun appel à `pm`/`am`, erreurs ignorées, compteur illisible remis à 0) et `modules/secours/service.sh` (remise à zéro après 2 min suivant `sys.boot_completed` ; à 3 si `data-model.md` Mode du robot.mode ≠ `lidl`, `camybrith retour-lidl --geste`) selon `data-model.md` Geste de l'interrupteur et research.md D13 ; option `--geste` dans `modules/secours/camybrith` (bilan avec `data-model.md` Journal.origine = `geste`)
+- [X] T034 [US3] Bandeau à l'ouverture de Camybrith dans `app/src/main/kotlin/app/toque/ui/MainActivity.kt` : seulement si `data-model.md` Mode du robot.mode = `lidl`, message selon Mode du robot.origine (« suite à 3 plantages au démarrage » si `secours`, « suite au geste de l'interrupteur » si `geste`), lien vers le bilan, bouton « Rester sur l'appli Lidl » (`contracts/ui.md`)
+- [X] T035 [US3] Ligne d'aide sur le geste de l'interrupteur sous « Revenir à l'appli Lidl » dans `app/src/main/kotlin/app/toque/ui/screens/SettingsScreen.kt` (`contracts/ui.md`)
+- [X] T036 [P] [US3] Textes de T034 et T035 dans `app/src/main/assets/lang/en.json` et `app/src/main/assets/lang/es.json`
+- [X] T037 [US3] Version d'essai qui plante au démarrage : propriété Gradle `-Pbench.crash=true` dans `app/build.gradle.kts` (ressource `R.bool.bench_crash`, fausse par défaut, jamais publiée) qui lève une exception dans `onCreate` de `app/src/main/kotlin/app/toque/ToqueApp.kt` ; scénario B6 dans `outils/banc-essai.sh`
 - [ ] T038 [US3] Scénarios B10 (3 démarrages courts, 10 essais), B11 (100 redémarrages espacés, mode long) et B13 (compteur `demarrages-courts` corrompu ou illisible : démarrage normal, compteur remis à 0) dans `outils/banc-essai.sh`
 
 **Checkpoint**: B6, B10, B11, B13 OK. Le robot reste utilisable même avec une interface cassée ou figée, sans ordinateur.

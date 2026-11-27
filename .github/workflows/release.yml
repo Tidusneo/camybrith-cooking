@@ -56,8 +56,8 @@ jobs:
       - name: Module de secours
         if: steps.version.outputs.publish == 'true'
         run: |
-          # Erreurs seulement : le module tourne sous le shell d'Android 8.1 (toybox).
-          shellcheck -S error -s sh modules/secours/camybrith modules/secours/service.sh modules/secours/customize.sh
+          # Errors only: the module runs under Android 8.1's shell (toybox).
+          shellcheck -S error -s sh modules/secours/camybrith modules/secours/post-fs-data.sh modules/secours/service.sh modules/secours/customize.sh
           shellcheck -S error outils/*.sh
           bash outils/fabriquer_secours.sh dist
 

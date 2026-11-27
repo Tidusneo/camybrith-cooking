@@ -38,7 +38,7 @@ sauvegardes) ; lecture de `recettes.db` et des `shared_prefs` existants.
 Mac, Linux, WSL pour `outils/`.
 
 **Project Type**: appli Android (interface + pilote) + module Magisk + scripts + module Gradle de
-test (`banc/fausse-lidl`).
+test (`bench/fake-lidl`).
 
 **Performance Goals**: retour à l'appli Lidl < 3 min redémarrage compris (SC-001) ; sauvegarde
 < 30 s.
@@ -93,15 +93,15 @@ core/src/main/kotlin/app/toque/core/backup/
 ├── Operation.kt         # journal d'opération et transitions
 ├── RescueRule.kt        # décision du mode de secours
 ├── Space.kt             # seuils d'espace (alerte 10 %, sauvegarde + 50 Mo)
-├── Etats.kt             # cuisson.json, mode.json, robot.json, dates ISO
-├── Secours.kt           # moteur de la commande `camybrith` (research D16), lancé par app_process
+├── States.kt            # cuisson.json, mode.json, robot.json, dates ISO
+├── RescueCommand.kt     # moteur de la commande `camybrith` (research D16), lancé par app_process
 ├── Manifest.kt          # manifeste de sauvegarde
 ├── Secrets.kt           # clés secrètes (liste fermée)
 ├── Validation.kt        # vérification d'une sauvegarde
 └── Migrations.kt        # conversions de format
 core/src/test/kotlin/app/toque/core/
 ├── RegistryTest.kt
-├── SecoursTest.kt       # le moteur sur un faux Android
+├── RescueCommandTest.kt # le moteur sur un faux Android
 ├── RescueRuleTest.kt
 └── BackupTest.kt
 
@@ -124,17 +124,17 @@ modules/secours/          # module Magisk, sans dossier system/
 ├── service.sh           # reprise d'opération, mode de secours, geste, bulle, contrôle après retour
 ├── customize.sh         # droits d'exécution à l'installation
 ├── camybrith            # lanceur de la commande (contracts/cli.md) : app_process + camybrith.apk
-└── camybrith.apk        # fabriqué par Gradle (moteur-secours), pas dans git
+└── camybrith.apk        # fabriqué par Gradle (rescue-engine), pas dans git
 
-moteur-secours/           # module Gradle : core/backup empaqueté en APK (jamais installé)
+rescue-engine/           # module Gradle : core/backup empaqueté en APK (jamais installé)
 
-banc/fausse-lidl/         # module Gradle de test : fausse appli Lidl pour l'émulateur
+bench/fake-lidl/         # module Gradle de test : fausse appli Lidl pour l'émulateur
 outils/
 ├── secours.sh  origine.sh  retirer.sh  sauvegarde.sh  banc-essai.sh   # nouveaux
 ├── fabriquer_secours.sh                                               # zip du module
 └── installer.sh  barre.sh  animation.sh                               # inscrivent au registre
 
-settings.gradle.kts             # inclut moteur-secours et banc:fausse-lidl
+settings.gradle.kts             # inclut rescue-engine et bench:fake-lidl
 .github/workflows/release.yml   # zip du module de secours ; shellcheck
 .gitignore                      # sauvegardes/
 docs/GUIDE.md, docs/GUIDE.en.md # section 12 réécrite ; installation du module après l'étape 8
@@ -158,5 +158,5 @@ assistant/camybrith-installer/SKILL.md
 
 ## Complexity Tracking
 
-Aucune violation de la constitution. Le module Gradle `banc/fausse-lidl` est un outil de test,
+Aucune violation de la constitution. Le module Gradle `bench/fake-lidl` est un outil de test,
 non livré aux utilisateurs.

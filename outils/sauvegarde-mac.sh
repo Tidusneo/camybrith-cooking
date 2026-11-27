@@ -1,28 +1,42 @@
 #!/bin/bash
-# Sauvegarde complète de la mémoire du Smart depuis un Mac, avec mtkclient, en LECTURE SEULE.
-# Rien n'est jamais écrit dans le robot : le script ne lance que des commandes de lecture
-# (printgpt, rl, rf), écrites en dur ci-dessous.
+# Full backup of the Smart's memory from a Mac, with mtkclient, READ ONLY.
+# Nothing is ever written to the robot: the script only runs read commands (printgpt, rl, rf),
+# hard-coded below. Messages are in French (user-facing).
 #
-#   bash outils/sauvegarde-mac.sh preparer        # une fois : installe mtkclient (sans le robot)
-#   bash outils/sauvegarde-mac.sh lire            # robot éteint, branché sur « Android USB »
-#   bash outils/sauvegarde-mac.sh lire --sans-donnees   # sans la partition userdata (plus court)
+#   bash outils/sauvegarde-mac.sh preparer              # once: installs mtkclient (no robot needed)
+#   bash outils/sauvegarde-mac.sh lire                  # robot off, plugged on "Android USB"
+#   bash outils/sauvegarde-mac.sh lire --sans-donnees   # without the userdata partition (shorter)
 #
-# La sauvegarde va dans ~/Camybrith-sauvegarde/<date>/ , HORS du projet : elle contient le numéro
-# de série et les réglages du robot (nvram, proinfo). Ne jamais la publier ni la committer.
+# The backup goes to ~/Camybrith-sauvegarde/<date>/, OUTSIDE the project: it holds the robot's
+# serial number and settings (nvram, proinfo). Never publish or commit it.
 set -eu
 
-MTK_TAG=v2.1.4.1                          # version de mtkclient vérifiée pour ce script
+MTK_TAG=v2.1.4.1                          # mtkclient version checked for this script
 MTK_SRC=${MTK_SRC:-$HOME/Projets/mtkclient}
 MTK_VENV=${MTK_VENV:-$HOME/Projets/mtkclient-venv}
 MTK_STUB=${MTK_STUB:-$HOME/Projets/mtkclient-stub}
-DEST_RACINE=${DEST_RACINE:-$HOME/Camybrith-sauvegarde}
-# Partitions sans lesquelles on ne pourra pas revenir en arrière : la sauvegarde doit les contenir.
-ESSENTIELLES="boot recovery cache lk seccfg nvram proinfo system vendor"
+BACKUP_ROOT=${BACKUP_ROOT:-$HOME/Camybrith-sauvegarde}
+# Partitions needed to ever go back: the backup must contain them.
+ESSENTIAL="boot recovery cache lk seccfg nvram proinfo system vendor"
 
-erreur() { echo "ERREUR : $*" >&2; exit 1; }
+fail() { echo "ERREUR : $*" >&2; exit 1; }
 
-preparer() {
-  command -v brew >/dev/null || erreur "Homebrew manque (https://brew.sh)."
+usage() {
+  cat <<'TXT'
+Sauvegarde complète de la mémoire du robot depuis le Mac, en LECTURE SEULE (rien n'est écrit).
+
+  bash outils/sauvegarde-mac.sh preparer              une fois : installe mtkclient (sans le robot)
+  bash outils/sauvegarde-mac.sh lire                  robot éteint, branché sur « Android USB »
+  bash outils/sauvegarde-mac.sh lire --sans-donnees   sans la partition userdata (plus court)
+
+La sauvegarde va dans ~/Camybrith-sauvegarde/<date>/, hors du projet : elle contient le numéro de
+série et les réglages du robot. Ne jamais la publier.
+TXT
+  exit 1
+}
+
+prepare() {
+  command -v brew >/dev/null || fail "Homebrew manque (https://brew.sh)."
   brew list libusb >/dev/null 2>&1 || brew install libusb
   PY=$(command -v python3.12 || true)
   [ -n "$PY" ] || { brew install python@3.12; PY=$(brew --prefix python@3.12)/bin/python3.12; }
@@ -33,35 +47,35 @@ preparer() {
   git -C "$MTK_SRC" checkout -q "$MTK_TAG"
   [ -x "$MTK_VENV/bin/python" ] || "$PY" -m venv "$MTK_VENV"
   "$MTK_VENV/bin/pip" install -q --disable-pip-version-check "$MTK_SRC"
-  # mtkclient importe toujours « fuse », qui ne sert qu'à monter la mémoire comme un disque.
-  # Plutôt qu'installer macFUSE (extension système), un faux module suffit pour lire.
+  # mtkclient always imports "fuse", which is only used to mount the memory as a disk. Rather than
+  # installing macFUSE (a system extension), a fake module is enough for reading.
   mkdir -p "$MTK_STUB"
   cat > "$MTK_STUB/fuse.py" <<'EOF'
-# Faux module « fuse » (Camybrith) : la commande « fs » de mtkclient n'est pas utilisée.
+# Fake "fuse" module (Camybrith): mtkclient's "fs" command is not used.
 class Operations: pass
 class LoggingMixIn: pass
 class FuseOSError(OSError): pass
 def FUSE(*a, **k):
-    raise RuntimeError("Montage FUSE non disponible (macFUSE non installé)")
+    raise RuntimeError("FUSE mount not available (macFUSE not installed)")
 EOF
-  mtk --help >/dev/null || erreur "mtkclient ne se lance pas."
+  mtk --help >/dev/null || fail "mtkclient ne se lance pas."
   echo "mtkclient $MTK_TAG prêt. Le jour du branchement : bash outils/sauvegarde-mac.sh lire"
 }
 
 mtk() { (cd "$MTK_SRC" && PYTHONPATH="$MTK_STUB" "$MTK_VENV/bin/mtk" "$@"); }
 
-lire() {
-  local sans_donnees=0
-  [ "${1:-}" = "--sans-donnees" ] && sans_donnees=1
-  [ -x "$MTK_VENV/bin/mtk" ] || erreur "mtkclient n'est pas installé : bash outils/sauvegarde-mac.sh preparer"
+read_all() {
+  local skip_userdata=0
+  [ "${1:-}" = "--sans-donnees" ] && skip_userdata=1
+  [ -x "$MTK_VENV/bin/mtk" ] || fail "mtkclient n'est pas installé : bash outils/sauvegarde-mac.sh preparer"
   [ "$(git -C "$MTK_SRC" describe --tags 2>/dev/null)" = "$MTK_TAG" ] \
-    || erreur "mtkclient n'est pas en $MTK_TAG : relance « preparer »."
+    || fail "mtkclient n'est pas en $MTK_TAG : relance « preparer »."
 
   local dest
-  dest="$DEST_RACINE/$(date +%Y-%m-%d_%H%M)"
-  case "$dest" in *" "*) erreur "Le dossier de sauvegarde ne doit pas contenir d'espace : $dest";; esac
-  local libre_go=$(( $(df -k "$HOME" | awk 'NR==2{print $4}') / 1024 / 1024 ))
-  [ "$libre_go" -ge 12 ] || erreur "Il faut au moins 12 Go libres sur le Mac (il en reste $libre_go)."
+  dest="$BACKUP_ROOT/$(date +%Y-%m-%d_%H%M)"
+  case "$dest" in *" "*) fail "Le dossier de sauvegarde ne doit pas contenir d'espace : $dest";; esac
+  local free_gb=$(( $(df -k "$HOME" | awk 'NR==2{print $4}') / 1024 / 1024 ))
+  [ "$free_gb" -ge 12 ] || fail "Il faut au moins 12 Go libres sur le Mac (il en reste $free_gb)."
   mkdir -p "$dest/partitions"
 
   cat <<TXT
@@ -77,27 +91,27 @@ TXT
   read -r -p "Prêt ? Entrée pour lancer, Ctrl+C pour annuler. " _
 
   local skip=""
-  [ "$sans_donnees" = 1 ] && skip=" --skip userdata"
-  # Uniquement des lectures. Une seule connexion pour tout (le robot n'accepte qu'une session).
+  [ "$skip_userdata" = 1 ] && skip=" --skip userdata"
+  # Reads only. A single connection for everything (the robot accepts only one session).
   local cmds="printgpt;rl $dest/partitions$skip;rf $dest/boot1.bin --parttype boot1;rf $dest/boot2.bin --parttype boot2"
   mtk multi "$cmds" 2>&1 | tee "$dest/journal.txt"
 
   echo
   echo "Vérification de la sauvegarde…"
   grep -iE "sbc|sla|daa|hw ?code|secure|target config" "$dest/journal.txt" | sort -u > "$dest/securite.txt" || true
-  local manque=""
-  for p in $ESSENTIELLES; do
+  local missing="" p f
+  for p in $ESSENTIAL; do
     f=$(ls "$dest/partitions/$p".* "$dest/partitions/$p" 2>/dev/null | head -1 || true)
-    if [ -z "$f" ] || [ ! -s "$f" ]; then manque="$manque $p"; fi
+    if [ -z "$f" ] || [ ! -s "$f" ]; then missing="$missing $p"; fi
   done
   find "$dest" -type f -size 0 -print | sed 's/^/  vide : /'
   (cd "$dest" && find partitions boot1.bin boot2.bin -type f 2>/dev/null | sort | xargs shasum -a 256 > SHA256SUMS) || true
   du -sh "$dest" | awk '{print "Taille totale : "$1}'
   echo "Sécurité du démarrage (extrait du journal) :"
   sed 's/^/  /' "$dest/securite.txt"
-  if [ -n "$manque" ]; then
+  if [ -n "$missing" ]; then
     echo
-    erreur "Sauvegarde INCOMPLÈTE, il manque :$manque. Ne passe pas à l'étape suivante. Journal : $dest/journal.txt"
+    fail "Sauvegarde INCOMPLÈTE, il manque :$missing. Ne passe pas à l'étape suivante. Journal : $dest/journal.txt"
   fi
   echo
   echo "Sauvegarde complète : $dest"
@@ -106,7 +120,7 @@ TXT
 }
 
 case "${1:-}" in
-  preparer) preparer ;;
-  lire) shift; lire "$@" ;;
-  *) sed -n '2,11p' "$0" | sed 's/^# \{0,1\}//'; exit 1 ;;
+  preparer) prepare ;;
+  lire) shift; read_all "$@" ;;
+  *) usage ;;
 esac

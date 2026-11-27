@@ -597,5 +597,12 @@
   "Le module de secours n'est pas installé : le retour se fera sans registre ni vérification, et ne marchera pas si Camybrith Cooking est cassé. Pour l'installer, depuis l'ordinateur : bash outils/secours.sh installer": "The rescue module is not installed: going back will happen without a register or checks, and will not work if Camybrith Cooking is broken. To install it, from the computer: bash outils/secours.sh installer",
   "Camybrith Cooking ne s'ouvrira plus au démarrage": "Camybrith Cooking will no longer open at startup",
   "Camybrith Cooking ne sera plus l'écran d'accueil": "Camybrith Cooking will no longer be the home screen",
-  "l'appli Lidl retrouve l'accès au moteur": "the Lidl app gets access to the motor again"
+  "l'appli Lidl retrouve l'accès au moteur": "the Lidl app gets access to the motor again",
+  "Le robot fonctionne avec l'appli Lidl depuis le %s, suite à 3 plantages au démarrage.": "The robot has been running the Lidl app since %s, after 3 crashes at startup.",
+  "Le robot fonctionne avec l'appli Lidl depuis le %s, suite au geste de l'interrupteur.": "The robot has been running the Lidl app since %s, after the power switch gesture.",
+  "Le robot fonctionne avec l'appli Lidl depuis le %s.": "The robot has been running the Lidl app since %s.",
+  "Appli Lidl": "Lidl app",
+  "Camybrith Cooking reste en mode Démo : il ne touche pas au moteur tant que le robot est sur l'appli Lidl.": "Camybrith Cooking stays in Demo mode: it does not touch the motor while the robot is on the Lidl app.",
+  "Rester sur l'appli Lidl": "Stay on the Lidl app",
+  "Écran figé ? Éteignez et rallumez le robot 3 fois de suite (moins de 2 minutes à chaque fois) : il repartira sur l'appli Lidl.": "Screen frozen? Switch the robot off and on 3 times in a row (less than 2 minutes each time): it will restart on the Lidl app."
 }

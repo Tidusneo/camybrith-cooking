@@ -7,25 +7,25 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class BackupTest {
-    private val mo = 1024L * 1024
+    private val mb = 1024L * 1024
 
-    @Test fun alerteSousDixPourcent() {
-        assertTrue(Space.alerte(99 * mo, 1000 * mo))
-        assertFalse(Space.alerte(100 * mo, 1000 * mo))
-        assertFalse(Space.alerte(0, 0))
-        assertEquals(15, Space.pourcentLibre(150, 1000))
+    @Test fun alertBelowTenPercent() {
+        assertTrue(Space.isLow(99 * mb, 1000 * mb))
+        assertFalse(Space.isLow(100 * mb, 1000 * mb))
+        assertFalse(Space.isLow(0, 0))
+        assertEquals(15, Space.percentFree(150, 1000))
     }
 
-    @Test fun seuilDeSauvegarde() {
-        assertTrue(Space.peutSauvegarder(53 * mo, 3 * mo))
-        assertFalse(Space.peutSauvegarder(52 * mo, 3 * mo))
-        assertFalse(Space.peutRecreerReserve(10 * mo))
-        assertTrue(Space.peutRecreerReserve(30 * mo))
+    @Test fun backupThreshold() {
+        assertTrue(Space.canBackup(53 * mb, 3 * mb))
+        assertFalse(Space.canBackup(52 * mb, 3 * mb))
+        assertFalse(Space.canRecreateReserve(10 * mb))
+        assertTrue(Space.canRecreateReserve(30 * mb))
     }
 
-    @Test fun taillesLisibles() {
-        assertEquals("350 Mo", Space.lisible(350 * mo))
-        assertEquals("1,2 Go", Space.lisible(1229 * mo))
-        assertEquals("12 Ko", Space.lisible(12 * 1024))
+    @Test fun readableSizes() {
+        assertEquals("350 Mo", Space.readable(350 * mb))
+        assertEquals("1,2 Go", Space.readable(1229 * mb))
+        assertEquals("12 Ko", Space.readable(12 * 1024))
     }
 }

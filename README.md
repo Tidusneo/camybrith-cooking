@@ -120,8 +120,8 @@ core/                logique en Kotlin pur, testée sans Android (protocole, sé
 commun/              code partagé entre l'interface et le pilote
 pilote/              appli « pilote moteur » (app.toque.pilote)
 app/                 appli interface (app.toque)
-moteur-secours/      moteur de la commande « camybrith » du module de secours (code de core/backup)
-banc/fausse-lidl/    fausse appli Lidl pour le banc d'essai sur émulateur (jamais publiée)
+rescue-engine/      moteur de la commande « camybrith » du module de secours (code de core/backup)
+bench/fake-lidl/    fausse appli Lidl pour le banc d'essai sur émulateur (jamais publiée)
 specs/               spécifications des fonctions (Spec Kit) et constitution du projet (.specify/)
 ```
 

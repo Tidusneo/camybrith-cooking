@@ -7,6 +7,7 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.os.Process
+import app.toque.backup.Rescue
 import app.toque.core.i18n.I18n
 import app.toque.core.machine.TemperatureTable
 import app.toque.machine.MachineClient
@@ -54,6 +55,15 @@ class ToqueApp : Application() {
             }
         }
         log.write("interface", "démarrage")
+        // Spec 007: the robot went back to the Lidl app (from the computer, the power switch
+        // gesture or the rescue mode) while Camybrith was in Machine réelle. The Lidl app now owns
+        // the motor: Camybrith switches to Démo BEFORE any connection to the pilot (principle I).
+        if (prefs.mode == Prefs.Mode.HARDWARE && Rescue.mode(3_000).lidl) {
+            prefs.mode = Prefs.Mode.DEMO
+            log.write("interface", "robot en mode Lidl : passage en Démo")
+        }
+        // Test bench (spec 007, B6): version that crashes at startup, never published.
+        if (resources.getBoolean(R.bool.bench_crash)) throw IllegalStateException("test bench: deliberate crash at startup")
         TimeSync.start(this, prefs, log)
         homeAssistant.restart()
         // Version prudente (tout interprété) : rien à surveiller.

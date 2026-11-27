@@ -1,28 +1,29 @@
 #!/bin/bash
-# Banc d'essai sur émulateur (spec 007, quickstart §B) : teste le retour à l'appli Lidl SANS le
-# robot. Un émulateur Android 8.1 reçoit une FAUSSE appli Lidl (banc/fausse-lidl), Camybrith et
-# le module de secours ; chaque scénario affiche OK ou ÉCHEC.
+# Emulator test bench (spec 007, quickstart §B): tests going back to the Lidl app WITHOUT the
+# robot. An Android 8.1 emulator gets a FAKE Lidl app (bench/fake-lidl), Camybrith and the rescue
+# module; each scenario prints OK or ÉCHEC (results are in French, like the other scripts).
 #
-#   bash outils/banc-essai.sh              # tous les scénarios disponibles
-#   bash outils/banc-essai.sh B2 B3        # seulement ceux-là
-#   bash outils/banc-essai.sh B5 aleatoire # coupures à des instants tirés au hasard (20 essais)
-#   bash outils/banc-essai.sh arreter      # éteint l'émulateur
+#   bash outils/banc-essai.sh               # the default scenarios
+#   bash outils/banc-essai.sh B2 B3         # only these
+#   bash outils/banc-essai.sh B5 aleatoire  # power cuts at random times (20 runs)
+#   bash outils/banc-essai.sh B11           # long mode: 100 restarts spaced by more than 2 min
+#   bash outils/banc-essai.sh arreter       # switches the emulator off
 #
-# Prérequis : JDK 17 et SDK Android (README, « Fabriquer les APK soi-même »). Rien n'est envoyé au
-# robot : toutes les commandes visent l'émulateur emulator-5580.
+# Requires JDK 17 and the Android SDK (README, "Fabriquer les APK soi-même"). Nothing is sent to
+# the robot: every command targets the emulator emulator-5580.
 #
-# Limites (research.md D11) : pas de vrai Magisk (le module est copié à la main et service.sh lancé
-# par ce script à chaque démarrage), pas de su pour l'interface (B1 passe par la commande du module),
-# pas de vrai service moteur ni de port série.
+# Limits (research.md D11): no real Magisk (the module is copied by hand, and post-fs-data.sh and
+# service.sh are run by this script at every boot, with a stand-in for Magisk's "su -c"), the
+# interface has no root (B1 goes through the module's command), no real motor service or serial port.
 set -u
-RACINE=$(cd "$(dirname "$0")/.." && pwd)
+ROOT=$(cd "$(dirname "$0")/.." && pwd)
 SDK=${ANDROID_HOME:-${ANDROID_SDK_ROOT:-$HOME/Library/Android/sdk}}
 [ -d "$SDK" ] || SDK=$HOME/Android/Sdk
 ADB="$SDK/platform-tools/adb"
 EMU="$SDK/emulator/emulator"
 AVD=camybrith-banc
 PORT=5580
-SERIE=emulator-$PORT
+SERIAL=emulator-$PORT
 case "$(uname -m)" in arm64|aarch64) ABI=arm64-v8a ;; *) ABI=x86_64 ;; esac
 IMAGE="system-images;android-27;default;$ABI"
 if [ -z "${JAVA_HOME:-}" ] && [ -d /opt/homebrew/opt/openjdk@17 ]; then export JAVA_HOME=/opt/homebrew/opt/openjdk@17; fi
@@ -32,17 +33,16 @@ LIDL=com.tecpal.device.mc30
 SVC=$LIDL/$LIDL.SerialPortMC30Service
 BOOT=app.toque/app.toque.recipes.BootReceiver
 HOME_ALIAS=app.toque/app.toque.ui.Accueil
-JOURNAL="$RACINE/build/banc-essai"
-mkdir -p "$JOURNAL"
+LOGS="$ROOT/build/banc-essai"
+mkdir -p "$LOGS"
 
-a() { "$ADB" -s "$SERIE" "$@"; }
+a() { "$ADB" -s "$SERIAL" "$@"; }
 sh_() { a shell "$@" | tr -d '\r'; }
 cam() { sh_ "sh $MOD/camybrith $*"; }
-dire() { echo "  $*"; }
 
-# ------------------------------------------------------------------ émulateur
+# ------------------------------------------------------------------ emulator
 
-creer_avd() {
+create_avd() {
   [ -x "$EMU" ] || { echo "Émulateur absent : $SDK/emulator. Installe-le avec sdkmanager \"emulator\"."; exit 1; }
   local sm
   sm=$(ls "$SDK"/cmdline-tools/*/bin/sdkmanager 2>/dev/null | head -1)
@@ -58,83 +58,107 @@ creer_avd() {
   fi
 }
 
-en_marche() { "$ADB" devices | grep -q "^${SERIE}[[:space:]]*device"; }
+running() { "$ADB" devices | grep -q "^${SERIAL}[[:space:]]*device"; }
 
-attendre_demarrage() {
+# Stand-in for Magisk's "su -c" (the emulator's su does not understand it), in /sbin (in memory,
+# redone at every boot): the outils/ scripts use it.
+su_stand_in() {
+  sh_ 'mount -o remount,rw / 2>/dev/null; printf "#!/system/bin/sh\n[ \"\$1\" = -c ] && { shift; exec /system/bin/sh -c \"\$*\"; }\nexec /system/xbin/su \"\$@\"\n" > /sbin/su; chmod 755 /sbin/su; mount -o remount,ro / 2>/dev/null' >/dev/null
+}
+
+# Magisk runs post-fs-data.sh early at every boot, then service.sh; here the bench does it:
+# post-fs-data.sh as soon as adb answers (before the end of the boot), service.sh afterwards.
+wait_for_boot() {
   a wait-for-device
+  a root >/dev/null 2>&1
+  sleep 1
+  a wait-for-device
+  sh_ "[ -f $MOD/post-fs-data.sh ] && sh $MOD/post-fs-data.sh" >/dev/null
   local i
-  for i in $(seq 1 120); do
+  for i in $(seq 1 150); do
     [ "$(sh_ getprop sys.boot_completed)" = 1 ] && break
     sleep 2
   done
-  a root >/dev/null 2>&1
-  sleep 2
-  a wait-for-device
-  for i in $(seq 1 60); do [ "$(sh_ getprop sys.boot_completed)" = 1 ] && break; sleep 1; done
+  su_stand_in
 }
 
-# Magisk lance service.sh à chaque démarrage ; ici, c'est le banc qui le fait (en arrière-plan).
-apres_demarrage() {
-  attendre_demarrage
-  sh_ "[ -f $MOD/service.sh ] && (nohup sh $MOD/service.sh >/dev/null 2>&1 &)" >/dev/null
+after_boot() {
+  wait_for_boot
+  sh_ "rm -f $CAM/demarrage.log; [ -f $MOD/service.sh ] && (nohup sh $MOD/service.sh >/dev/null 2>&1 &)" >/dev/null
+  # As on the robot, let the module finish its boot work before looking.
+  local i
+  for i in $(seq 1 60); do
+    sh_ "cat $CAM/demarrage.log 2>/dev/null" | grep -q "Démarrage traité" && break
+    sleep 1
+  done
 }
 
-demarrer() {
-  if en_marche; then return; fi
-  creer_avd
+start_emulator() {
+  if running; then
+    # Already on (previous bench run): restore root and the su stand-in.
+    a root >/dev/null 2>&1; sleep 1; a wait-for-device; su_stand_in
+    return
+  fi
+  create_avd
   echo "Démarrage de l'émulateur (une à deux minutes)…"
   nohup "$EMU" -avd "$AVD" -port "$PORT" -no-window -no-audio -no-boot-anim -no-snapshot \
-    -gpu swiftshader_indirect >"$JOURNAL/emulateur.log" 2>&1 &
+    -gpu swiftshader_indirect >"$LOGS/emulateur.log" 2>&1 &
   sleep 5
-  apres_demarrage
+  after_boot
 }
 
-couper() {
-  # Arrêt brutal, comme une coupure de courant (rien n'est écrit proprement).
+power_cut() {
+  # Hard stop, like a power cut (nothing is written cleanly).
   a emu kill >/dev/null 2>&1
   local i
-  for i in $(seq 1 30); do en_marche || break; sleep 1; done
+  for i in $(seq 1 30); do running || break; sleep 1; done
   sleep 2
 }
 
-redemarrer() {
+restart() {
   a shell svc power reboot >/dev/null 2>&1 || a reboot
   sleep 8
-  apres_demarrage
+  after_boot
 }
 
 # ------------------------------------------------------------------ installation
 
-installer() {
+install_all() {
   echo "Compilation (fausse appli Lidl, moteur de secours, Camybrith)…"
-  (cd "$RACINE" && ./gradlew -q :banc:fausse-lidl:assembleDebug :moteur-secours:versModule :pilote:assembleDebug :app:assembleDebug) \
-    >"$JOURNAL/gradle.log" 2>&1 || { echo "La compilation a échoué : $JOURNAL/gradle.log"; exit 1; }
-  a install -r "$RACINE/banc/fausse-lidl/build/outputs/apk/debug/fausse-lidl-debug.apk" >/dev/null
-  a install -r "$RACINE/pilote/build/outputs/apk/debug/pilote-debug.apk" >/dev/null
-  a install -r "$RACINE/app/build/outputs/apk/debug/app-debug.apk" >/dev/null
-  # Comme sur le robot : pas d'autre écran d'accueil que l'appli Lidl et Camybrith.
+  (cd "$ROOT" && ./gradlew -q :bench:fake-lidl:assembleDebug :rescue-engine:toModule :pilote:assembleDebug :app:assembleDebug) \
+    >"$LOGS/gradle.log" 2>&1 || { echo "La compilation a échoué : $LOGS/gradle.log"; exit 1; }
+  a install -r "$ROOT/bench/fake-lidl/build/outputs/apk/debug/fake-lidl-debug.apk" >/dev/null
+  a install -r "$ROOT/pilote/build/outputs/apk/debug/pilote-debug.apk" >/dev/null
+  a install -r "$ROOT/app/build/outputs/apk/debug/app-debug.apk" >/dev/null
+  # As on the robot: no home screen other than the Lidl app and Camybrith.
   sh_ "pm disable com.android.launcher3" >/dev/null 2>&1
   sh_ "mkdir -p $MOD $CAM && chmod 700 $CAM" >/dev/null
   local f
-  for f in module.prop camybrith service.sh camybrith.apk; do a push "$RACINE/modules/secours/$f" "$MOD/$f" >/dev/null; done
-  sh_ "chmod 755 $MOD/camybrith $MOD/service.sh; touch $CAM/banc" >/dev/null
+  for f in module.prop camybrith post-fs-data.sh service.sh camybrith.apk; do a push "$ROOT/modules/secours/$f" "$MOD/$f" >/dev/null; done
+  sh_ "chmod 755 $MOD/camybrith $MOD/service.sh $MOD/post-fs-data.sh; touch $CAM/bench" >/dev/null
+  cp "$ROOT/app/build/outputs/apk/debug/app-debug.apk" "$LOGS/app-normal.apk"
 }
 
-# État de départ de chaque scénario : robot « installé » puis passé en Machine réelle, sans journal.
-etat_initial() {
-  sh_ "am force-stop app.toque; cd $CAM && rm -rf registre.json op.json mode.json bilans secours.json banc-arrete corrections-demarrage.json cuisson.json" >/dev/null
+# Starting state of every scenario: robot "installed" then switched to Machine réelle, no journal.
+initial_state() {
+  sh_ "pm path app.toque" | grep -q package: || a install "$LOGS/app-normal.apk" >/dev/null
+  sh_ "am force-stop app.toque; cd $CAM && rm -rf registre.json op.json mode.json bilans secours.json bench-stopped corrections-demarrage.json cuisson.json demarrages-courts" >/dev/null
   sh_ "pm enable $SVC; pm enable $BOOT; pm enable $HOME_ALIAS" >/dev/null
-  # Ce que fait outils/installer.sh (T018) : inscrire le démarrage de Camybrith avant d'installer.
+  # As on the robot: Camybrith is the chosen home screen.
+  sh_ "cmd package set-home-activity $HOME_ALIAS" >/dev/null
+  # What outils/installer.sh does (T018): record Camybrith's startup before installing.
   cam noter demarrage "$BOOT" absent enabled lidl installer.sh >/dev/null
   cam noter demarrage "$HOME_ALIAS" absent enabled lidl installer.sh >/dev/null
-  passage_machine_reelle >/dev/null
+  switch_to_real_machine >/dev/null
   sh_ "printf '%s' '{\"occupe\":false,\"programme\":\"\",\"maj\":\"2026-01-01T00:00:00+00:00\"}' > $CAM/cuisson.json"
   sh_ "am start -a android.intent.action.MAIN -c android.intent.category.HOME" >/dev/null
-  sleep 2
+  # Android writes component states to disk about ten seconds after a change: wait, so that a
+  # power cut does not bring back the previous scenario's state.
+  sleep 12
 }
 
-# Ce que fait l'interface au passage en Machine réelle (LidlSync, T017) : noter, agir, confirmer.
-passage_machine_reelle() {
+# What the interface does when switching to Machine réelle (LidlSync, T017): record, act, confirm.
+switch_to_real_machine() {
   local id
   id=$(cam noter composant "$SVC" enabled disabled lidl interface | tail -1)
   case "$id" in ''|*[!0-9]*) echo "noter a échoué : $id"; return 1 ;; esac
@@ -143,10 +167,10 @@ passage_machine_reelle() {
   echo "$id"
 }
 
-# ------------------------------------------------------------------ contrôles
+# ------------------------------------------------------------------ checks
 
-# Vrai si le composant paquet/classe est listé sous « disabledComponents: » (même lecture que core).
-desactive() {
+# True if package/class is listed under "disabledComponents:" (same parsing as core).
+is_disabled() {
   sh_ "dumpsys package ${1%%/*}" | awk -v c="${1#*/}" '
     { t=$0; sub(/^ +/, "", t); ind=length($0)-length(t) }
     n>=0 && (t=="" || ind<=n) { n=-1 }
@@ -154,137 +178,233 @@ desactive() {
     t=="disabledComponents:" { n=ind }
     BEGIN { n=-1 } END { exit f?0:1 }'
 }
-accueil() { sh_ "cmd package resolve-activity --brief -a android.intent.action.MAIN -c android.intent.category.HOME" | tail -1; }
-devant() { sh_ "dumpsys activity activities" | grep -m1 mResumedActivity | sed 's/.* u0 \([^ ]*\).*/\1/'; }
-attendre_lidl_devant() {
+home_screen() { sh_ "cmd package resolve-activity --brief -a android.intent.action.MAIN -c android.intent.category.HOME" | tail -1; }
+foreground() { sh_ "dumpsys activity activities" | grep -m1 mResumedActivity | sed 's/.* u0 \([^ ]*\).*/\1/'; }
+wait_lidl_in_front() {
   local i
-  for i in $(seq 1 ${1:-60}); do case "$(devant)" in $LIDL/*) return 0 ;; esac; sleep 1; done
+  for i in $(seq 1 "${1:-60}"); do case "$(foreground)" in $LIDL/*) return 0 ;; esac; sleep 1; done
   return 1
 }
+in_lidl_mode() { sh_ "cat $CAM/mode.json 2>/dev/null" | grep -q '"lidl"'; }
 
-ECHECS=0
-verdict() { # nom, liste d'erreurs
-  if [ -z "$2" ]; then echo "OK      $1"; else echo "ÉCHEC   $1 :$2"; ECHECS=$((ECHECS + 1)); fi
+FAILURES=0
+verdict() { # name, list of errors (French, shown)
+  if [ -z "$2" ]; then echo "OK      $1"; else echo "ÉCHEC   $1 :$2"; FAILURES=$((FAILURES + 1)); fi
 }
 
-controles_mode_lidl() {
+lidl_mode_checks() {
   local e=""
-  desactive "$SVC" && e="$e service moteur Lidl toujours désactivé;"
-  desactive "$BOOT" || e="$e BootReceiver actif;"
-  desactive "$HOME_ALIAS" || e="$e alias d'accueil actif;"
-  case "$(accueil)" in $LIDL/*) ;; *) e="$e accueil = $(accueil);" ;; esac
+  is_disabled "$SVC" && e="$e service moteur Lidl toujours désactivé;"
+  is_disabled "$BOOT" || e="$e BootReceiver actif;"
+  is_disabled "$HOME_ALIAS" || e="$e alias d'accueil actif;"
+  case "$(home_screen)" in $LIDL/*) ;; *) e="$e accueil = $(home_screen);" ;; esac
   sh_ "[ -f $CAM/op.json ] && echo journal" | grep -q journal && e="$e journal pas effacé;"
-  sh_ "cat $CAM/mode.json 2>/dev/null" | grep -q '"lidl"' || e="$e mode.json pas en lidl;"
-  attendre_lidl_devant 60 || e="$e appli au premier plan = $(devant);"
+  in_lidl_mode || e="$e mode.json pas en lidl;"
+  wait_lidl_in_front 60 || e="$e appli au premier plan = $(foreground);"
   echo "$e"
 }
 
-# ------------------------------------------------------------------ scénarios
+# Checks when the interface is no longer installed (B7).
+lidl_checks_without_interface() {
+  local e=""
+  is_disabled "$SVC" && e="$e service moteur Lidl toujours désactivé;"
+  case "$(home_screen)" in $LIDL/*) ;; *) e="$e accueil = $(home_screen);" ;; esac
+  in_lidl_mode || e="$e mode.json pas en lidl;"
+  wait_lidl_in_front 60 || e="$e appli au premier plan = $(foreground);"
+  echo "$e"
+}
+
+# ------------------------------------------------------------------ scenarios
 
 B1() {
-  etat_initial
+  initial_state
   sh_ "pm enable $SVC" >/dev/null
   sh_ "cd $CAM && rm -f registre.json" >/dev/null
   local id e=""
-  id=$(passage_machine_reelle) || e="$e $id;"
-  desactive "$SVC" || e="$e service pas désactivé;"
+  id=$(switch_to_real_machine) || e="$e $id;"
+  is_disabled "$SVC" || e="$e service pas désactivé;"
   sh_ "cat $CAM/registre.json" | grep -q "\"cible\": \"$SVC\"" || e="$e pas inscrit au registre;"
   sh_ "cat $CAM/registre.json" | grep -q '"confirme": true' || e="$e inscription pas confirmée;"
-  # Une cible hors format est refusée et rien n'est inscrit.
+  # An off-format target is refused and nothing is recorded.
   cam noter composant "x; reboot" enabled disabled lidl interface >/dev/null
   sh_ "cat $CAM/registre.json" | grep -q reboot && e="$e cible invalide acceptée;"
   verdict "B1 passage en Machine réelle inscrit au registre avant d'agir" "$e"
 }
 
 B2() {
-  etat_initial
+  initial_state
   local t0 t1 e
   t0=$(date +%s)
-  cam retour-lidl >"$JOURNAL/B2.txt" 2>&1
+  cam retour-lidl >"$LOGS/B2.txt" 2>&1
   sleep 8
-  apres_demarrage
-  e=$(controles_mode_lidl)
+  after_boot
+  e=$(lidl_mode_checks)
   t1=$(date +%s)
   [ $((t1 - t0)) -le 180 ] || e="$e $((t1 - t0)) s (plus de 3 min);"
-  grep -q "Résultat : réussi" "$JOURNAL/B2.txt" || e="$e bilan pas réussi (voir $JOURNAL/B2.txt);"
+  grep -q "Résultat : réussi" "$LOGS/B2.txt" || e="$e bilan pas réussi (voir $LOGS/B2.txt);"
+  local p
   for p in app.toque app.toque.pilote; do [ -n "$(sh_ "pidof $p")" ] && e="$e $p tourne;"; done
   verdict "B2 retour à l'appli Lidl en $((t1 - t0)) s" "$e"
 }
 
 B3() {
-  # Suite de B2 : le robot est en mode Lidl.
-  sh_ "cat $CAM/mode.json 2>/dev/null" | grep -q '"lidl"' || { cam retour-lidl >/dev/null 2>&1; sleep 8; apres_demarrage; }
+  # Follows B2: the robot is in Lidl mode.
+  in_lidl_mode || { cam retour-lidl >/dev/null 2>&1; sleep 8; after_boot; }
   local i e=""
   for i in 1 2 3; do
-    redemarrer
-    attendre_lidl_devant 90 || e="$e démarrage $i : $(devant);"
+    restart
+    wait_lidl_in_front 90 || e="$e démarrage $i : $(foreground);"
   done
   sleep 5
-  e="$e$(controles_mode_lidl)"
+  e="$e$(lidl_mode_checks)"
   verdict "B3 trois redémarrages, toujours l'appli Lidl" "$e"
 }
 
 B5() {
-  local etapes="debut arret annulation verification termine" etape e tout=""
-  if [ "${1:-}" = aleatoire ]; then B5_aleatoire; return; fi
-  for etape in $etapes; do
-    etat_initial
-    sh_ "cd $CAM && rm -f banc-arrete" >/dev/null
-    # Le moteur s'arrête net à cette étape (fichier « banc » présent : émulateur seulement).
-    (a shell "CAMYBRITH_BANC_ARRET=$etape sh $MOD/camybrith retour-lidl" >/dev/null 2>&1 &)
+  local step e all=""
+  for step in debut arret annulation verification termine; do
+    initial_state
+    sh_ "cd $CAM && rm -f bench-stopped" >/dev/null
+    # The engine stops dead at this step ("bench" marker file present: emulator only).
+    (a shell "CAMYBRITH_BENCH_STOP=$step sh $MOD/camybrith retour-lidl" >/dev/null 2>&1 &)
     local i
-    for i in $(seq 1 60); do sh_ "cat $CAM/banc-arrete 2>/dev/null" | grep -q "$etape" && break; sleep 1; done
-    couper
-    demarrer
+    for i in $(seq 1 60); do sh_ "cat $CAM/bench-stopped 2>/dev/null" | grep -q "$step" && break; sleep 1; done
+    power_cut
+    start_emulator
     sleep 5
-    e=$(controles_mode_lidl)
-    [ -z "$e" ] || tout="$tout [$etape]$e"
-    echo "        coupure à l'étape « $etape » : ${e:-ok}"
+    e=$(lidl_mode_checks)
+    [ -z "$e" ] || all="$all [$step]$e"
+    echo "        coupure à l'étape « $step » : ${e:-ok}"
   done
-  verdict "B5 coupure à chaque étape du retour" "$tout"
+  verdict "B5 coupure à chaque étape du retour" "$all"
 }
 
-B5_aleatoire() {
-  local n=${N_ALEATOIRE:-20} k ok=0 e
+B5_random() {
+  local n=${N_RANDOM:-20} k ok=0 e
   for k in $(seq 1 "$n"); do
-    etat_initial
-    local delai
-    delai=$(awk -v s="$RANDOM" 'BEGIN{srand(s); printf "%.1f", rand()*4}')
+    initial_state
+    sh_ "rm -f $CAM/demarrages-courts" >/dev/null
+    local delay
+    delay=$(awk -v s="$RANDOM" 'BEGIN{srand(s); printf "%.1f", rand()*4}')
     (a shell "sh $MOD/camybrith retour-lidl --sans-redemarrage" >/dev/null 2>&1 &)
-    sleep "$delai"
-    couper
-    demarrer
+    sleep "$delay"
+    power_cut
+    start_emulator
     sleep 5
-    e=$(controles_mode_lidl)
-    # Coupure avant même le début du journal : le robot est encore en Camybrith, c'est normal ;
-    # mais il ne doit jamais être dans un état intermédiaire.
-    if [ -z "$e" ]; then ok=$((ok + 1)); echo "        essai $k (coupure à ${delai} s) : retour terminé"
-    elif ! desactive "$HOME_ALIAS" && desactive "$SVC" && ! sh_ "ls $CAM/mode.json" >/dev/null 2>&1; then
-      ok=$((ok + 1)); echo "        essai $k (coupure à ${delai} s) : coupé avant le début, robot resté sur Camybrith"
-    else echo "        essai $k (coupure à ${delai} s) : ÉTAT INTERMÉDIAIRE :$e"
+    e=$(lidl_mode_checks)
+    # Cut before the journal even started: the robot is still on Camybrith, which is fine; but it
+    # must never be in an in-between state.
+    if [ -z "$e" ]; then ok=$((ok + 1)); echo "        essai $k (coupure à ${delay} s) : retour terminé"
+    elif ! is_disabled "$HOME_ALIAS" && is_disabled "$SVC" && ! sh_ "ls $CAM/mode.json" >/dev/null 2>&1; then
+      ok=$((ok + 1)); echo "        essai $k (coupure à ${delay} s) : coupé avant le début, robot resté sur Camybrith"
+    else echo "        essai $k (coupure à ${delay} s) : ÉTAT INTERMÉDIAIRE :$e"
     fi
   done
-  [ "$ok" = "$n" ] && verdict "B5 aleatoire $ok/$n" "" || verdict "B5 aleatoire $ok/$n" " états intermédiaires"
+  if [ "$ok" = "$n" ]; then verdict "B5 aleatoire $ok/$n" ""; else verdict "B5 aleatoire $ok/$n" " états intermédiaires"; fi
 }
 
-# ------------------------------------------------------------------ programme
+B6() {
+  initial_state
+  echo "        fabrication d'une version qui plante au démarrage…"
+  (cd "$ROOT" && ./gradlew -q -Pbench.crash=true :app:assembleDebug) >"$LOGS/gradle-crash.log" 2>&1 \
+    || { verdict "B6 mode de secours" " compilation de la version qui plante impossible"; return; }
+  cp "$ROOT/app/build/outputs/apk/debug/app-debug.apk" "$LOGS/app-crash.apk"
+  (cd "$ROOT" && ./gradlew -q :app:assembleDebug) >>"$LOGS/gradle-crash.log" 2>&1
+  a install -r "$LOGS/app-crash.apk" >/dev/null
+  sleep 12
+  restart
+  local i e=""
+  for i in $(seq 1 75); do in_lidl_mode && break; sleep 2; done
+  e=$(lidl_mode_checks)
+  sh_ "cat $CAM/secours.json 2>/dev/null" | grep -q '"plantages"' || e="$e secours.json absent;"
+  sh_ "cat $CAM/mode.json 2>/dev/null" | grep -q '"secours"' || e="$e origine pas « secours »;"
+  sh_ "cat $CAM/demarrage.log" > "$LOGS/B6.txt"
+  a install -r "$LOGS/app-normal.apk" >/dev/null
+  verdict "B6 trois plantages au démarrage, retour automatique" "$e"
+}
+
+B7() {
+  initial_state
+  sh_ "pm uninstall app.toque" >/dev/null
+  printf 'o\no\n' | ROBOT_SERIAL=$SERIAL bash "$ROOT/outils/origine.sh" >"$LOGS/B7.txt" 2>&1
+  sleep 8
+  after_boot
+  local e
+  e=$(lidl_checks_without_interface)
+  grep -q "Résultat : réussi" "$LOGS/B7.txt" || e="$e bilan pas réussi (voir $LOGS/B7.txt);"
+  a install "$LOGS/app-normal.apk" >/dev/null
+  verdict "B7 retour depuis l'ordinateur, interface désinstallée" "$e"
+}
+
+# A short boot: switch on, wait for the end of the boot, cut before 2 minutes.
+short_boot() { power_cut; start_emulator; sleep 10; }
+
+B10() {
+  local n=${N_GESTURE:-10} k ok=0 e
+  for k in $(seq 1 "$n"); do
+    initial_state
+    sh_ "echo 0 > $CAM/demarrages-courts"
+    short_boot; short_boot
+    # After two short boots, still Camybrith.
+    e=""
+    in_lidl_mode && e=" retour déjà fait au 2e démarrage;"
+    short_boot
+    sleep 20
+    e="$e$(lidl_mode_checks)"
+    sh_ "cat $CAM/mode.json 2>/dev/null" | grep -q '"geste"' || e="$e origine pas « geste »;"
+    if [ -z "$e" ]; then ok=$((ok + 1)); echo "        essai $k : appli Lidl au 3e démarrage"
+    else echo "        essai $k :$e"; fi
+  done
+  if [ "$ok" = "$n" ]; then verdict "B10 geste de l'interrupteur $ok/$n" ""; else verdict "B10 geste de l'interrupteur $ok/$n" " échecs"; fi
+}
+
+B11() {
+  local n=${N_LONG:-100} k e=""
+  initial_state
+  for k in $(seq 1 "$n"); do
+    restart
+    sleep 130   # on for more than 2 minutes: the counter goes back to 0
+    in_lidl_mode && { e=" déclenché au redémarrage $k;"; break; }
+    [ $((k % 10)) = 0 ] && echo "        $k redémarrages espacés, aucun déclenchement"
+  done
+  verdict "B11 redémarrages espacés ($n), jamais de déclenchement" "$e"
+}
+
+B13() {
+  local v e all=""
+  for v in "abc" "99999999999999999999" "" "-5"; do
+    initial_state
+    sh_ "printf '%s' '$v' > $CAM/demarrages-courts"
+    restart
+    sleep 20
+    e=""
+    in_lidl_mode && e="$e retour déclenché;"
+    [ "$(foreground | cut -d/ -f1)" = app.toque ] || e="$e Camybrith pas au premier plan ($(foreground));"
+    case "$(sh_ "cat $CAM/demarrages-courts")" in 1|0) ;; *) e="$e compteur = $(sh_ "cat $CAM/demarrages-courts");" ;; esac
+    [ -z "$e" ] || all="$all [« $v »]$e"
+  done
+  verdict "B13 compteur du geste illisible : démarrage normal" "$all"
+}
+
+# ------------------------------------------------------------------ main
 
 case "${1:-}" in
-  arreter) en_marche && a emu kill >/dev/null; echo "Émulateur arrêté."; exit 0 ;;
+  arreter) running && a emu kill >/dev/null; echo "Émulateur arrêté."; exit 0 ;;
 esac
-SCEN=${*:-"B1 B2 B3 B5"}
-demarrer
-installer
-echo "Scénarios : $SCEN"
-set -- $SCEN
+SCENARIOS=${*:-"B1 B2 B3 B5 B6 B7 B10 B13"}
+start_emulator
+install_all
+echo "Scénarios : $SCENARIOS"
+# shellcheck disable=SC2086
+set -- $SCENARIOS
 while [ $# -gt 0 ]; do
   case "$1" in
-    B1|B2|B3) "$1" ;;
-    B5) if [ "${2:-}" = aleatoire ]; then B5 aleatoire; shift; else B5; fi ;;
+    B1|B2|B3|B6|B7|B10|B11|B13) "$1" ;;
+    B5) if [ "${2:-}" = aleatoire ]; then B5_random; shift; else B5; fi ;;
     *) echo "Scénario inconnu ou pas encore écrit : $1" ;;
   esac
   shift
 done
 echo
-[ "$ECHECS" = 0 ] && echo "Tout est OK." || echo "$ECHECS scénario(s) en ÉCHEC. Journaux : $JOURNAL"
-exit "$ECHECS"
+if [ "$FAILURES" = 0 ]; then echo "Tout est OK."; else echo "$FAILURES scénario(s) en ÉCHEC. Journaux : $LOGS"; fi
+exit "$FAILURES"

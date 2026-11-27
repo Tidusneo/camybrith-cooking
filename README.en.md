@@ -121,8 +121,8 @@ core/                pure Kotlin logic, tested without Android (protocol, safety
 commun/              code shared by the interface and the pilot
 pilote/              "motor pilot" app (app.toque.pilote)
 app/                 interface app (app.toque)
-moteur-secours/      engine of the rescue module's "camybrith" command (code from core/backup)
-banc/fausse-lidl/    fake Lidl app for the emulator test bench (never published)
+rescue-engine/      engine of the rescue module's "camybrith" command (code from core/backup)
+bench/fake-lidl/    fake Lidl app for the emulator test bench (never published)
 specs/               feature specifications (Spec Kit) and project constitution (.specify/)
 ```
 
