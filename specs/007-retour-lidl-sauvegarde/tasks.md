@@ -204,7 +204,7 @@ Dépôt existant (plan.md › Project Structure) : `core/` (Kotlin pur), `app/`,
 - [X] T071 [P] Mettre à jour `assistant/camybrith-installer/SKILL.md` (installer le module de secours ; utiliser `outils/origine.sh` pour revenir à l'appli Lidl)
 - [X] T072 [P] Entrée dans `CHANGELOG.md` (français et anglais) et paragraphe dans `README.md`, `README.en.md`, `README.es.md`
 - [X] T073 Relire tous les chemins d'écriture de `modules/secours/` et des scripts `outils/` : uniquement ceux de `contracts/cli.md` (principe VII) ; vérifier que `modules/secours/post-fs-data.sh` respecte les règles de research.md D13 ; consigner le résultat dans `specs/007-retour-lidl-sauvegarde/checklists/requirements.md`
-- [ ] T074 Scénario B14 (mémoire de l'émulateur remplie à 100 % : retour à l'appli Lidl, geste, démarrage, bilan `memoirePleine`, sauvegarde refusée, alerte d'espace) dans `outils/banc-essai.sh` (SC-009)
+- [X] T074 Scénario B14 (mémoire de l'émulateur remplie à 100 % : retour à l'appli Lidl, geste, démarrage, bilan `memoirePleine`, sauvegarde refusée, alerte d'espace) dans `outils/banc-essai.sh` (SC-009)
 - [ ] T075 Dérouler `bash outils/banc-essai.sh` en entier (B1 à B14), puis `quickstart.md` §C sur le robot dès qu'il est rooté
 
 ---

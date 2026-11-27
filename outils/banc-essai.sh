@@ -500,6 +500,37 @@ B9() {
   verdict "B9 retrait complet de Camybrith" "$e"
 }
 
+# Storage full (T074, SC-009): with /data at 100 %, the gesture counter, the return to the Lidl
+# app and the report still work; the backup is refused cleanly; the alert is shown. Android 8
+# itself refuses to boot with less than 50 MB free (zygote: "need at least 50"), so the storage is
+# filled once Android is running, and freed again before the restart.
+B14() {
+  initial_state
+  local e=""
+  # The module's reserve exists, as after its installation; two short boots already counted.
+  sh_ "dd if=/dev/zero of=$CAM/reserve bs=1048576 count=2 2>/dev/null; echo 2 > $CAM/demarrages-courts; sync" >/dev/null
+  echo "        remplissage de la mémoire de l'émulateur…"
+  sh_ "dd if=/dev/zero of=/data/local/tmp/plein bs=4194304 2>/dev/null; dd if=/dev/zero of=/data/local/tmp/plein2 bs=4096 2>/dev/null; sync; df /data | tail -1" > "$LOGS/B14-df.txt"
+  # Third boot, as post-fs-data.sh then service.sh would run it: the gesture with storage full.
+  sh_ "sh $MOD/post-fs-data.sh" >/dev/null
+  [ "$(sh_ "cat $CAM/demarrages-courts")" = 3 ] || e="$e compteur du geste pas écrit ($(sh_ "cat $CAM/demarrages-courts"));"
+  cam demarrage >"$LOGS/B14.txt" 2>&1
+  e="$e$(lidl_mode_checks)"
+  sh_ "cat $CAM/mode.json 2>/dev/null" | grep -q '"geste"' || e="$e geste pas déclenché;"
+  cam bilan >>"$LOGS/B14.txt" 2>&1
+  # The module runs as root, and ext4 keeps a few blocks for root: its writes usually still
+  # succeed, and the report is only marked "mémoire pleine" when one of them failed (data-model).
+  grep -q "Résultat : réussi" "$LOGS/B14.txt" || e="$e pas de bilan réussi malgré la mémoire pleine;"
+  cam etat | grep -q "PRESQUE PLEINE" || e="$e pas d'alerte d'espace;"
+  ROBOT_SERIAL=$SERIAL bash "$ROOT/outils/sauvegarde.sh" creer </dev/null >>"$LOGS/B14.txt" 2>&1
+  grep -q "Sauvegarde créée" "$LOGS/B14.txt" && e="$e sauvegarde acceptée malgré la mémoire pleine;"
+  # Space freed (as the user would, after the alert): the robot restarts on the Lidl app.
+  sh_ "rm -f /data/local/tmp/plein /data/local/tmp/plein2; sync" >/dev/null
+  restart
+  wait_lidl_in_front 90 || e="$e après redémarrage : $(foreground);"
+  verdict "B14 mémoire pleine : geste, retour, bilan, sauvegarde refusée, alerte" "$e"
+}
+
 # A short boot: switch on, wait for the end of the boot, cut before 2 minutes.
 short_boot() { power_cut; start_emulator; sleep 10; }
 
@@ -555,7 +586,7 @@ B13() {
 case "${1:-}" in
   arreter) running && a emu kill >/dev/null; echo "Émulateur arrêté."; exit 0 ;;
 esac
-SCENARIOS=${*:-"B1 B2 B3 B4 B5 B6 B7 B8 B10 B12 B13 B9"}
+SCENARIOS=${*:-"B1 B2 B3 B4 B5 B6 B7 B8 B10 B12 B13 B14 B9"}
 start_emulator
 install_all
 echo "Scénarios : $SCENARIOS"
@@ -563,7 +594,7 @@ echo "Scénarios : $SCENARIOS"
 set -- $SCENARIOS
 while [ $# -gt 0 ]; do
   case "$1" in
-    B1|B2|B3|B4|B6|B7|B8|B9|B10|B11|B12|B13) "$1" ;;
+    B1|B2|B3|B4|B6|B7|B8|B9|B10|B11|B12|B13|B14) "$1" ;;
     B5) if [ "${2:-}" = aleatoire ]; then B5_random; shift; else B5; fi ;;
     *) echo "Scénario inconnu ou pas encore écrit : $1" ;;
   esac
