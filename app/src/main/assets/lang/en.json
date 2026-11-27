@@ -622,5 +622,21 @@
   "Module de secours absent : depuis l'ordinateur, lancez bash outils/secours.sh installer": "Rescue module missing: from the computer, run bash outils/secours.sh installer",
   "Pas assez de place pour une sauvegarde : supprimez d'anciennes sauvegardes ou des photos de recettes.": "Not enough space for a backup: delete old backups or recipe photos.",
   "Sauvegarde impossible : %s": "Backup failed: %s",
-  "Sauvegarde créée : %d favoris, %d recettes perso.": "Backup created: %d favorites, %d own recipes."
+  "Sauvegarde créée : %d favoris, %d recettes perso.": "Backup created: %d favorites, %d own recipes.",
+  "Sauvegarde illisible : %s": "Unreadable backup: %s",
+  "Sauvegarde introuvable : %s": "Backup not found: %s",
+  "Sauvegarde refusée, rien n'a été modifié :": "Backup refused, nothing was changed:",
+  "Restauration annulée : la sauvegarde automatique de l'état actuel a échoué (%s)": "Restore cancelled: the automatic backup of the current state failed (%s)",
+  "Restauration faite : %d favoris, %d recettes perso. Avant, l'état actuel a été sauvegardé (%s).": "Restore done: %d favorites, %d own recipes. The current state was backed up first (%s).",
+  "Restaurer : %s": "Restore: %s",
+  "Supprimer : %s": "Delete: %s",
+  "Vérification de la sauvegarde…": "Checking the backup…",
+  "Sauvegarde refusée": "Backup refused",
+  "Restaurer la sauvegarde": "Restore the backup",
+  "Seront remplacés : %d favoris, %d recettes perso et importées, %d réglages. Les recettes Lidl ne sont pas touchées.": "Will be replaced: %d favorites, %d own and imported recipes, %d settings. Lidl recipes are not touched.",
+  "Le mot de passe MQTT n'est jamais sauvegardé : ressaisissez-le s'il n'est pas déjà réglé.": "The MQTT password is never backed up: type it again if it is not already set.",
+  "L'état actuel est sauvegardé d'abord, puis Camybrith Cooking redémarre.": "The current state is backed up first, then Camybrith Cooking restarts.",
+  "Restaurer": "Restore",
+  "Restauration…": "Restoring…",
+  "Restauration": "Restore"
 }

@@ -93,7 +93,7 @@ object Rescue {
 
     /** Back to Camybrith (US4): the module reopens MainActivity with EXTRA_RESUMED on success. */
     fun resume(): Result {
-        val r = run("reprendre", timeoutMs = 60_000)
+        val r = run("reprendre", timeoutMs = 90_000)
         return Result(r.code, (r.out + r.err).trim())
     }
 

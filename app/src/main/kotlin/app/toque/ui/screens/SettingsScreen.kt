@@ -15,6 +15,7 @@ import android.widget.ScrollView
 import android.widget.TextView
 import app.toque.Prefs
 import app.toque.TimeSync
+import app.toque.backup.BackupRestorer
 import app.toque.backup.BackupWriter
 import app.toque.backup.Rescue
 import app.toque.core.backup.Space
@@ -496,11 +497,61 @@ class SettingsScreen(a: MainActivity) : Screen(a) {
                 backupSpace.setTextColor(if (low) Ui.WARN else Ui.TEXT2)
                 backupList.removeAllViews()
                 if (entries.isEmpty()) backupList.addView(Ui.text(c, tr("Aucune sauvegarde sur le robot."), 14f, Ui.TEXT3))
-                for (e in entries) backupList.addView(link(e.name.removePrefix("camybrith-").removeSuffix(".camybrith") + " · " + Space.readable(e.size)) {
-                    a.confirm(tr("Supprimer la sauvegarde"), e.name, tr("Supprimer"), danger = true) {
-                        Thread { BackupWriter.delete(e.name); view.post { refreshBackups() } }.start()
-                    }
-                })
+                for (e in entries) {
+                    backupList.addView(link(tr("Restaurer : %s", e.name.removePrefix("camybrith-").removeSuffix(".camybrith") + " · " + Space.readable(e.size))) {
+                        restoreBackup(e.name)
+                    })
+                    backupList.addView(link(tr("Supprimer : %s", e.name.removePrefix("camybrith-").removeSuffix(".camybrith"))) {
+                        a.confirm(tr("Supprimer la sauvegarde"), e.name, tr("Supprimer"), danger = true) {
+                            Thread { BackupWriter.delete(e.name); view.post { refreshBackups() } }.start()
+                        }
+                    })
+                }
+            }
+        }.start()
+    }
+
+    /** Restore (contracts/ui.md › Restaurer): check, summary, confirmation, then restart of the app. */
+    private fun restoreBackup(name: String) {
+        if (a.snapshot.busy) {
+            a.toast(tr("Arrêtez d'abord le programme en cours"), Ui.WARN)
+            return
+        }
+        a.toast(tr("Vérification de la sauvegarde…"))
+        Thread {
+            val p = BackupRestorer.read(a, name)
+            view.post {
+                when {
+                    p == null -> a.toast(tr("Sauvegarde introuvable : %s", name), Ui.WARN)
+                    !p.ok -> a.confirm(tr("Sauvegarde refusée"), p.errors.joinToString("\n") { "• $it" }, "OK", tr("Fermer")) {}
+                    else -> a.confirm(tr("Restaurer la sauvegarde"),
+                        tr("Seront remplacés : %d favoris, %d recettes perso et importées, %d réglages. Les recettes Lidl ne sont pas touchées.",
+                            p.data.favorites.size, p.data.recipes.size, p.data.settings.size) + "\n\n" +
+                            tr("Le mot de passe MQTT n'est jamais sauvegardé : ressaisissez-le s'il n'est pas déjà réglé.") +
+                            (if (p.warnings.isNotEmpty()) "\n\n" + p.warnings.joinToString("\n") { "⚠ $it" } else "") + "\n\n" +
+                            tr("L'état actuel est sauvegardé d'abord, puis Camybrith Cooking redémarre."),
+                        tr("Restaurer"), danger = true) { runRestore(name) }
+                }
+            }
+        }.start()
+    }
+
+    private fun runRestore(name: String) {
+        if (a.snapshot.busy) return
+        a.toast(tr("Restauration…"))
+        Thread {
+            val r = BackupRestorer.restore(a, name)
+            view.post {
+                if (!r.ok) { a.confirm(tr("Restauration"), r.message, "OK", tr("Fermer")) {}; return@post }
+                a.toast(r.message, Ui.OK)
+                // Restart the interface so that everything is read again from the restored data.
+                view.postDelayed({
+                    val i = a.packageManager.getLaunchIntentForPackage(a.packageName)
+                    val pi = android.app.PendingIntent.getActivity(a, 2, i, android.app.PendingIntent.FLAG_ONE_SHOT)
+                    (a.getSystemService(android.content.Context.ALARM_SERVICE) as android.app.AlarmManager)
+                        .set(android.app.AlarmManager.RTC, System.currentTimeMillis() + 800, pi)
+                    android.os.Process.killProcess(android.os.Process.myPid())
+                }, 1_500)
             }
         }.start()
     }

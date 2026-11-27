@@ -409,6 +409,49 @@ B8() {
     unzip -p "$name" settings.json | grep -q sombre || e="$e réglages absents;"
   fi
   verdict "B8 sauvegarde en $((t1 - t0)) s, récupérée, sans secret" "$e"
+  B8_restore "$name"
+}
+
+# Restore part of B8 (T067, T068): data comes back; a damaged backup is refused; a power cut
+# between the transaction and the settings is replayed when the app opens again.
+B8_restore() {
+  local local_copy=$1 name e=""
+  name=$(basename "${local_copy:-x}")
+  [ -n "$local_copy" ] || { verdict "B8 restauration" " pas de sauvegarde à restaurer"; return; }
+  restore() { sh_ "am broadcast -f 32 -n app.toque/.backup.BackupReceiver --es restaurer $1 $2" >/dev/null; }
+  set_theme() { sh_ "am force-stop app.toque; sed -i 's#<string name=\"theme\">[^<]*</string>#<string name=\"theme\">$1</string>#' /data/data/app.toque/shared_prefs/toque.xml" >/dev/null; }
+  theme() { sh_ "grep -o 'name=\"theme\">[^<]*' /data/data/app.toque/shared_prefs/toque.xml" | sed 's/.*>//'; }
+  # 1. Normal restore: the setting comes back, an automatic backup of the current state is made.
+  set_theme clair
+  local before
+  before=$(sh_ "ls $CAM/sauvegardes | wc -l")
+  restore "$name" ""
+  sleep 15
+  [ "$(theme)" = sombre ] || e="$e réglage pas restauré ($(theme));"
+  [ "$(sh_ "ls $CAM/sauvegardes | wc -l")" -gt "$before" ] || e="$e pas de sauvegarde automatique avant;"
+  # 2. Damaged backup (one byte changed): refused, nothing modified.
+  set_theme clair
+  local bad=camybrith-20200101-000000.camybrith
+  sh_ "cp $CAM/sauvegardes/$name /data/local/tmp/$bad && printf X | dd of=/data/local/tmp/$bad bs=1 seek=40 conv=notrunc 2>/dev/null; mv /data/local/tmp/$bad $CAM/sauvegardes/$bad" >/dev/null
+  restore "$bad" ""
+  sleep 10
+  [ "$(theme)" = clair ] || e="$e sauvegarde abîmée appliquée;"
+  sh_ "rm -f $CAM/sauvegardes/$bad" >/dev/null
+  verdict "B8 restauration (et sauvegarde abîmée refusée)" "$e"
+  # 3. Power cut between the transaction and the settings: replayed at the next opening.
+  e=""
+  set_theme clair
+  sh_ "rm -f $CAM/bench-stopped" >/dev/null
+  restore "$name" "--ez arret-apres-transaction true"
+  local i
+  for i in $(seq 1 30); do sh_ "[ -f $CAM/bench-stopped ] && echo ok" | grep -q ok && break; sleep 1; done
+  power_cut
+  start_emulator
+  sh_ "am start -n app.toque/.ui.MainActivity" >/dev/null
+  sleep 10
+  [ "$(theme)" = sombre ] || e="$e restauration pas rejouée ($(theme));"
+  sh_ "[ -f /data/data/app.toque/files/restauration-en-cours ] && echo reste" | grep -q reste && e="$e marqueur pas effacé;"
+  verdict "B8 coupure pendant une restauration, rejouée à l'ouverture" "$e"
 }
 
 # Full removal (US5): no Camybrith app or module left, the fake Lidl app works, root stays.

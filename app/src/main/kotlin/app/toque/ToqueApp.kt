@@ -62,6 +62,8 @@ class ToqueApp : Application() {
             prefs.mode = Prefs.Mode.DEMO
             log.write("interface", "robot en mode Lidl : passage en Démo")
         }
+        // Spec 007, US7: a restore cut off by a power failure is replayed before anything reads the data.
+        app.toque.backup.BackupRestorer.resumeIfNeeded(this)
         // Test bench (spec 007, B6): version that crashes at startup, never published.
         if (resources.getBoolean(R.bool.bench_crash)) throw IllegalStateException("test bench: deliberate crash at startup")
         TimeSync.start(this, prefs, log)
