@@ -55,6 +55,7 @@ class RescueCommandTest {
                         (if (d.isEmpty()) "" else "      disabledComponents:\n" + d.joinToString("") { "        $it\n" }) +
                         "  Queries:\n")
                 }
+                a[0] == "pm" && a[1] == "uninstall" -> { installed.remove(a[2]); processes.remove(a[2]); res(0, "Success") }
                 a[0] == "am" && a[1] == "force-stop" -> { processes.remove(a[2]); res(0, "") }
                 a[0] == "pidof" -> res(if (a[1] in processes) 0 else 1, if (a[1] in processes) "1234" else "")
                 a[0] == "cmd" && "android.intent.category.HOME" in a -> {
@@ -286,6 +287,23 @@ class RescueCommandTest {
         assertTrue(f.enabled("$lidl/$svc"))
         assertFalse(f.enabled(RobotId.HOME_ALIAS))
         assertTrue(Mode.parse(File(dir, "mode.json").readText()).lidl)
+    }
+
+    @Test fun fullRemovalKeepsRootAndNavBar() {
+        val (f, dir, out) = setup()
+        f.installed += listOf("nu.nav.bar", "slowscript.httpfileserver", "com.topjohnwu.magisk")
+        val c = command(f, dir, out)
+        c.main(arrayOf("inscrire"))
+        assertEquals(out.joinToString("\n"), 0, c.main(arrayOf("retrait", "--avec-serveur")))
+        assertFalse(RobotId.APP in f.installed)
+        assertFalse(RobotId.PILOT in f.installed)
+        assertFalse("slowscript.httpfileserver" in f.installed)
+        assertTrue("nu.nav.bar" in f.installed)            // kept: not asked
+        assertTrue("com.topjohnwu.magisk" in f.installed)  // base: never removed
+        assertTrue(f.enabled("$lidl/$svc"))
+        assertTrue(f.commands.contains(listOf("touch", "/data/adb/modules/camybrith_secours/remove")))
+        assertFalse(dir.exists())
+        assertFalse(f.commands.contains(listOf("svc", "power", "reboot")))
     }
 
     @Test fun androidOutputParsing() {

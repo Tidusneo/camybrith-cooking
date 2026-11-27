@@ -148,8 +148,8 @@ Dépôt existant (plan.md › Project Structure) : `core/` (Kotlin pur), `app/`,
 
 **Independent Test**: quickstart §B scénario B9
 
-- [ ] T047 [US5] Sous-commande `retrait` dans `modules/secours/camybrith` : `retour-lidl` sans redémarrage, annulation des modifications `data-model.md` Modification.portee = `retrait` (Navigation Bar et HTTP File Server seulement si confirmé), jamais `socle`, puis retrait du module de secours et de `/data/adb/camybrith/` en dernier
-- [ ] T048 [US5] Script `outils/retirer.sh` : proposer une sauvegarde (`outils/sauvegarde.sh recuperer` si US6 est livré), copier le registre et les bilans (`origine.sh registre`), confirmation par élément optionnel, `camybrith retrait`
+- [X] T047 [US5] Sous-commande `retrait` dans `modules/secours/camybrith` : `retour-lidl` sans redémarrage, annulation des modifications `data-model.md` Modification.portee = `retrait` (Navigation Bar et HTTP File Server seulement si confirmé), jamais `socle`, puis retrait du module de secours et de `/data/adb/camybrith/` en dernier
+- [X] T048 [US5] Script `outils/retirer.sh` : proposer une sauvegarde (`outils/sauvegarde.sh recuperer` si US6 est livré), copier le registre et les bilans (`origine.sh registre`), confirmation par élément optionnel, `camybrith retrait`
 - [ ] T049 [US5] Scénario B9 dans `outils/banc-essai.sh`
 
 **Checkpoint**: B9 OK

@@ -66,7 +66,8 @@ class RescueCommand(
             "demarrage" -> boot()
             "surveiller" -> watch(a.getOrNull(1)?.toLongOrNull() ?: throw Stop(1, "usage : surveiller <instant du démarrage, en s>"))
             "reprendre" -> resume(origin = if ("--ordinateur" in a) Origin.COMPUTER else Origin.INTERFACE)
-            "retrait", "sauvegarder" -> throw Stop(1, "« ${a[0]} » n'est pas encore disponible dans cette version du module.")
+            "retrait" -> remove(withNavBar = "--avec-barre" in a, withFileServer = "--avec-serveur" in a)
+            "sauvegarder" -> throw Stop(1, "« ${a[0]} » n'est pas encore disponible dans cette version du module.")
             else -> {
                 out("Usage : camybrith etat|noter|noter-fin|inscrire|retour-lidl|bilan [--json]")
                 1
@@ -394,6 +395,61 @@ class RescueCommand(
         return 0
     }
 
+    // ------------------------------------------------------------------ full removal (US5)
+
+    /**
+     * Full removal of Camybrith: back to the Lidl app (no restart), then undo the `retrait` scope
+     * (Camybrith apps, boot animation, accessibility setting; Navigation Bar and HTTP File Server
+     * only if asked), never the `socle` (root and Wi-Fi access stay), and finally the rescue module
+     * itself and /data/adb/camybrith. The computer script copies the registry beforehand.
+     */
+    private fun remove(withNavBar: Boolean, withFileServer: Boolean, resuming: Boolean = false): Int {
+        prepare()
+        if (!resuming) {
+            val code = backToLidl(Origin.COMPUTER, reboot = false)
+            if (code != 0) return code
+        }
+        var reg = try { registry() } catch (e: RegistryException) { throw Stop(2, e.message ?: "registre illisible") }
+        var journal = Journal(OperationType.REMOVAL, Origin.COMPUTER, Step.START, now())
+        write(journalFile, journal.toJson())
+        journal = journal.next(Step.STOP); write(journalFile, journal.toJson())
+        val kept = ArrayList<String>()
+        if (!withNavBar) kept += NAVBAR
+        if (!withFileServer) kept += HTTP_FILE_SERVER
+        val undone = ArrayList<Change>()
+        val failures = LinkedHashMap<Int, String>()
+        for (c in reg.undoPlan(Scope.REMOVAL)) {
+            // Keeping Navigation Bar also keeps the accessibility setting that switches it on.
+            if (kept.any { c.target == it || c.target.startsWith("$it/") || (c.type == ChangeType.SETTING && c.after.contains(it)) }) continue
+            val r = device.run(*Undo.command(c).toTypedArray())
+            if (AndroidOutput.ok(r.code, r.out, r.err) || (c.type == ChangeType.APP && !installed(c.target))) {
+                undone += c
+                reg = reg.mark(c.id, ChangeState.UNDONE)
+            } else {
+                failures[c.id] = (r.err.ifBlank { r.out }).trim().take(200).ifEmpty { "code ${r.code}" }
+                reg = reg.mark(c.id, ChangeState.FAILED, failures[c.id])
+            }
+        }
+        write(registryFile, reg.toJson())
+        journal = journal.next(Step.UNDO); write(journalFile, journal.toJson())
+        val checks = listOf(RobotId.APP, RobotId.PILOT).map { Check("$it désinstallé", !installed(it)) }
+        journal = journal.next(Step.CHECK); write(journalFile, journal.toJson())
+        val report = Report(OperationType.REMOVAL, now(), Origin.COMPUTER, undone, failures, checks)
+        out(if (json) Json.write(linkedMapOf("ok" to report.succeeded)) else report.text())
+        if (!report.succeeded) {
+            // Something was not removed: keep the module and the registry, so it can be retried.
+            writeReport(report)
+            journalFile.delete()
+            return 2
+        }
+        // Last of all: the rescue module itself, then its data (nothing is written after this).
+        device.run("touch", "$MODULE_DIR/remove")
+        journalFile.delete()
+        root.deleteRecursively()
+        if (!json) out("Camybrith est retiré. Le module de secours disparaîtra au prochain démarrage ; le root et l'accès Wi-Fi restent.")
+        return 0
+    }
+
     /** Final verification (research.md D6), with guarantees: the essentials are fixed even outside the registry. */
     private fun verify(robot: RobotId?, fixes: MutableList<String>): List<Check> {
         val c = ArrayList<Check>()
@@ -492,6 +548,8 @@ class RescueCommand(
             val j = try { Journal.parse(text) } catch (_: RegistryException) { null }
             when (j?.bootAction() ?: BootAction.FINISH_RETURN) {
                 BootAction.CLEAR -> journalFile.delete()
+                // An interrupted removal is finished, keeping Navigation Bar and HTTP File Server.
+                BootAction.FINISH_REMOVAL -> return remove(withNavBar = false, withFileServer = false, resuming = true)
                 else -> {
                     journalFile.delete()
                     backToLidl(j?.origin ?: Origin.RESCUE, reboot = false, resuming = true)
@@ -560,6 +618,7 @@ class RescueCommand(
 
     companion object {
         const val GESTURE_THRESHOLD = 3
+        const val MODULE_DIR = "/data/adb/modules/camybrith_secours"
         const val DISK_WRITE_WAIT_MS = 12_000L
         const val NAVBAR = "nu.nav.bar"
         const val HTTP_FILE_SERVER = "slowscript.httpfileserver"

@@ -152,9 +152,11 @@ initial_state() {
   switch_to_real_machine >/dev/null
   sh_ "printf '%s' '{\"occupe\":false,\"programme\":\"\",\"maj\":\"2026-01-01T00:00:00+00:00\"}' > $CAM/cuisson.json"
   sh_ "am start -a android.intent.action.MAIN -c android.intent.category.HOME" >/dev/null
-  # Android writes component states to disk about ten seconds after a change: wait, so that a
-  # power cut does not bring back the previous scenario's state.
+  # Android writes component states to disk about ten seconds after a change, and Linux keeps
+  # writes in memory for up to 30 s: wait, then force them to disk, so that a power cut does not
+  # bring back the previous scenario's state.
   sleep 12
+  sh_ sync >/dev/null
 }
 
 # What the interface does when switching to Machine réelle (LidlSync, T017): record, act, confirm.
@@ -385,6 +387,28 @@ B12() {
   verdict "B12 bulle « Camybrith » en mode Lidl" "$e"
 }
 
+# Full removal (US5): no Camybrith app or module left, the fake Lidl app works, root stays.
+B9() {
+  initial_state
+  # What outils/installer.sh records (T018) for the apps.
+  cam noter appli app.toque absent installee retrait installer.sh >/dev/null
+  cam noter appli app.toque.pilote absent installee retrait installer.sh >/dev/null
+  printf 'n\nn\no\n' | ROBOT_SERIAL=$SERIAL bash "$ROOT/outils/retirer.sh" >"$LOGS/B9.txt" 2>&1
+  local e=""
+  for p in app.toque app.toque.pilote; do sh_ "pm path $p" | grep -q package: && e="$e $p toujours installé;"; done
+  sh_ "[ -f $MOD/remove ] && echo ok" | grep -q ok || e="$e module de secours pas marqué à retirer;"
+  sh_ "[ -d $CAM ] && echo reste" | grep -q reste && e="$e $CAM toujours là;"
+  is_disabled "$SVC" && e="$e service moteur Lidl toujours désactivé;"
+  case "$(home_screen)" in $LIDL/*) ;; *) e="$e accueil = $(home_screen);" ;; esac
+  [ "$(sh_ 'su -c "id -u"')" = 0 ] || e="$e root perdu;"
+  ls "$ROOT"/sauvegardes/registre-* >/dev/null 2>&1 || e="$e registre pas copié sur l'ordinateur;"
+  # Put the bench back (Magisk would have removed the module at the next boot).
+  sh_ "rm -f $MOD/remove; mkdir -p $CAM && chmod 700 $CAM && touch $CAM/bench" >/dev/null
+  a install "$LOGS/app-normal.apk" >/dev/null
+  a install "$ROOT/pilote/build/outputs/apk/debug/pilote-debug.apk" >/dev/null
+  verdict "B9 retrait complet de Camybrith" "$e"
+}
+
 # A short boot: switch on, wait for the end of the boot, cut before 2 minutes.
 short_boot() { power_cut; start_emulator; sleep 10; }
 
@@ -440,7 +464,7 @@ B13() {
 case "${1:-}" in
   arreter) running && a emu kill >/dev/null; echo "Émulateur arrêté."; exit 0 ;;
 esac
-SCENARIOS=${*:-"B1 B2 B3 B4 B5 B6 B7 B10 B12 B13"}
+SCENARIOS=${*:-"B1 B2 B3 B4 B5 B6 B7 B9 B10 B12 B13"}
 start_emulator
 install_all
 echo "Scénarios : $SCENARIOS"
@@ -448,7 +472,7 @@ echo "Scénarios : $SCENARIOS"
 set -- $SCENARIOS
 while [ $# -gt 0 ]; do
   case "$1" in
-    B1|B2|B3|B4|B6|B7|B10|B11|B12|B13) "$1" ;;
+    B1|B2|B3|B4|B6|B7|B9|B10|B11|B12|B13) "$1" ;;
     B5) if [ "${2:-}" = aleatoire ]; then B5_random; shift; else B5; fi ;;
     *) echo "Scénario inconnu ou pas encore écrit : $1" ;;
   esac
