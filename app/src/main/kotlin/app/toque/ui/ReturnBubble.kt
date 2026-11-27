@@ -34,6 +34,7 @@ class ReturnBubble : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.getBooleanExtra(EXTRA_LIDL_MODE, false) == true) {
             lidlMode = true
+            Prefs(this).lidlMode = true
             // Started as root by the rescue module while Camybrith is in the background: Android 8
             // only allows it as a foreground service, which needs a notification.
             startAsForeground()

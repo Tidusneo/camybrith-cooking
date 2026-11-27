@@ -96,7 +96,7 @@ finit sur l'appli Lidl, utilisable.
 
 **Acceptance Scenarios**:
 
-1. **Given** Camybrith plante 3 fois en moins de 2 minutes après le démarrage, **When** cela se
+1. **Given** Camybrith plante 2 fois en moins de 2 minutes après le démarrage, **When** cela se
    produit, **Then** le robot bascule sur l'appli Lidl, qui pilote la machine.
 2. **Given** le mode de secours s'est déclenché, **When** l'utilisateur rouvre Camybrith par la
    bulle, **Then** un message explique ce qui s'est passé et propose de reprendre Camybrith ou de
@@ -250,7 +250,7 @@ qu'ils reviennent.
   coupure de courant.
 - **FR-007**: Le retour MUST NOT écrire dans les partitions du système et MUST NOT retirer le root
   ni l'accès par le Wi-Fi.
-- **FR-008**: Après 3 plantages de l'interface en moins de 2 minutes après le démarrage, le
+- **FR-008**: Après 2 plantages de l'interface en moins de 2 minutes après le démarrage, le
   système MUST faire le retour à l'appli Lidl automatiquement (mode de secours).
 - **FR-016**: Allumer puis éteindre le robot 3 fois de suite, chaque fois en moins de 2 minutes,
   MUST déclencher le retour à l'appli Lidl au démarrage suivant, sans écran ni ordinateur. Ce

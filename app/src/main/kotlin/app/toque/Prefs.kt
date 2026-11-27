@@ -234,6 +234,16 @@ class Prefs(context: Context) {
         }
 
     /** Ouvrir Toque au démarrage du robot (désactivé par « Revenir à l'appli d'origine »). */
+    /**
+     * Spec 007: the robot runs the Lidl app. Set when the rescue module starts the bubble, cleared
+     * when Camybrith is resumed; a copy of mode.json that can be read without root.
+     */
+    var lidlMode: Boolean
+        get() = p.getBoolean("lidlMode", false)
+        set(v) {
+            p.edit().putBoolean("lidlMode", v).commit()
+        }
+
     var bootLaunch: Boolean
         get() = p.getBoolean("bootLaunch", true)
         set(v) {

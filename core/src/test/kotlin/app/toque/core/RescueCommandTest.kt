@@ -213,9 +213,9 @@ class RescueCommandTest {
         assertTrue(f.enabled("$lidl/$svc"))
         assertTrue(File(dir, "secours.json").readText().contains("\"plantages\":3"))
         assertEquals("secours", Mode.parse(File(dir, "mode.json").readText()).origin?.key)
-        // Only two crashes: nothing, the watch ends after 120 s.
+        // A single crash: nothing, the watch ends after 120 s.
         val (f2, dir2, out2) = setup()
-        f2.crashLog = (1..2).joinToString("\n") { "${t + it}.000  99  99 E AndroidRuntime: Process: app.toque, PID: 99" }
+        f2.crashLog = (1..1).joinToString("\n") { "${t + it}.000  99  99 E AndroidRuntime: Process: app.toque, PID: 99" }
         assertEquals(0, command(f2, dir2, out2, t0 + 130_000).main(arrayOf("surveiller", t.toString())))
         assertTrue(f2.enabled(RobotId.HOME_ALIAS))
     }
@@ -304,6 +304,17 @@ class RescueCommandTest {
         assertTrue(f.commands.contains(listOf("touch", "/data/adb/modules/camybrith_secours/remove")))
         assertFalse(dir.exists())
         assertFalse(f.commands.contains(listOf("svc", "power", "reboot")))
+    }
+
+    @Test fun returnWorksWhenTheInterfaceIsUninstalled() {
+        val (f, dir, out) = setup()
+        val c = command(f, dir, out)
+        c.main(arrayOf("inscrire"))
+        f.installed.remove(RobotId.APP)
+        assertEquals(0, c.main(arrayOf("retour-lidl", "--sans-redemarrage")))
+        val report = lastReport(dir)
+        assertTrue(report.text(), report.succeeded)
+        assertTrue(f.enabled("$lidl/$svc"))
     }
 
     @Test fun androidOutputParsing() {

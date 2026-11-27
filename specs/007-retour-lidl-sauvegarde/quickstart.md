@@ -34,7 +34,7 @@ secours et la doublure `magisk`, puis déroule ces scénarios et affiche OK/ÉCH
 | B3 | Redémarrer 3 fois | toujours la fausse appli Lidl au premier plan |
 | B4 | `reprendre` | Camybrith redevient l'accueil, favoris intacts |
 | B5 | Coupure pendant `retour-lidl` : à chaque étape, puis 20 fois au hasard (`B5 aleatoire`) | au redémarrage, retour terminé, journal effacé, 20/20 |
-| B6 | Version de test qui plante au démarrage | après 3 plantages, retour automatique, `secours.json` présent |
+| B6 | Version de test qui plante au démarrage | après 2 plantages, retour automatique, `secours.json` présent |
 | B7 | Interface désinstallée à la main | `outils/origine.sh` fonctionne quand même |
 | B8 | Sauvegarde, récupération, restauration | données revenues ; aucune valeur secrète dans le fichier |
 | B10 | Geste : 3 démarrages courts de l'émulateur (arrêt avant 2 min) | 3ᵉ démarrage sur la fausse appli Lidl, bilan « geste » ; 10/10 |

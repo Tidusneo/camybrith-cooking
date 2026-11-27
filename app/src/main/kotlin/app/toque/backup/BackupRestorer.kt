@@ -112,8 +112,12 @@ object BackupRestorer {
     private fun fetch(c: Context, name: String): File? {
         if (!Regex("camybrith-[0-9]{8}-[0-9]{6}\\.camybrith").matches(name)) return null
         val local = File(c.cacheDir, name)
+        // Not yet collected by the module: still in the app's own folder.
+        val pending = File(File(c.filesDir, BackupWriter.PENDING_DIR), name)
+        if (pending.isFile) return pending.copyTo(local, overwrite = true)
         val r = RootShell.run("cp ${BackupWriter.DIR}/$name ${local.path} && chmod 644 ${local.path} && echo ok", 15_000)
-        return if (r.out.contains("ok") && local.isFile) local else null
+        // Without root (test bench), a copy put there beforehand by the bench is used as is.
+        return if (r.out.contains("ok") || local.isFile) local.takeIf { it.isFile } else null
     }
 
     private fun versionCode(c: Context): Int = try {

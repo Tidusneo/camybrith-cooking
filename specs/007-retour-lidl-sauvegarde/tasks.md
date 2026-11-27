@@ -105,15 +105,15 @@ Dépôt existant (plan.md › Project Structure) : `core/` (Kotlin pur), `app/`,
 
 ## Phase 5: User Story 3 - Mode de secours : automatique ou par l'interrupteur (Priority: P1)
 
-**Goal**: retour à l'appli Lidl sans intervention après 3 plantages au démarrage, ou par le geste de l'interrupteur quand l'écran est figé, et explication à la réouverture
+**Goal**: retour à l'appli Lidl sans intervention après 2 plantages au démarrage, ou par le geste de l'interrupteur quand l'écran est figé, et explication à la réouverture
 
 **Independent Test**: quickstart §B scénarios B6, B10, B11, B13 ; §C étape 6 bis
 
 - [X] T030 [P] [US3] Règle de décision dans `core/src/main/kotlin/app/toque/core/backup/RescueRule.kt` (`data-model.md` État de secours › Règle de décision)
-- [X] T031 [US3] Tests JUnit de T030 dans `core/src/test/kotlin/app/toque/core/RescueRuleTest.kt` avec des extraits de `logcat -b crash` (2 plantages : non ; 3 en 100 s : oui ; 3 en 200 s : non ; journal d'opération en cours : non)
-- [X] T032 [US3] Surveillance dans `modules/secours/service.sh` (après la reprise de T023) : comptage des plantages de `app.toque` pendant 120 s, à 3 `camybrith retour-lidl --secours`, écriture de `data-model.md` État de secours (secours.json : date, nombre de plantages, version en cause)
+- [X] T031 [US3] Tests JUnit de T030 dans `core/src/test/kotlin/app/toque/core/RescueRuleTest.kt` avec des extraits de `logcat -b crash` (1 plantage : non ; 2 en 100 s : oui ; 2 en 300 s : non ; journal d'opération en cours : non ; seuil passé de 3 à 2, voir research.md D7)
+- [X] T032 [US3] Surveillance dans `modules/secours/service.sh` (après la reprise de T023) : comptage des plantages de `app.toque` pendant 120 s, à 2 `camybrith retour-lidl --secours`, écriture de `data-model.md` État de secours (secours.json : date, nombre de plantages, version en cause)
 - [X] T033 [US3] Geste de l'interrupteur dans `modules/secours/post-fs-data.sh` (incrément de `demarrages-courts` puis `sync`, en respectant les règles de research.md D13 : aucune attente, aucun appel à `pm`/`am`, erreurs ignorées, compteur illisible remis à 0) et `modules/secours/service.sh` (remise à zéro après 2 min suivant `sys.boot_completed` ; à 3 si `data-model.md` Mode du robot.mode ≠ `lidl`, `camybrith retour-lidl --geste`) selon `data-model.md` Geste de l'interrupteur et research.md D13 ; option `--geste` dans `modules/secours/camybrith` (bilan avec `data-model.md` Journal.origine = `geste`)
-- [X] T034 [US3] Bandeau à l'ouverture de Camybrith dans `app/src/main/kotlin/app/toque/ui/MainActivity.kt` : seulement si `data-model.md` Mode du robot.mode = `lidl`, message selon Mode du robot.origine (« suite à 3 plantages au démarrage » si `secours`, « suite au geste de l'interrupteur » si `geste`), lien vers le bilan, bouton « Rester sur l'appli Lidl » (`contracts/ui.md`)
+- [X] T034 [US3] Bandeau à l'ouverture de Camybrith dans `app/src/main/kotlin/app/toque/ui/MainActivity.kt` : seulement si `data-model.md` Mode du robot.mode = `lidl`, message selon Mode du robot.origine (« suite à des plantages de Camybrith Cooking au démarrage » si `secours`, « suite au geste de l'interrupteur » si `geste`), lien vers le bilan, bouton « Rester sur l'appli Lidl » (`contracts/ui.md`)
 - [X] T035 [US3] Ligne d'aide sur le geste de l'interrupteur sous « Revenir à l'appli Lidl » dans `app/src/main/kotlin/app/toque/ui/screens/SettingsScreen.kt` (`contracts/ui.md`)
 - [X] T036 [P] [US3] Textes de T034 et T035 dans `app/src/main/assets/lang/en.json` et `app/src/main/assets/lang/es.json`
 - [X] T037 [US3] Version d'essai qui plante au démarrage : propriété Gradle `-Pbench.crash=true` dans `app/build.gradle.kts` (ressource `R.bool.bench_crash`, fausse par défaut, jamais publiée) qui lève une exception dans `onCreate` de `app/src/main/kotlin/app/toque/ToqueApp.kt` ; scénario B6 dans `outils/banc-essai.sh`

@@ -22,20 +22,20 @@ class RescueRuleTest {
     private fun decide(log: String, nowSec: Int = 120, journal: Boolean = false) =
         RescueRule.shouldTrigger(RescueRule.crashes(log), t0, t0 + nowSec * 1000L, journal)
 
-    @Test fun twoCrashesAreNotEnough() {
-        assertFalse(decide(crash(5) + "\n" + crash(40)))
+    @Test fun oneCrashIsNotEnough() {
+        assertFalse(decide(crash(5)))
     }
 
-    @Test fun threeCrashesInHundredSeconds() {
-        assertTrue(decide(listOf(crash(0), crash(50), crash(100)).joinToString("\n")))
+    @Test fun twoCrashesInHundredSeconds() {
+        assertTrue(decide(listOf(crash(0), crash(100)).joinToString("\n")))
     }
 
-    @Test fun threeCrashesInTwoHundredSeconds() {
-        assertFalse(decide(listOf(crash(0), crash(100), crash(200)).joinToString("\n"), nowSec = 200))
+    @Test fun twoCrashesInThreeHundredSeconds() {
+        assertFalse(decide(listOf(crash(0), crash(300)).joinToString("\n"), nowSec = 300))
     }
 
     @Test fun crashesDuringBootCount() {
-        assertTrue(decide(listOf(crash(-20), crash(-10), crash(3)).joinToString("\n"), nowSec = 10))
+        assertTrue(decide(listOf(crash(-20), crash(3)).joinToString("\n"), nowSec = 10))
     }
 
     @Test fun neverDuringAJournal() {
@@ -45,7 +45,7 @@ class RescueRuleTest {
     @Test fun pilotAndOtherAppsDoNotCount() {
         val log = listOf(crash(1, "app.toque.pilote"), crash(2, "com.tecpal.device.mc30"), crash(3, "app.toque.pilote")).joinToString("\n")
         assertEquals(0, RescueRule.crashes(log).size)
-        assertFalse(decide(log + "\n" + crash(4) + "\n" + crash(5)))
+        assertFalse(decide(log + "\n" + crash(4)))
     }
 
     @Test fun nativeCrash() {
