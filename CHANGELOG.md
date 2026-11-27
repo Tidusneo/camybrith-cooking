@@ -2,6 +2,23 @@
 
 🇫🇷 Français, puis 🇬🇧 English.
 
+## 1.4.3
+
+* **Mon propre dépôt** : les mises à jour depuis le robot, les guides et les scripts pointent vers
+  [github.com/scaule/camybrith-cooking](https://github.com/scaule/camybrith-cooking). Le robot
+  refuse les fichiers publiés ailleurs.
+* **Import de recettes Cookomix** : dans Recettes, bouton « Importer », puis colle le lien d'une
+  recette cookomix.com. Les réglages sont convertis pour le Smart, et les étapes adaptées sont
+  marquées « à vérifier ». La recette arrive dans « Mes recettes », avec sa photo.
+
+🇬🇧
+* **Own repository**: updates from the robot, the guides and the scripts now point to
+  [github.com/scaule/camybrith-cooking](https://github.com/scaule/camybrith-cooking). The robot
+  refuses files published elsewhere.
+* **Cookomix recipe import**: in Recipes, tap "Import" and paste a cookomix.com recipe link.
+  Settings are converted for the Smart, and adapted steps are marked "to check". The recipe lands
+  in "My recipes", with its photo.
+
 ## 1.4.2
 
 * **Nouvelle adresse du projet** : [github.com/Tidusneo/camybrith-cooking](https://github.com/Tidusneo/camybrith-cooking).
