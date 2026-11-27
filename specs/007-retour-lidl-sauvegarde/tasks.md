@@ -83,7 +83,7 @@ Dépôt existant (plan.md › Project Structure) : `core/` (Kotlin pur), `app/`,
 - [X] T023 [US1] Dans `modules/secours/service.sh` : recréer la réserve si elle manque et que l'espace le permet ; après `sys.boot_completed`, terminer une opération dont `data-model.md` Journal.etape n'est pas `termine` (Journal d'opération › Au démarrage), puis contrôler après un retour que l'appli Lidl est au premier plan et l'ajouter au bilan
 - [X] T024 [US1] Remplacer « Revenir à l'appli d'origine » (`restoreVendor`) par « Revenir à l'appli Lidl » dans `app/src/main/kotlin/app/toque/ui/screens/SettingsScreen.kt` selon `contracts/ui.md` : refus pendant une cuisson, liste de ce qui sera annulé, ce qui restera, rappel « pas de mise à jour système Lidl », appel `Rescue.retourLidl()` ; mode dégradé actuel si le module est absent, signalé comme tel
 - [X] T025 [P] [US1] Textes de T024 en anglais et espagnol dans `app/src/main/assets/lang/en.json` et `app/src/main/assets/lang/es.json`
-- [ ] T026 [US1] Scénarios B2, B3 et B5 dans `outils/banc-essai.sh` : B2 chronométré (échec au-delà de 3 min, SC-001) ; B5 avec arrêt brutal de l'émulateur à chaque étape du journal, puis mode `B5 aleatoire` de 20 coupures à des instants tirés au hasard (SC-004)
+- [X] T026 [US1] Scénarios B2, B3 et B5 dans `outils/banc-essai.sh` : B2 chronométré (échec au-delà de 3 min, SC-001) ; B5 avec arrêt brutal de l'émulateur à chaque étape du journal, puis mode `B5 aleatoire` de 20 coupures à des instants tirés au hasard (SC-004)
 
 **Checkpoint**: B2, B3, B5 OK. Le robot peut toujours revenir à l'appli Lidl depuis Camybrith.
 
@@ -97,7 +97,7 @@ Dépôt existant (plan.md › Project Structure) : `core/` (Kotlin pur), `app/`,
 
 - [X] T027 [US2] Script `outils/origine.sh` selon `contracts/cli.md` : connexion (`commun.sh`), robot injoignable → message clair et arrêt, état de cuisson inconnu → avertissement et confirmation avant `--forcer` (research.md D12), liste de ce qui sera annulé (lecture de `registre.json`), confirmation, `camybrith retour-lidl`, affichage du bilan et du rappel
 - [X] T028 [US2] Sous-commande `registre` dans `outils/origine.sh` : copie de `registre.json` et des bilans dans `sauvegardes/`
-- [ ] T029 [US2] Scénario B7 (interface désinstallée à la main) dans `outils/banc-essai.sh`
+- [X] T029 [US2] Scénario B7 (interface désinstallée à la main) dans `outils/banc-essai.sh`
 
 **Checkpoint**: B7 OK. Le retour marche sans l'interface.
 
@@ -135,8 +135,8 @@ Dépôt existant (plan.md › Project Structure) : `core/` (Kotlin pur), `app/`,
 - [X] T042 [US4] Bouton « Reprendre Camybrith » dans le bandeau de `app/src/main/kotlin/app/toque/ui/MainActivity.kt` : `Rescue.reprendre()`, puis les vérifications de Machine réelle existantes (`prepareHardware` de `SettingsScreen.kt`)
 - [X] T043 [US4] Sous-commande `reprendre` dans `outils/origine.sh`
 - [X] T044 [P] [US4] Textes de T042 dans `app/src/main/assets/lang/en.json` et `app/src/main/assets/lang/es.json`
-- [ ] T045 [US4] Scénario B4 dans `outils/banc-essai.sh` (favoris intacts après retour puis reprise)
-- [ ] T046 [US4] Scénario B12 (bulle affichée, déplaçable, réductible, non fermable, reprise en 3 gestes au plus) dans `outils/banc-essai.sh`
+- [X] T045 [US4] Scénario B4 dans `outils/banc-essai.sh` (favoris intacts après retour puis reprise)
+- [X] T046 [US4] Scénario B12 (bulle affichée, déplaçable, réductible, non fermable, reprise en 3 gestes au plus) dans `outils/banc-essai.sh`
 
 **Checkpoint**: B4 et B12 OK. Le retour à l'appli Lidl est réversible depuis le robot.
 
@@ -150,7 +150,7 @@ Dépôt existant (plan.md › Project Structure) : `core/` (Kotlin pur), `app/`,
 
 - [X] T047 [US5] Sous-commande `retrait` dans `modules/secours/camybrith` : `retour-lidl` sans redémarrage, annulation des modifications `data-model.md` Modification.portee = `retrait` (Navigation Bar et HTTP File Server seulement si confirmé), jamais `socle`, puis retrait du module de secours et de `/data/adb/camybrith/` en dernier
 - [X] T048 [US5] Script `outils/retirer.sh` : proposer une sauvegarde (`outils/sauvegarde.sh recuperer` si US6 est livré), copier le registre et les bilans (`origine.sh registre`), confirmation par élément optionnel, `camybrith retrait`
-- [ ] T049 [US5] Scénario B9 dans `outils/banc-essai.sh`
+- [X] T049 [US5] Scénario B9 dans `outils/banc-essai.sh`
 
 **Checkpoint**: B9 OK
 
@@ -170,7 +170,7 @@ Dépôt existant (plan.md › Project Structure) : `core/` (Kotlin pur), `app/`,
 - [X] T055 [US6] Section « Sauvegardes » dans `app/src/main/kotlin/app/toque/ui/screens/SettingsScreen.kt` : espace libre et alerte sous 10 % (FR-020), Sauvegarder maintenant (pendant une cuisson : proposer à la fin), liste, Supprimer (`contracts/ui.md`)
 - [X] T056 [US6] Script `outils/sauvegarde.sh` : `creer`, `lister`, `recuperer [nom]` vers `sauvegardes/`
 - [X] T057 [P] [US6] Textes de T055 dans `app/src/main/assets/lang/en.json` et `app/src/main/assets/lang/es.json`
-- [ ] T058 [US6] Partie sauvegarde et récupération du scénario B8 dans `outils/banc-essai.sh` : sauvegarde chronométrée (échec au-delà de 30 s, SC-006) et recherche de la valeur secrète dans tout le fichier
+- [X] T058 [US6] Partie sauvegarde et récupération du scénario B8 dans `outils/banc-essai.sh` : sauvegarde chronométrée (échec au-delà de 30 s, SC-006) et recherche de la valeur secrète dans tout le fichier
 
 **Checkpoint**: une sauvegarde se crée et se récupère, sans secret
 
@@ -190,8 +190,8 @@ Dépôt existant (plan.md › Project Structure) : `core/` (Kotlin pur), `app/`,
 - [X] T064 [US7] Écran de restauration dans `app/src/main/kotlin/app/toque/ui/screens/SettingsScreen.kt` (`contracts/ui.md` › Restaurer)
 - [X] T065 [US7] `envoyer FICHIER` et `restaurer NOM` dans `outils/sauvegarde.sh` (la restauration est déclenchée dans l'interface, qui doit être ouverte)
 - [X] T066 [P] [US7] Textes de T064 dans `app/src/main/assets/lang/en.json` et `app/src/main/assets/lang/es.json`
-- [ ] T067 [US7] Partie restauration du scénario B8 dans `outils/banc-essai.sh` (données revenues ; sauvegarde abîmée refusée sans rien modifier)
-- [ ] T068 [US7] Coupure pendant une restauration (entre la transaction et les réglages) dans `outils/banc-essai.sh` : à la réouverture, restauration rejouée, données complètes
+- [X] T067 [US7] Partie restauration du scénario B8 dans `outils/banc-essai.sh` (données revenues ; sauvegarde abîmée refusée sans rien modifier)
+- [X] T068 [US7] Coupure pendant une restauration (entre la transaction et les réglages) dans `outils/banc-essai.sh` : à la réouverture, restauration rejouée, données complètes
 
 **Checkpoint**: B8 complet OK
 
@@ -199,11 +199,11 @@ Dépôt existant (plan.md › Project Structure) : `core/` (Kotlin pur), `app/`,
 
 ## Phase 10: Polish & Cross-Cutting Concerns
 
-- [ ] T069 Écran en lecture seule « Modifications du robot » (liste du registre) dans `app/src/main/kotlin/app/toque/ui/screens/SettingsScreen.kt` et ses textes dans `app/src/main/assets/lang/en.json` et `es.json` (`contracts/ui.md`)
-- [ ] T070 [P] Réécrire la section 12 « Revenir en arrière » et ajouter l'installation du module de secours après l'étape 8 dans `docs/GUIDE.md` et `docs/GUIDE.en.md`
-- [ ] T071 [P] Mettre à jour `assistant/camybrith-installer/SKILL.md` (installer le module de secours ; utiliser `outils/origine.sh` pour revenir à l'appli Lidl)
-- [ ] T072 [P] Entrée dans `CHANGELOG.md` (français et anglais) et paragraphe dans `README.md`, `README.en.md`, `README.es.md`
-- [ ] T073 Relire tous les chemins d'écriture de `modules/secours/` et des scripts `outils/` : uniquement ceux de `contracts/cli.md` (principe VII) ; vérifier que `modules/secours/post-fs-data.sh` respecte les règles de research.md D13 ; consigner le résultat dans `specs/007-retour-lidl-sauvegarde/checklists/requirements.md`
+- [X] T069 Écran en lecture seule « Modifications du robot » (liste du registre) dans `app/src/main/kotlin/app/toque/ui/screens/SettingsScreen.kt` et ses textes dans `app/src/main/assets/lang/en.json` et `es.json` (`contracts/ui.md`)
+- [X] T070 [P] Réécrire la section 12 « Revenir en arrière » et ajouter l'installation du module de secours après l'étape 8 dans `docs/GUIDE.md` et `docs/GUIDE.en.md`
+- [X] T071 [P] Mettre à jour `assistant/camybrith-installer/SKILL.md` (installer le module de secours ; utiliser `outils/origine.sh` pour revenir à l'appli Lidl)
+- [X] T072 [P] Entrée dans `CHANGELOG.md` (français et anglais) et paragraphe dans `README.md`, `README.en.md`, `README.es.md`
+- [X] T073 Relire tous les chemins d'écriture de `modules/secours/` et des scripts `outils/` : uniquement ceux de `contracts/cli.md` (principe VII) ; vérifier que `modules/secours/post-fs-data.sh` respecte les règles de research.md D13 ; consigner le résultat dans `specs/007-retour-lidl-sauvegarde/checklists/requirements.md`
 - [ ] T074 Scénario B14 (mémoire de l'émulateur remplie à 100 % : retour à l'appli Lidl, geste, démarrage, bilan `memoirePleine`, sauvegarde refusée, alerte d'espace) dans `outils/banc-essai.sh` (SC-009)
 - [ ] T075 Dérouler `bash outils/banc-essai.sh` en entier (B1 à B14), puis `quickstart.md` §C sur le robot dès qu'il est rooté
 

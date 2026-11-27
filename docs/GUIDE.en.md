@@ -450,12 +450,16 @@ Still in the project folder:
 cd ~/camybrith-cooking
 git pull
 bash outils/telecharger.sh
+bash outils/secours.sh installer
 bash outils/installer.sh
 ```
 
 * `telecharger.sh` (download) fetches the latest published version: the **motor pilot**, the
-  **fast** ("rapide") and **safe** ("prudente") interface (into `apk/`), and the **boot
-  animation** (into `modules/`).
+  **fast** ("rapide") and **safe** ("prudente") interface (into `apk/`), the **boot animation**
+  and the **rescue module** (into `modules/`).
+* `secours.sh installer` installs the **rescue module**: it keeps track of everything Camybrith
+  changes on the robot, so that you can **always go back to the Lidl app** (see step 12). It does
+  not modify `/system`. The following scripts refuse to change the robot without it.
 * `installer.sh` asks for the robot's IP address the first time (it is kept in
   `outils/robot.conf`), installs the pilot, grants it root, installs the interface, grants it
   root, has **Android compile it** (one to two minutes, do not open the app meanwhile), then
@@ -501,8 +505,8 @@ to **Demo**, and open a ticket (the project's **Issues** tab) describing what yo
 * **The navigation bar** at the bottom of the screen can be hidden:
   `bash outils/barre.sh cacher` (hide) and `bash outils/barre.sh remettre` (bring back). Without
   it, a **long press on the clock** in Camybrith Cooking opens Back, Home and Recent apps.
-* **Back to the stock app**: **Settings**, **Machine**, "Back to the stock app". Camybrith Cooking
-  releases the motor and switches to Demo.
+* **Back to the Lidl app**: **Settings**, **Tools**, "Back to the Lidl app"; the robot restarts on
+  the Lidl app, and the "Camybrith" bubble brings you back (step 12).
 * **Your own recipes** written for a Thermomix: the file format and how to send them are explained
   in [RECIPES.en.md](RECIPES.en.md). Settings converted for the Smart are flagged "to check":
   read them before starting.
@@ -528,18 +532,33 @@ Your favorites, settings and recipes are kept.
 
 ## 12. Going back
 
-From lightest to most complete:
+"Going back" means putting the robot back on **the Lidl app only**. Root and Wi-Fi access stay, so
+that you can come back to Camybrith. From lightest to most complete:
 
-1. **Just use the stock app**: Settings, Machine, "Back to the stock app".
-2. **Remove the animation**: `bash outils/animation.sh retirer`, then reboot.
-3. **Uninstall Camybrith Cooking** (after point 1):
-   ```
-   ~/platform-tools/adb -s 192.168.1.42:5555 uninstall app.toque
-   ~/platform-tools/adb -s 192.168.1.42:5555 uninstall app.toque.pilote
-   ```
-4. **Remove root**: write your original `boot.img` back with SP Flash Tool (step 6.3 with the
+1. **Back to the Lidl app, from the robot**: Settings › Tools › **Back to the Lidl app**. The
+   screen lists what will be undone, then the robot restarts on the Lidl app. A report is kept
+   (Settings › Tools › Changes to the robot).
+2. **From the computer**, even if Camybrith is broken: `bash outils/origine.sh`.
+3. **Without screen or computer** (frozen screen): **switch on, wait for the logo, switch off at
+   the power switch, three times in a row** (less than 2 minutes each time). At the next boot the
+   robot starts on the Lidl app. The module also does it by itself if Camybrith crashes right at
+   startup (rescue mode).
+4. **Back to Camybrith** afterwards: tap the "Camybrith" bubble shown over the Lidl app, then
+   **Resume Camybrith**. From the computer: `bash outils/origine.sh reprendre`.
+5. **Back up your data** before big changes: Settings › Backups › Back up now, then
+   `bash outils/sauvegarde.sh recuperer` to copy it to the computer. Favorites, own recipes and
+   settings (never passwords or Lidl recipes).
+6. **Remove Camybrith completely**: `bash outils/retirer.sh`. The registry is copied to the
+   computer, then the interface, the pilot, the animation and the rescue module are removed. Root
+   and Wi-Fi access stay.
+
+> Never accept a Lidl system update while the robot is rooted.
+
+And to go further than the Lidl app:
+
+7. **Remove root**: write your original `boot.img` back with SP Flash Tool (step 6.3 with the
    original). Magisk and its modules become inactive.
-5. **If something goes badly wrong**, your step 2 backup holds everything needed to bring the
+8. **If something goes badly wrong**, your step 2 backup holds everything needed to bring the
    robot back to its original state. Do not try things at random: ask for help in the project's
    Issues, with a precise description of what happened.
 

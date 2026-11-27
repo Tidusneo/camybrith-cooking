@@ -2,6 +2,34 @@
 
 🇫🇷 Français, puis 🇬🇧 English.
 
+## 1.5.0
+
+* **On peut toujours revenir à l'appli Lidl** (module de secours, à installer une fois avec
+  `bash outils/secours.sh installer`) :
+  * depuis le robot (Réglages › Outils › Revenir à l'appli Lidl), depuis l'ordinateur
+    (`bash outils/origine.sh`), ou sans écran : éteindre et rallumer 3 fois de suite ;
+  * tout seul si Camybrith plante dès le démarrage ;
+  * une coupure de courant pendant le retour ne laisse jamais le robot à moitié revenu ;
+  * puis revenir à Camybrith par la bulle « Camybrith » affichée sur l'appli Lidl.
+* **Sauvegardes** : Réglages › Sauvegardes (favoris, recettes perso et importées, réglages ;
+  jamais les mots de passe ni les recettes Lidl), copie sur l'ordinateur avec
+  `bash outils/sauvegarde.sh`, restauration vérifiée.
+* **Retrait complet** de Camybrith : `bash outils/retirer.sh` (le root et l'accès Wi-Fi restent).
+* **Modifications du robot** : la liste de tout ce que Camybrith a changé (Réglages › Outils).
+
+🇬🇧
+* **You can always go back to the Lidl app** (rescue module, installed once with
+  `bash outils/secours.sh installer`):
+  * from the robot (Settings › Tools › Back to the Lidl app), from the computer
+    (`bash outils/origine.sh`), or without a screen: switch off and on 3 times in a row;
+  * by itself if Camybrith crashes right at startup;
+  * a power cut during the return never leaves the robot half way;
+  * then back to Camybrith with the "Camybrith" bubble shown over the Lidl app.
+* **Backups**: Settings › Backups (favorites, own and imported recipes, settings; never passwords
+  or Lidl recipes), copied to the computer with `bash outils/sauvegarde.sh`, checked restore.
+* **Full removal** of Camybrith: `bash outils/retirer.sh` (root and Wi-Fi access stay).
+* **Changes to the robot**: the list of everything Camybrith changed (Settings › Tools).
+
 ## 1.4.3
 
 * **Mon propre dépôt** : les mises à jour depuis le robot, les guides et les scripts pointent vers

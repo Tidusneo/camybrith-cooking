@@ -82,7 +82,9 @@ explain the risk and refuse to guide that shortcut.
 * Step 7.5: `connected to…` then `uid=0(root)`.
 * The app can be switched to Spanish (or French/English) in Settings › Langue · Language; with
   the app in Spanish, the recipe sync downloads Spanish recipes.
-* Step 8: `installer.sh` ends with "C'est fini" and shows both version names.
+* Step 8: `secours.sh installer` prints "Registre initialisé" and the list of changes it found;
+  then `installer.sh` ends with "C'est fini" and shows both version names. `installer.sh`,
+  `barre.sh` and `animation.sh` refuse to run without the rescue module: install it first.
 
 ## Hard stops
 
@@ -95,6 +97,24 @@ Stop, do not improvise, and explain calmly what happens next:
 * A boot loop longer than five minutes after step 6.3: guide the person to write the original
   `boot.img` back (same as 6.3, with the original file). That restores the previous state.
 * The person reports smoke, a burning smell or a hot board: unplug the robot at once and stop.
+* The person accepted, or is offered, a Lidl system update while rooted: tell them not to accept
+  it; if it is already installing, do not interrupt it, and ask for a photo once it is done.
+
+## Going back to the Lidl app
+
+"Going back" means the robot runs the Lidl app only again; root and Wi-Fi access stay. Never
+suggest SP Flash Tool for that. In order (guide, step 12):
+
+* From the robot: Settings › Tools › "Revenir à l'appli Lidl".
+* From the computer, even if Camybrith is broken: `bash outils/origine.sh` (it shows what will be
+  undone and asks for confirmation; if it says the cooking state is unknown, ask the person to
+  look at the robot before confirming).
+* Frozen screen, no computer: switch on, wait for the logo, switch off, three times in a row.
+* Back to Camybrith afterwards: the "Camybrith" bubble over the Lidl app, or
+  `bash outils/origine.sh reprendre`.
+* Full removal: `bash outils/retirer.sh` (root and Wi-Fi access stay).
+* Before any of these, offer a backup of the data: `bash outils/sauvegarde.sh creer` then
+  `bash outils/sauvegarde.sh recuperer`.
 
 ## TWRP (step 4)
 
@@ -109,8 +129,9 @@ each tap. The only swipe allowed is "Swipe to Confirm" for Copy File.
 
 If you have a shell on the person's computer (for example Claude Code, or a desktop app with a
 connected folder), you may run the project's commands for them from step 3 on, after saying what
-each one does. Always ask before a command that writes to the robot (`installer.sh`,
-`animation.sh`, `barre.sh`, `sons.sh`, `adb install`, `adb uninstall`, `reboot`). SP Flash Tool,
+each one does. Always ask before a command that writes to the robot (`secours.sh`, `installer.sh`,
+`animation.sh`, `barre.sh`, `sons.sh`, `origine.sh`, `retirer.sh`, `sauvegarde.sh`, `adb install`,
+`adb uninstall`, `reboot`). SP Flash Tool,
 TWRP and the robot's screen always stay in the person's hands. Never send, print or ask for the
 private ADB key (`~/.android/adbkey`); only `adbkey.pub` may be used, and the scripts handle it.
 
