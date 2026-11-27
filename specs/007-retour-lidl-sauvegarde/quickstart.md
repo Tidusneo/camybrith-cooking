@@ -30,7 +30,7 @@ secours et la doublure `magisk`, puis déroule ces scénarios et affiche OK/ÉCH
 | # | Scénario | Attendu |
 |---|---|---|
 | B1 | Passage en Machine réelle simulé | service « moteur » de la fausse appli Lidl désactivé ET inscrit au registre avant |
-| B2 | `retour-lidl` (chronométré) | moins de 3 min ; service réactivé, écran d'accueil résolu vers la fausse appli Lidl, `BootReceiver` et `.ui.Accueil` désactivés, processus Camybrith arrêtés, bilan sans échec, redémarrage sur la fausse appli Lidl |
+| B2 | `retour-lidl` (chronométré) | moins de 3 min ; service réactivé, écran d'accueil résolu vers la fausse appli Lidl, `BootReceiver` et `.ui.Accueil` désactivés, pilote moteur arrêté (l'interface peut tourner : elle porte la bulle), bilan sans échec, redémarrage sur la fausse appli Lidl |
 | B3 | Redémarrer 3 fois | toujours la fausse appli Lidl au premier plan |
 | B4 | `reprendre` | Camybrith redevient l'accueil, favoris intacts |
 | B5 | Coupure pendant `retour-lidl` : à chaque étape, puis 20 fois au hasard (`B5 aleatoire`) | au redémarrage, retour terminé, journal effacé, 20/20 |
