@@ -53,6 +53,14 @@ jobs:
           ./gradlew --no-daemon -Pprudent=true :app:assembleRelease
           cp app/build/outputs/apk/release/app-release.apk "dist/Camybrith-$v-prudente.apk"
 
+      - name: Module de secours
+        if: steps.version.outputs.publish == 'true'
+        run: |
+          # Errors only: the module runs under Android 8.1's shell (toybox).
+          shellcheck -S error -s sh modules/secours/camybrith modules/secours/post-fs-data.sh modules/secours/service.sh modules/secours/customize.sh
+          shellcheck -S error outils/*.sh
+          bash outils/fabriquer_secours.sh dist
+
       - name: Animation de démarrage
         if: steps.version.outputs.publish == 'true'
         run: |

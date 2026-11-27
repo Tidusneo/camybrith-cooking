@@ -115,12 +115,15 @@ docs/GUIDE.en.md     step by step install guide (start here)
 docs/RECIPES.en.md   importing your own recipes
 docs/SMART.md        technical notes on the Smart (protocol, programs, tests; French)
 outils/              scripts run from your computer: install, sounds, animation, nav bar…
-modules/             Magisk modules: ADB over Wi-Fi, boot animation
+modules/             Magisk modules: ADB over Wi-Fi, boot animation, rescue (back to the Lidl app)
 personnalisation/    your sounds, your logo, and the tools to make them
 core/                pure Kotlin logic, tested without Android (protocol, safety, recipes)
 commun/              code shared by the interface and the pilot
 pilote/              "motor pilot" app (app.toque.pilote)
 app/                 interface app (app.toque)
+rescue-engine/      engine of the rescue module's "camybrith" command (code from core/backup)
+bench/fake-lidl/    fake Lidl app for the emulator test bench (never published)
+specs/               feature specifications (Spec Kit) and project constitution (.specify/)
 ```
 
 ## Building the APKs yourself
@@ -137,6 +140,15 @@ The **fast** version ("rapide") is compiled ahead of time by Android before its 
 (that is what `outils/installer.sh` does): on this robot, Android's just-in-time compiler makes the
 interface crash. The **safe** version ("prudente") is never compiled: slower, but immune to that
 problem.
+
+Gradle must see JDK 17: on a Mac with Homebrew (`brew install openjdk@17`),
+`export JAVA_HOME=/opt/homebrew/opt/openjdk@17`. The rescue module is built with
+`bash outils/fabriquer_secours.sh` (output: `modules/camybrith_secours.zip`).
+
+**Test bench without the robot** (back to the Lidl app, power cuts, restarts): you also need the
+emulator and the Android 8.1 SDK image (`sdkmanager "emulator"
+"system-images;android-27;default;arm64-v8a"`, or `x86_64` on an Intel PC; the script downloads it
+if missing), then `bash outils/banc-essai.sh`. It never touches the robot.
 
 ## Adding a language
 

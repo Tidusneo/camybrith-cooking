@@ -114,12 +114,15 @@ docs/GUIDE.md        le guide d'installation pas à pas (commence ici)
 docs/RECETTES.md     importer tes propres recettes
 docs/SMART.md        notes techniques sur le Smart (protocole, programmes, essais)
 outils/              scripts à lancer depuis l'ordinateur : installer, sons, animation, barre…
-modules/             modules Magisk : ADB par le Wi-Fi, animation de démarrage
+modules/             modules Magisk : ADB par le Wi-Fi, animation de démarrage, secours (retour à l'appli Lidl)
 personnalisation/    tes sons, ton logo, et les outils pour les fabriquer
 core/                logique en Kotlin pur, testée sans Android (protocole, sécurité, recettes)
 commun/              code partagé entre l'interface et le pilote
 pilote/              appli « pilote moteur » (app.toque.pilote)
 app/                 appli interface (app.toque)
+rescue-engine/      moteur de la commande « camybrith » du module de secours (code de core/backup)
+bench/fake-lidl/    fausse appli Lidl pour le banc d'essai sur émulateur (jamais publiée)
+specs/               spécifications des fonctions (Spec Kit) et constitution du projet (.specify/)
 ```
 
 ## Fabriquer les APK soi-même
@@ -136,6 +139,15 @@ La version **rapide** est compilée par Android avant la première ouverture (c'
 `outils/installer.sh`) : sur ce robot, la compilation « au fil de l'eau » d'Android fait planter
 l'interface. La version **prudente** n'est jamais compilée : plus lente, mais à l'abri de ce
 problème.
+
+Le JDK 17 doit être celui que voit Gradle : sur Mac avec Homebrew (`brew install openjdk@17`),
+`export JAVA_HOME=/opt/homebrew/opt/openjdk@17`. Le module de secours se fabrique avec
+`bash outils/fabriquer_secours.sh` (résultat : `modules/camybrith_secours.zip`).
+
+**Banc d'essai sans le robot** (retour à l'appli Lidl, coupures, redémarrages) : il faut en plus
+l'émulateur et l'image Android 8.1 du SDK (`sdkmanager "emulator"
+"system-images;android-27;default;arm64-v8a"`, ou `x86_64` sur un PC Intel ; le script la
+télécharge s'il ne la trouve pas), puis `bash outils/banc-essai.sh`. Il ne touche jamais au robot.
 
 ## Ajouter une langue
 

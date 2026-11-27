@@ -15,6 +15,7 @@ import android.widget.ScrollView
 import android.widget.TextView
 import app.toque.Prefs
 import app.toque.TimeSync
+import app.toque.backup.Rescue
 import app.toque.core.i18n.I18n
 import app.toque.core.i18n.tr
 import app.toque.core.machine.TemperatureTable
@@ -272,7 +273,9 @@ class SettingsScreen(a: MainActivity) : Screen(a) {
         tools.addView(link(tr("Bouton rotatif")) { a.push(KnobScreen(a)) })
         tools.addView(link(tr("Journal")) { a.push(LogScreen(a)) })
         tools.addView(link(tr("Paramètres Android")) { a.openAndroidSettings() })
-        tools.addView(link(tr("Revenir à l'appli d'origine")) { restoreVendor() })
+        tools.addView(link(tr("Revenir à l'appli Lidl")) { returnToLidl() })
+        tools.addView(Ui.text(c, tr("Écran figé ? Éteignez et rallumez le robot 3 fois de suite (moins de 2 minutes à chaque fois) : il repartira sur l'appli Lidl."),
+            13f, Ui.TEXT3).apply { setLineSpacing(0f, 1.1f) }, Ui.lp(t = 4, b = 8))
         val version = try { a.packageManager.getPackageInfo(a.packageName, 0).versionName } catch (_: Exception) { "?" }
         tools.addView(Ui.text(c, tr("Camybrith Cooking %s · protocole d'après le Monsieur Cuisine Developer SDK (licence MIT). " +
             "Projet indépendant, non affilié à Lidl ni à SilverCrest.", version), 14f, Ui.TEXT3).apply { setLineSpacing(0f, 1.1f) }, Ui.lp(t = 12))
@@ -467,13 +470,19 @@ class SettingsScreen(a: MainActivity) : Screen(a) {
         a.refreshTitle()
     }
 
-    private fun prepareHardware() {
+    /** Also called after resuming Camybrith from the Lidl app (spec 007, US4): same checks. */
+    fun prepareHardware() {
         a.toast(tr("Vérifications…"))
         Thread {
             val problems = ArrayList<String>()
             if (!RootShell.available()) problems += tr("accès root refusé")
             val sync = LidlSync(a, a.prefs, a.app.recipes, a.app.log)
+            // Spec 007: without the rescue module, cutting the Lidl app off would not be recorded
+            // in the registry, and going back to the Lidl app would not know how to undo it.
+            if (problems.isEmpty() && sync.installed() && !Rescue.installed())
+                problems += tr("module de secours absent : depuis l'ordinateur, lancez bash outils/secours.sh installer")
             if (problems.isEmpty() && sync.installed()) {
+                Rescue.writeRobotId(a.prefs.activeRobot)
                 if (sync.components().hardwareService != null && !sync.setVendorHardware(false))
                     problems += tr("impossible de couper l'appli d'origine du moteur")
                 sync.forceStop()
@@ -486,11 +495,68 @@ class SettingsScreen(a: MainActivity) : Screen(a) {
         }.start()
     }
 
-    private fun restoreVendor() {
+    /**
+     * "Revenir à l'appli Lidl" (spec 007, contracts/ui.md): through the rescue module, which undoes
+     * what Camybrith changed, checks, then restarts the robot on the Lidl app. Without the module,
+     * degraded mode (the former "Revenir à l'appli d'origine"), flagged as such.
+     */
+    private fun returnToLidl() {
+        if (a.snapshot.busy) {
+            a.toast(tr("Arrêtez d'abord le programme en cours"), Ui.WARN)
+            return
+        }
+        a.toast(tr("Vérifications…"))
+        Thread {
+            val status = if (Rescue.installed()) Rescue.status() else null
+            view.post {
+                if (status == null) restoreVendorDegraded()
+                else {
+                    val toUndo = if (status.toUndo.isEmpty()) tr("rien à annuler (déjà fait)")
+                    else status.toUndo.joinToString("\n") { "• $it" }
+                    a.confirm(
+                        tr("Revenir à l'appli Lidl"),
+                        tr("Le robot va redémarrer et fonctionner avec la seule appli Lidl.") + "\n\n" +
+                            tr("Ce qui sera annulé :") + "\n" + toUndo + "\n\n" +
+                            tr("Ce qui reste : Camybrith Cooking installé (pour revenir), le root et l'accès Wi-Fi.") + "\n\n" +
+                            tr("Ne jamais accepter de mise à jour système Lidl tant que le robot est rooté."),
+                        tr("Revenir"),
+                    ) { runReturnToLidl() }
+                }
+            }
+        }.start()
+    }
+
+    private fun runReturnToLidl() {
+        if (a.snapshot.busy) {
+            a.toast(tr("Arrêtez d'abord le programme en cours"), Ui.WARN)
+            return
+        }
+        a.prefs.mode = Prefs.Mode.DEMO
+        KnobLight.release()
+        // The interface releases the machine before the module stops the pilot.
+        a.machine.reconfigure {
+            a.toast(tr("Retour à l'appli Lidl… le robot va redémarrer"))
+            Thread {
+                val r = Rescue.backToLidl()
+                // On success the robot restarts and we never get here.
+                view.post {
+                    a.confirm(tr("Retour à l'appli Lidl"),
+                        (if (r.code == 1) tr("Refusé : ") else tr("Problème : ")) + r.text.takeLast(600),
+                        "OK", tr("Fermer")) {}
+                }
+            }.start()
+        }
+    }
+
+    /** Without the rescue module: former behaviour, with no record and no checks. */
+    private fun restoreVendorDegraded() {
         a.confirm(
-            tr("Revenir à l'appli d'origine"),
-            tr("Camybrith Cooking libère le moteur, rend l'accès à l'appli Monsieur Cuisine d'origine et passe en mode Démo. " +
-                "Camybrith Cooking ne s'ouvrira plus au démarrage du robot."),
+            tr("Revenir à l'appli Lidl (mode dégradé)"),
+            tr("Le module de secours n'est pas installé : le retour se fera sans registre ni vérification, et ne marchera pas si Camybrith Cooking est cassé. " +
+                "Pour l'installer, depuis l'ordinateur : bash outils/secours.sh installer") + "\n\n" +
+                tr("Camybrith Cooking libère le moteur, rend l'accès à l'appli Monsieur Cuisine d'origine et passe en mode Démo. " +
+                    "Camybrith Cooking ne s'ouvrira plus au démarrage du robot.") + "\n\n" +
+                tr("Ne jamais accepter de mise à jour système Lidl tant que le robot est rooté."),
             tr("Revenir"),
         ) {
             a.prefs.mode = Prefs.Mode.DEMO

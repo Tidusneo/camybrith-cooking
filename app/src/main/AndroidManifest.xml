@@ -42,13 +42,20 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-            <!-- Écran d'accueil du robot -->
+        </activity>
+
+        <!-- Écran d'accueil du robot. On a separate alias so that going back to the Lidl app
+             (rescue module, spec 007) can disable it without touching the launcher icon. -->
+        <activity-alias
+            android:name=".ui.Accueil"
+            android:exported="true"
+            android:targetActivity=".ui.MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.HOME" />
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
-        </activity>
+        </activity-alias>
 
         <!-- Pilotage : appli à part, app.toque.pilote (dossier pilote/), qui reste interprétée. -->
 

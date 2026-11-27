@@ -10,8 +10,17 @@
 set -u
 . "$(dirname "$0")/commun.sh"
 connecter
+exiger_root
+require_rescue
 SVC=nu.nav.bar/nu.nav.bar.service.NavigationBarService
 cur=$($A shell settings get secure enabled_accessibility_services | tr -d '\r')
+# Spec 007: recorded in the registry before touching the settings; only a full removal restores them.
+before=$cur; { [ -z "$before" ] || [ "$before" = null ]; } && before=absent
+acc=$($A shell settings get secure accessibility_enabled | tr -d '\r'); { [ -z "$acc" ] || [ "$acc" = null ]; } && acc=absent
+case "${1:-}" in cacher|remettre)
+  ID1=$(note reglage secure/enabled_accessibility_services "$before" "$1" retrait) || exit 1
+  ID2=$(note reglage secure/accessibility_enabled "$acc" "$1" retrait) || exit 1 ;;
+esac
 case "${1:-}" in
   cacher)
     new=$(echo "$cur" | tr ':' '\n' | grep -v -x "$SVC" | grep -v '^null$' | paste -sd: -)
@@ -21,6 +30,7 @@ case "${1:-}" in
     else
       $A shell settings put secure enabled_accessibility_services "$new"
     fi
+    note_done "$ID1" ok; note_done "$ID2" ok
     echo "Barre cachée." ;;
   remettre)
     case ":$cur:" in *":$SVC:"*) ;; *)
@@ -28,6 +38,7 @@ case "${1:-}" in
       $A shell settings put secure enabled_accessibility_services "$new"
       $A shell settings put secure accessibility_enabled 1 ;;
     esac
+    note_done "$ID1" ok; note_done "$ID2" ok
     echo "Barre remise." ;;
   *) echo "Usage : bash $0 cacher|remettre"; exit 1 ;;
 esac

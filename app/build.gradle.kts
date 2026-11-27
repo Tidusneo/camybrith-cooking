@@ -21,6 +21,9 @@ android {
         versionCode = if (prudent) 52 else 51
         versionName = if (prudent) "1.4.3-prudente" else "1.4.3-rapide"
         manifestPlaceholders["safeMode"] = prudent.toString()
+        // Test bench (spec 007, scenario B6): -Pbench.crash=true builds a version that crashes at
+        // startup, to test the rescue mode on the emulator. Never published.
+        resValue("bool", "bench_crash", ((project.findProperty("bench.crash") as String?) == "true").toString())
     }
 
     signingConfigs {

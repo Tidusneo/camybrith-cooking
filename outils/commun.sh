@@ -1,3 +1,4 @@
+# shellcheck shell=bash
 # Partie commune aux scripts de ce dossier (à ne pas lancer seul).
 # Trouve adb, l'adresse du robot, et vérifie que le robot répond.
 #
@@ -18,6 +19,8 @@ else
 fi
 
 CONF="$DIR/robot.conf"
+# Test bench (outils/banc-essai.sh): ROBOT_SERIAL=emulator-5580 targets the emulator, not the robot.
+if [ -n "${ROBOT_SERIAL:-}" ]; then IP=bench; fi
 if [ -z "${IP:-}" ] && [ -s "$CONF" ]; then . "$CONF"; fi
 if [ -z "${IP:-}" ]; then
   echo "Adresse IP du robot sur ton réseau Wi-Fi (exemple : 192.168.1.42)."
@@ -30,10 +33,11 @@ if [ -z "${IP:-}" ]; then
 fi
 
 A="$ADB -s $IP:5555"
+[ -n "${ROBOT_SERIAL:-}" ] && A="$ADB -s $ROBOT_SERIAL"
 
 connecter() {
-  "$ADB" connect "$IP:5555" >/dev/null 2>&1
-  if ! $A shell true >/dev/null 2>&1; then
+  [ -n "${ROBOT_SERIAL:-}" ] || "$ADB" connect "$IP:5555" >/dev/null 2>&1
+  if ! $A shell true </dev/null >/dev/null 2>&1; then
     echo "Le robot ne répond pas sur $IP:5555."
     echo "Vérifie qu'il est allumé, sur le même Wi-Fi que l'ordinateur, que le module « ADB Wi-Fi »"
     echo "est actif dans Magisk, et que ta clé a bien été ajoutée (guide, étape 7)."
@@ -43,7 +47,7 @@ connecter() {
 }
 
 root_ok() {
-  $A shell "su -c id" 2>/dev/null | grep -q "uid=0"
+  $A shell "su -c id" </dev/null 2>/dev/null | grep -q "uid=0"
 }
 
 exiger_root() {
@@ -53,3 +57,32 @@ exiger_root() {
     exit 1
   fi
 }
+
+# ------------------------------------------------------------------ rescue module (spec 007)
+# Anything that modifies the robot is first recorded in the module's registry, so it can be undone.
+
+# Path of the "camybrith" command on the robot (empty if the module is not installed).
+rescue_path() {
+  $A shell </dev/null "su -c 'for c in /data/adb/modules/camybrith_secours/camybrith /data/adb/modules_update/camybrith_secours/camybrith; do [ -f \$c ] && echo \$c && break; done'" 2>/dev/null | tr -d '\r' | head -1
+}
+
+require_rescue() {
+  RESCUE=$(rescue_path)
+  if [ -z "$RESCUE" ]; then
+    echo "Le module de secours n'est pas installé : il garde la trace de ce que ce script modifie,"
+    echo "pour pouvoir toujours revenir à l'appli Lidl. Installe-le d'abord :"
+    echo "  bash outils/secours.sh installer"
+    exit 1
+  fi
+}
+
+# note TYPE TARGET BEFORE AFTER SCOPE: records the change and prints its id.
+note() {
+  local id
+  id=$($A shell </dev/null "su -c 'sh $RESCUE noter $1 $2 $3 $4 $5 $(basename "$0")'" 2>/dev/null | tr -d '\r' | tail -1)
+  case "$id" in ''|*[!0-9]*) echo "Le registre a refusé la modification ($1 $2) : $id. Rien n'a été fait." >&2; exit 1 ;; esac
+  echo "$id"
+}
+
+# note_done ID ok|echec: confirms the change, or removes it if the attempt failed.
+note_done() { $A shell </dev/null "su -c 'sh $RESCUE noter-fin $1 $2'" >/dev/null 2>&1; }

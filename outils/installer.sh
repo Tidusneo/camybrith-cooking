@@ -20,6 +20,14 @@ APP=$(ls -t "$D"/Camybrith-*-"$MODE".apk 2>/dev/null | head -1)
 
 connecter
 exiger_root
+require_rescue
+
+# Spec 007: recorded in the registry BEFORE installing: the apps (removed only by a full removal)
+# and Camybrith's startup (undone by going back to the Lidl app).
+ID_PILOT=$(note appli app.toque.pilote absent installee retrait) || exit 1
+ID_APP=$(note appli app.toque absent installee retrait) || exit 1
+ID_BOOT=$(note demarrage app.toque/app.toque.recipes.BootReceiver absent enabled lidl) || exit 1
+ID_HOME=$(note demarrage app.toque/app.toque.ui.Accueil absent enabled lidl) || exit 1
 
 # Magisk 31 n'affiche plus de fenêtre de demande : le root s'accorde d'avance, ici pour le pilote
 # (port série de la carte moteur) et pour l'interface (couper l'appli Lidl du moteur, commandes Android).
@@ -38,7 +46,11 @@ accorder_root() {
 echo "1/5  Pilote moteur : $(basename "$PILOTE")…"
 $A install -r "$PILOTE" | tail -1
 UID_P=$($A shell dumpsys package app.toque.pilote | tr -d '\r' | grep -o 'userId=[0-9]*' | head -1 | cut -d= -f2)
-[ -n "$UID_P" ] || { echo "Le pilote ne s'est pas installé : rien d'autre n'a été fait."; exit 1; }
+if [ -z "$UID_P" ]; then
+  for i in $ID_PILOT $ID_APP $ID_BOOT $ID_HOME; do note_done "$i" echec; done
+  echo "Le pilote ne s'est pas installé : rien d'autre n'a été fait."; exit 1
+fi
+note_done "$ID_PILOT" ok
 accorder_root app.toque.pilote "Camybrith Cooking : pilote moteur"
 
 echo "2/5  Interface : $(basename "$APP")…"
@@ -48,9 +60,11 @@ case "$OUT" in
   *VERSION_DOWNGRADE*)
     echo "     La version installée est plus récente (par exemple la prudente). Pour revenir à la rapide :"
     echo "     $ADB -s $IP:5555 uninstall app.toque   puis relance ce script (favoris et réglages seront perdus)."
+    for i in $ID_APP $ID_BOOT $ID_HOME; do note_done "$i" echec; done
     exit 1 ;;
-  *Success*) ;;
-  *) echo "     L'installation a échoué."; exit 1 ;;
+  *Success*) for i in $ID_APP $ID_BOOT $ID_HOME; do note_done "$i" ok; done ;;
+  *) for i in $ID_APP $ID_BOOT $ID_HOME; do note_done "$i" echec; done
+     echo "     L'installation a échoué."; exit 1 ;;
 esac
 
 echo "3/5  Accès root de l'interface…"

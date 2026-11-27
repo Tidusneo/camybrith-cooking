@@ -15,6 +15,9 @@ import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.TextView
 import app.toque.Prefs
+import app.toque.backup.Rescue
+import app.toque.core.backup.Iso
+import app.toque.core.backup.Mode
 import app.toque.Sounds
 import app.toque.core.machine.RootShell
 import app.toque.recipes.FileImport
@@ -73,6 +76,28 @@ class MainActivity : Activity() {
             if (keepAwake) lastActivityMs = System.currentTimeMillis()
             if (!sleeping && min > 0 && System.currentTimeMillis() - lastActivityMs >= min * 60_000L) sleepScreen()
             main.postDelayed(this, 10_000)
+        }
+    }
+
+    // ------------------------------------------------------------------ cooking state for the rescue module
+    // (spec 007, research.md D12): the module refuses to go back to the Lidl app during a program.
+    // Written on every change, and every 30 s during a program. Also runs in the background.
+    private var cookingWritten: Boolean? = null
+    private var cookingUpdatedMs = 0L
+    private val cookingCheck = object : Runnable {
+        override fun run() {
+            if (prefs.mode == Prefs.Mode.HARDWARE) {
+                val s = snapshot
+                val now = System.currentTimeMillis()
+                if (s.busy != cookingWritten || (s.busy && now - cookingUpdatedMs >= 30_000)) {
+                    cookingWritten = s.busy
+                    cookingUpdatedMs = now
+                    val busy = s.busy
+                    val label = s.jobLabel
+                    Thread { Rescue.writeCooking(busy, label) }.start()
+                }
+            }
+            main.postDelayed(this, 5_000)
         }
     }
 
@@ -155,6 +180,25 @@ class MainActivity : Activity() {
         Ui.apply(Ui.resolve(Ui.Theme.of(prefs.theme)))
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         window.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(Ui.BG))
+        if (prefs.mode == Prefs.Mode.HARDWARE) {
+            val robot = prefs.activeRobot
+            Thread {
+                Rescue.writeRobotId(robot)
+                // The home screen is the .ui.Accueil alias (spec 007). Android can forget the
+                // chosen home app (after an update, for instance) and then asks which one to use:
+                // declare it again whenever HOME no longer resolves to Camybrith. Never when the
+                // alias is disabled (robot back on the Lidl app).
+                val alias = android.content.ComponentName(this, "app.toque.ui.Accueil")
+                val state = packageManager.getComponentEnabledSetting(alias)
+                val home = packageManager.resolveActivity(
+                    Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME), android.content.pm.PackageManager.MATCH_DEFAULT_ONLY)
+                if (state != android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_DISABLED &&
+                    home?.activityInfo?.packageName != packageName)
+                    RootShell.run("cmd package set-home-activity app.toque/app.toque.ui.Accueil", 10_000)
+            }.start()
+        }
+        main.removeCallbacks(cookingCheck)
+        main.post(cookingCheck)
 
         root = FrameLayout(this)
         root.setBackgroundColor(Ui.BG)
@@ -179,6 +223,9 @@ class MainActivity : Activity() {
         }
         root.addView(sleepView, Ui.flp())
         setContentView(root)
+        // Spec 007: robot back on the Lidl app → explanation banner (after the home screen).
+        main.postDelayed({ checkLidlMode() }, 1_500)
+        main.postDelayed({ afterResume(intent) }, 1_500)
 
         // Recettes déposées dans le dossier d'import (Thermomix…) : importées à l'ouverture, une fois
         // l'écran et le catalogue prêts (l'ouverture passe d'abord).
@@ -325,7 +372,14 @@ class MainActivity : Activity() {
         if (prefs.vendorSession) endVendorSession()
     }
 
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+        afterResume(intent)
+    }
+
     override fun onStop() {
+        // Robot on the Lidl app: the bubble must be there as soon as Camybrith leaves the screen.
+        if (lidlMode) ReturnBubble.startLidlMode(this)
         unsubscribe?.invoke()
         unsubscribeEvents?.invoke()
         main.removeCallbacks(themeCheck)
@@ -336,6 +390,7 @@ class MainActivity : Activity() {
     }
 
     override fun onDestroy() {
+        main.removeCallbacks(cookingCheck)
         Ui.tapSound = {}
         sounds.release()
         super.onDestroy()
@@ -567,7 +622,7 @@ class MainActivity : Activity() {
 
     /** Dialogue de confirmation. */
     fun confirm(title: String, message: String, yes: String, no: String = tr("Annuler"),
-                danger: Boolean = false, icon: Icon.Kind = Icon.Kind.WARNING, onYes: () -> Unit) {
+                danger: Boolean = false, icon: Icon.Kind = Icon.Kind.WARNING, onNo: () -> Unit = {}, onYes: () -> Unit) {
         val card = Ui.vertical(this)
         card.background = Ui.round(Ui.SURFACE, 26f)
         card.setPadding(Ui.u(28), Ui.u(24), Ui.u(28), Ui.u(22))
@@ -578,7 +633,7 @@ class MainActivity : Activity() {
         card.addView(head)
         card.addView(Ui.text(this, message, 17f, Ui.TEXT2).apply { setLineSpacing(0f, 1.22f) }, Ui.lp(t = 14, b = 22))
         val row = Ui.horizontal(this, Gravity.END or Gravity.CENTER_VERTICAL)
-        row.addView(Ui.button(this, no, Ui.Style.GHOST, height = 52) { closeOverlay() })
+        row.addView(Ui.button(this, no, Ui.Style.GHOST, height = 52) { closeOverlay(); onNo() })
         row.addView(Ui.spacer(this, w = 12))
         row.addView(Ui.button(this, yes, if (danger) Ui.Style.DANGER else Ui.Style.PRIMARY, height = 52) {
             closeOverlay()
@@ -631,6 +686,68 @@ class MainActivity : Activity() {
             val r = sync.importNow()
             main.post { toast(r.message, if (r.ok) Ui.OK else Ui.WARN) }
         }.start()
+    }
+
+    /**
+     * Banner when the robot runs the Lidl app (spec 007, contracts/ui.md): since when, why (rescue,
+     * gesture), the report; "Rester sur l'appli Lidl" reopens the Lidl app.
+     */
+    /** True while the robot runs the Lidl app: leaving Camybrith brings the bubble back. */
+    @Volatile private var lidlMode = false
+
+    private fun checkLidlMode() {
+        Thread {
+            val mode = Rescue.mode()
+            lidlMode = mode.lidl
+            if (!mode.lidl) return@Thread
+            val report = Rescue.lastReport()?.lines()?.take(2)?.joinToString("\n") ?: ""
+            main.post { showLidlBanner(mode, report) }
+        }.start()
+    }
+
+    private fun showLidlBanner(mode: Mode, report: String) {
+        val since = Iso.parse(mode.since)?.let {
+            java.text.SimpleDateFormat("dd/MM/yyyy HH:mm", java.util.Locale.ROOT).format(java.util.Date(it))
+        } ?: mode.since
+        val text = when (mode.origin?.key) {
+            "secours" -> tr("Le robot fonctionne avec l'appli Lidl depuis le %s, suite à 3 plantages au démarrage.", since)
+            "geste" -> tr("Le robot fonctionne avec l'appli Lidl depuis le %s, suite au geste de l'interrupteur.", since)
+            else -> tr("Le robot fonctionne avec l'appli Lidl depuis le %s.", since)
+        }
+        confirm(tr("Appli Lidl"), text + (if (report.isNotEmpty()) "\n\n" + report else "") + "\n\n" +
+            tr("Camybrith Cooking reste en mode Démo : il ne touche pas au moteur tant que le robot est sur l'appli Lidl."),
+            tr("Reprendre Camybrith"), tr("Rester sur l'appli Lidl"), icon = Icon.Kind.SYNC,
+            onNo = { openLidlApp() }) { confirmResume() }
+    }
+
+    private fun openLidlApp() {
+        packageManager.getLaunchIntentForPackage(prefs.vendorPackage)?.let { startActivity(it.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+    }
+
+    /** "Reprendre Camybrith" (spec 007, US4): the module cannot see whether the Lidl app is cooking. */
+    private fun confirmResume() {
+        confirm(tr("Reprendre Camybrith"),
+            tr("Camybrith Cooking redevient l'écran d'accueil et reprend la machine, après les vérifications habituelles.\n\nAucune cuisson ne doit être en cours avec l'appli Lidl."),
+            tr("Reprendre"), danger = true) {
+            toast(tr("Reprise de Camybrith…"))
+            Thread {
+                val r = Rescue.resume()
+                main.post {
+                    // On success the module reopens this activity with EXTRA_RESUMED (onNewIntent).
+                    if (r.code != 0) confirm(tr("Reprendre Camybrith"),
+                        (if (r.code == 1) tr("Refusé : ") else tr("Problème : ")) + r.text.takeLast(600), "OK", tr("Fermer")) {}
+                }
+            }.start()
+        }
+    }
+
+    /** After `camybrith reprendre`: the same checks as the first switch to Machine réelle. */
+    private fun afterResume(intent: Intent?) {
+        if (intent?.getBooleanExtra(EXTRA_RESUMED, false) != true) return
+        intent.removeExtra(EXTRA_RESUMED)
+        lidlMode = false
+        closeOverlay()
+        SettingsScreen(this).also { push(it) }.prepareHardware()
     }
 
     fun openVendorApp() {
@@ -720,6 +837,9 @@ class MainActivity : Activity() {
     }
 
     companion object {
+        /** Set by `camybrith reprendre` when it reopens Camybrith (spec 007, US4). */
+        const val EXTRA_RESUMED = "camybrith_resume"
+
         /** Partie à rouvrir après une reconstruction (langue, thème). */
         private var reopenSection: Section? = null
 
