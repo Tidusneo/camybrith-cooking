@@ -88,6 +88,10 @@ assistant et lui demander de te guider pas à pas.
 * **Hors ligne** : rien ne dépend d'un serveur.
 * **Tout se personnalise** : les sons, l'animation de démarrage avec ton logo, et même le nom et
   l'icône (voir [personnalisation/LISEZMOI.md](personnalisation/LISEZMOI.md)).
+* **On peut toujours revenir à l'appli Lidl** : depuis le robot, depuis l'ordinateur, ou en
+  éteignant et rallumant 3 fois de suite si l'écran est figé ; puis revenir à Camybrith par une
+  bulle. Un module de secours garde la trace de tout ce qui est modifié. Sauvegarde et
+  restauration de tes favoris, recettes et réglages (voir [docs/GUIDE.md](docs/GUIDE.md), étape 12).
 
 ## Home Assistant
 

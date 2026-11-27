@@ -457,11 +457,17 @@ Toujours dans le dossier du projet :
 cd ~/camybrith-cooking
 git pull
 bash outils/telecharger.sh
+bash outils/secours.sh installer
 bash outils/installer.sh
 ```
 
 * `telecharger.sh` récupère la dernière version publiée : le **pilote moteur**, l'interface
-  **rapide** et **prudente** (dans `apk/`), et l'**animation de démarrage** (dans `modules/`).
+  **rapide** et **prudente** (dans `apk/`), l'**animation de démarrage** et le **module de
+  secours** (dans `modules/`).
+* `secours.sh installer` installe le **module de secours** : il garde la trace de tout ce que
+  Camybrith modifie sur le robot, pour pouvoir **toujours revenir à l'appli Lidl** (voir
+  l'étape 12). Il ne modifie pas `/system`. Les scripts suivants refusent de modifier le robot
+  sans lui.
 * `installer.sh` te demande la première fois l'adresse IP du robot (elle est gardée dans
   `outils/robot.conf`), installe le pilote, lui accorde le root, installe l'interface, lui accorde
   le root, la fait **compiler par Android** (une à deux minutes, n'ouvre pas l'appli pendant ce
@@ -508,8 +514,8 @@ Si l'un de ces essais ne se passe pas comme décrit, coupe le robot à l'interru
 * **La barre de navigation** en bas de l'écran peut être cachée :
   `bash outils/barre.sh cacher` (et `bash outils/barre.sh remettre`). Sans elle, un **appui long
   sur l'heure** dans Camybrith Cooking ouvre Retour, Accueil et Applis récentes.
-* **Revenir à l'appli d'origine** : **Réglages**, **Machine**, « Revenir à l'appli d'origine ».
-  Camybrith Cooking rend le moteur et passe en Démo.
+* **Revenir à l'appli Lidl** : **Réglages**, **Outils**, « Revenir à l'appli Lidl » ; le robot
+  redémarre sur l'appli Lidl, la bulle « Camybrith » permet d'y revenir (étape 12).
 * **Tes propres recettes** écrites pour un Thermomix : le format du fichier et la façon de les
   envoyer sont expliqués dans [RECETTES.md](RECETTES.md). Les réglages convertis pour le Smart
   sont signalés « à vérifier » : relis-les avant de lancer.
@@ -537,18 +543,34 @@ Tes favoris, réglages et recettes sont conservés.
 
 ## 12. Revenir en arrière
 
-Du plus léger au plus complet :
+« Revenir en arrière », c'est remettre le robot sur **la seule appli Lidl**. Le root et l'accès
+Wi-Fi restent, pour pouvoir revenir à Camybrith. Du plus léger au plus complet :
 
-1. **Juste utiliser l'appli d'origine** : Réglages, Machine, « Revenir à l'appli d'origine ».
-2. **Retirer l'animation** : `bash outils/animation.sh retirer`, puis redémarre.
-3. **Désinstaller Camybrith Cooking** (après le point 1) :
-   ```
-   ~/platform-tools/adb -s 192.168.1.42:5555 uninstall app.toque
-   ~/platform-tools/adb -s 192.168.1.42:5555 uninstall app.toque.pilote
-   ```
-4. **Retirer le root** : réécris ton `boot.img` d'origine avec SP Flash Tool (étape 6.3 avec
+1. **Revenir à l'appli Lidl, depuis le robot** : Réglages › Outils › **Revenir à l'appli Lidl**.
+   L'écran liste ce qui sera annulé, puis le robot redémarre sur l'appli Lidl. Un bilan est
+   gardé (Réglages › Outils › Modifications du robot).
+2. **Depuis l'ordinateur**, même si Camybrith est cassé : `bash outils/origine.sh`.
+3. **Sans écran ni ordinateur** (écran figé) : **allume, attends le logo, éteins à
+   l'interrupteur, trois fois de suite** (moins de 2 minutes à chaque fois). Au démarrage suivant,
+   le robot repart sur l'appli Lidl. Le module le fait aussi tout seul si Camybrith plante dès le
+   démarrage (mode de secours).
+4. **Revenir sur Camybrith** ensuite : touche la bulle « Camybrith » affichée par-dessus l'appli
+   Lidl, puis **Reprendre Camybrith**. Depuis l'ordinateur : `bash outils/origine.sh reprendre`.
+5. **Sauvegarder tes données** avant de grosses manipulations : Réglages › Sauvegardes ›
+   Sauvegarder maintenant, puis `bash outils/sauvegarde.sh recuperer` pour la copier sur
+   l'ordinateur. Favoris, recettes perso et réglages (jamais les mots de passe ni les recettes
+   Lidl).
+6. **Retirer complètement Camybrith** : `bash outils/retirer.sh`. Le registre est copié sur
+   l'ordinateur, puis l'interface, le pilote, l'animation et le module de secours sont retirés. Le
+   root et l'accès Wi-Fi restent.
+
+> Ne jamais accepter de mise à jour système Lidl tant que le robot est rooté.
+
+Et pour aller plus loin que l'appli Lidl :
+
+7. **Retirer le root** : réécris ton `boot.img` d'origine avec SP Flash Tool (étape 6.3 avec
    l'original). Magisk et ses modules deviennent inactifs.
-5. **En cas de gros pépin**, ta sauvegarde de l'étape 2 contient tout ce qu'il faut pour remettre
+8. **En cas de gros pépin**, ta sauvegarde de l'étape 2 contient tout ce qu'il faut pour remettre
    le robot dans son état d'origine. Ne tente rien au hasard : demande de l'aide dans les Issues
    du projet, avec une description précise de ce qui s'est passé.
 

@@ -167,6 +167,9 @@ class RescueCommand(
                 "alerte" to Space.isLow(free, total), "reserve" to reserveFile.isFile,
                 "actives" to Scope.values().associate { it.key to reg.active(it).size },
                 "lidl" to lidl.map { linkedMapOf("id" to it.id, "type" to it.type.key, "cible" to it.target, "avant" to it.before) },
+                "modifications" to reg.changes.map { linkedMapOf(
+                    "id" to it.id, "type" to it.type.key, "cible" to it.target, "portee" to it.scope.key,
+                    "etat" to it.state.key, "date" to it.date, "origine" to it.origin, "deduit" to it.inferred) },
                 "operation" to op?.let { try { Journal.parse(it).type.key } catch (_: RegistryException) { "illisible" } },
                 "dernierBilan" to last?.name,
             )))

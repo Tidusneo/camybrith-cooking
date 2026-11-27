@@ -637,5 +637,12 @@
   "L'état actuel est sauvegardé d'abord, puis Camybrith Cooking redémarre.": "Primero se guarda el estado actual y luego Camybrith Cooking se reinicia.",
   "Restaurer": "Restaurar",
   "Restauration…": "Restaurando…",
-  "Restauration": "Restauración"
+  "Restauration": "Restauración",
+  "annulée": "deshecha",
+  "échec": "fallo",
+  "active": "activa",
+  "relevée à l'installation du module": "registrada al instalar el módulo",
+  "Modifications du robot": "Cambios en el robot",
+  "Module de secours absent : depuis l'ordinateur, lancez bash outils/secours.sh installer": "Falta el módulo de rescate: desde el ordenador, ejecuta bash outils/secours.sh installer",
+  "Aucune modification inscrite au registre.": "Ningún cambio registrado."
 }

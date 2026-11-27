@@ -56,7 +56,8 @@ object Rescue {
         run("noter-fin", id.toString(), if (ok) "ok" else "echec")
     }
 
-    class Status(val lidl: Boolean, val since: String, val origin: String?, val toUndo: List<String>, val storageLow: Boolean)
+    class Status(val lidl: Boolean, val since: String, val origin: String?, val toUndo: List<String>, val storageLow: Boolean,
+                 val changes: List<String> = emptyList())
 
     fun status(): Status? {
         val r = run("etat", "--json")
@@ -66,6 +67,11 @@ object Rescue {
             m.str("mode") == "lidl", m.str("depuis") ?: "", m.str("origine"),
             m["lidl"].list().map { e -> e.obj().let { label(it.str("type") ?: "", it.str("cible") ?: "") } },
             m["alerte"] == true,
+            m["modifications"].list().map { e -> e.obj().let {
+                val state = when (it.str("etat")) { "annulee" -> tr("annulée"); "echec" -> tr("échec"); else -> tr("active") }
+                "${it.str("date")?.take(10) ?: ""} · ${label(it.str("type") ?: "", it.str("cible") ?: "")} · ${it.str("portee")} · $state" +
+                    if (it["deduit"] == true) " · " + tr("relevée à l'installation du module") else " · " + (it.str("origine") ?: "")
+            } },
         )
     }
 

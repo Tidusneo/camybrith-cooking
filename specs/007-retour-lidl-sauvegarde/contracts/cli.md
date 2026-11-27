@@ -34,7 +34,12 @@ code 2. La restauration n'est pas faite par le module mais par l'interface (rese
 
 Seules écritures permises : `/data/adb/camybrith/`, `/data/adb/modules/` (retrait d'un module du
 projet), `/data/data/app.toque*`, `pm enable|disable|uninstall` sur les cibles du registre,
-`settings put|delete` sur les cibles du registre, `am force-stop`, `reboot`.
+`settings put|delete` sur les cibles du registre, `am force-stop`, `reboot` (`svc power reboot`).
+Ajoutées à l'implémentation, limitées à Camybrith et à l'appli Lidl : `appops set app.toque
+SYSTEM_ALERT_WINDOW allow` (bulle), `cmd package set-home-activity` sur l'alias d'accueil de
+Camybrith (reprise), et des lancements sans écriture : `am start` (écran d'accueil, Camybrith),
+`am start-foreground-service` (bulle), `am broadcast` vers Camybrith (sauvegarde), `monkey -p
+<appli Lidl>` (ouvrir l'appli Lidl).
 
 # Contract: scripts ordinateur (`outils/`)
 

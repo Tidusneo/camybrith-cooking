@@ -286,6 +286,7 @@ class SettingsScreen(a: MainActivity) : Screen(a) {
         tools.addView(link(tr("Journal")) { a.push(LogScreen(a)) })
         tools.addView(link(tr("Paramètres Android")) { a.openAndroidSettings() })
         tools.addView(link(tr("Revenir à l'appli Lidl")) { returnToLidl() })
+        tools.addView(link(tr("Modifications du robot")) { showChanges() })
         tools.addView(Ui.text(c, tr("Écran figé ? Éteignez et rallumez le robot 3 fois de suite (moins de 2 minutes à chaque fois) : il repartira sur l'appli Lidl."),
             13f, Ui.TEXT3).apply { setLineSpacing(0f, 1.1f) }, Ui.lp(t = 4, b = 8))
         val version = try { a.packageManager.getPackageInfo(a.packageName, 0).versionName } catch (_: Exception) { "?" }
@@ -647,6 +648,21 @@ class SettingsScreen(a: MainActivity) : Screen(a) {
                 }
             }.start()
         }
+    }
+
+    /** Read-only list of the registry (contracts/ui.md › Modifications du robot), to understand the reports. */
+    private fun showChanges() {
+        Thread {
+            val status = if (Rescue.installed()) Rescue.status() else null
+            view.post {
+                val text = when {
+                    status == null -> tr("Module de secours absent : depuis l'ordinateur, lancez bash outils/secours.sh installer")
+                    status.changes.isEmpty() -> tr("Aucune modification inscrite au registre.")
+                    else -> status.changes.joinToString("\n") { "• $it" }
+                }
+                a.confirm(tr("Modifications du robot"), text, "OK", tr("Fermer"), icon = Icon.Kind.SETTINGS) {}
+            }
+        }.start()
     }
 
     /** Without the rescue module: former behaviour, with no record and no checks. */

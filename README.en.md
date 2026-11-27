@@ -90,6 +90,10 @@ another assistant and ask it to guide you step by step.
 * **Offline**: nothing depends on a server.
 * **Everything can be customized**: sounds, the boot animation with your own logo, even the name
   and icon (see [personnalisation/README.en.md](personnalisation/README.en.md)).
+* **You can always go back to the Lidl app**: from the robot, from the computer, or by switching
+  it off and on 3 times in a row if the screen is frozen; then back to Camybrith with a bubble. A
+  rescue module keeps track of everything that is changed. Backup and restore of your favorites,
+  recipes and settings (see [docs/GUIDE.en.md](docs/GUIDE.en.md), step 12).
 
 ## Home Assistant
 

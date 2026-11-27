@@ -87,6 +87,10 @@ todavía no se ha probado en un Connect real. Ver [docs/CONNECT.en.md](docs/CONN
 * **Sin conexión**: nada depende de un servidor.
 * **Todo se personaliza**: sonidos, animación de arranque con tu propio logo, incluso el nombre y
   el icono (ver [personnalisation/README.en.md](personnalisation/README.en.md)).
+* **Siempre se puede volver a la app de Lidl**: desde el robot, desde el ordenador, o apagándolo y
+  encendiéndolo 3 veces seguidas si la pantalla está bloqueada; y luego volver a Camybrith con una
+  burbuja. Un módulo de rescate guarda la lista de todo lo que se modifica. Copia y restauración de
+  favoritos, recetas y ajustes (ver [docs/GUIDE.en.md](docs/GUIDE.en.md), paso 12).
 
 ## Home Assistant
 
