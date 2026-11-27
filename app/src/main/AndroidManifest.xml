@@ -83,6 +83,11 @@
             </intent-filter>
         </receiver>
 
+        <!-- Backup requested by the rescue module (spec 007), started as root only. -->
+        <receiver
+            android:name=".backup.BackupReceiver"
+            android:exported="false" />
+
         <receiver
             android:name=".recipes.BootReceiver"
             android:exported="true">

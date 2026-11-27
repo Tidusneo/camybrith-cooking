@@ -387,6 +387,30 @@ B12() {
   verdict "B12 bulle « Camybrith » en mode Lidl" "$e"
 }
 
+# Backup (US6, T058): created in less than 30 s, copied to the computer, without any secret.
+B8() {
+  initial_state
+  local secret="banc-secret-$RANDOM" t0 t1 e="" name
+  # A secret in the settings, as an MQTT password would be (written while the app is stopped).
+  sh_ "am force-stop app.toque" >/dev/null
+  sh_ "f=/data/data/app.toque/shared_prefs/toque.xml; [ -f \$f ] || { mkdir -p \${f%/*}; printf '<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\" ?>\n<map>\n</map>\n' > \$f; }; sed -i 's#</map>#    <string name=\"mqttPassword\">$secret</string>\n    <string name=\"theme\">sombre</string>\n</map>#' \$f; chown \$(stat -c %u:%g \${f%/*}) \$f" >/dev/null
+  t0=$(date +%s)
+  ROBOT_SERIAL=$SERIAL bash "$ROOT/outils/sauvegarde.sh" creer </dev/null >"$LOGS/B8.txt" 2>&1
+  t1=$(date +%s)
+  grep -q "Sauvegarde créée" "$LOGS/B8.txt" || e="$e pas de sauvegarde (voir $LOGS/B8.txt);"
+  [ $((t1 - t0)) -le 30 ] || e="$e $((t1 - t0)) s (plus de 30 s);"
+  rm -rf "$ROOT/sauvegardes"
+  ROBOT_SERIAL=$SERIAL bash "$ROOT/outils/sauvegarde.sh" recuperer </dev/null >>"$LOGS/B8.txt" 2>&1
+  name=$(ls "$ROOT"/sauvegardes/camybrith-*.camybrith 2>/dev/null | head -1)
+  if [ -z "$name" ]; then e="$e pas récupérée sur l'ordinateur;"
+  else
+    unzip -l "$name" | grep -q manifest.json || e="$e manifeste absent;"
+    unzip -p "$name" | grep -q "$secret" && e="$e LE SECRET EST DANS LA SAUVEGARDE;"
+    unzip -p "$name" settings.json | grep -q sombre || e="$e réglages absents;"
+  fi
+  verdict "B8 sauvegarde en $((t1 - t0)) s, récupérée, sans secret" "$e"
+}
+
 # Full removal (US5): no Camybrith app or module left, the fake Lidl app works, root stays.
 B9() {
   initial_state
@@ -464,7 +488,7 @@ B13() {
 case "${1:-}" in
   arreter) running && a emu kill >/dev/null; echo "Émulateur arrêté."; exit 0 ;;
 esac
-SCENARIOS=${*:-"B1 B2 B3 B4 B5 B6 B7 B9 B10 B12 B13"}
+SCENARIOS=${*:-"B1 B2 B3 B4 B5 B6 B7 B8 B10 B12 B13 B9"}
 start_emulator
 install_all
 echo "Scénarios : $SCENARIOS"
@@ -472,7 +496,7 @@ echo "Scénarios : $SCENARIOS"
 set -- $SCENARIOS
 while [ $# -gt 0 ]; do
   case "$1" in
-    B1|B2|B3|B4|B6|B7|B9|B10|B11|B12|B13) "$1" ;;
+    B1|B2|B3|B4|B6|B7|B8|B9|B10|B11|B12|B13) "$1" ;;
     B5) if [ "${2:-}" = aleatoire ]; then B5_random; shift; else B5; fi ;;
     *) echo "Scénario inconnu ou pas encore écrit : $1" ;;
   esac

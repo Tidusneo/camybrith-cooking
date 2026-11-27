@@ -15,7 +15,9 @@ import android.widget.ScrollView
 import android.widget.TextView
 import app.toque.Prefs
 import app.toque.TimeSync
+import app.toque.backup.BackupWriter
 import app.toque.backup.Rescue
+import app.toque.core.backup.Space
 import app.toque.core.i18n.I18n
 import app.toque.core.i18n.tr
 import app.toque.core.machine.TemperatureTable
@@ -267,6 +269,15 @@ class SettingsScreen(a: MainActivity) : Screen(a) {
         Updater.onInstallError = { msg -> updateFailed(msg) }
         renderUpdate()
 
+        // ---- Backups (spec 007, US6, contracts/ui.md › Sauvegardes)
+        val backups = section(tr("Sauvegardes"), Icon.Kind.SETTINGS)
+        backupSpace = Ui.text(c, "", 15f, Ui.TEXT2)
+        backups.addView(backupSpace, Ui.lp(b = 8))
+        backups.addView(link(tr("Sauvegarder maintenant")) { backupNow() })
+        backupList = Ui.vertical(c)
+        backups.addView(backupList)
+        refreshBackups()
+
         // ---- Outils
         val tools = section(tr("Outils"), Icon.Kind.SETTINGS)
         tools.addView(link(tr("Diagnostic de la base moteur")) { a.push(DiagnosticsScreen(a)) })
@@ -468,6 +479,45 @@ class SettingsScreen(a: MainActivity) : Screen(a) {
         a.prefs.twinPort = port.text.toString().trim().toIntOrNull() ?: 8765
         a.machine.reconfigure { v -> if (v.ok) a.toast(tr("Mode : %s", mode.label), Ui.OK) else a.refusal(v) }
         a.refreshTitle()
+    }
+
+    private lateinit var backupSpace: TextView
+    private lateinit var backupList: LinearLayout
+
+    private fun refreshBackups() {
+        Thread {
+            val free = a.filesDir.usableSpace
+            val total = a.filesDir.totalSpace
+            val entries = BackupWriter.list()
+            view.post {
+                val low = Space.isLow(free, total)
+                backupSpace.text = tr("Espace libre : %s (%d %%)", Space.readable(free), Space.percentFree(free, total)) +
+                    if (low) "\n" + tr("La mémoire du robot est presque pleine : supprimez d'anciennes sauvegardes ou des photos de recettes.") else ""
+                backupSpace.setTextColor(if (low) Ui.WARN else Ui.TEXT2)
+                backupList.removeAllViews()
+                if (entries.isEmpty()) backupList.addView(Ui.text(c, tr("Aucune sauvegarde sur le robot."), 14f, Ui.TEXT3))
+                for (e in entries) backupList.addView(link(e.name.removePrefix("camybrith-").removeSuffix(".camybrith") + " · " + Space.readable(e.size)) {
+                    a.confirm(tr("Supprimer la sauvegarde"), e.name, tr("Supprimer"), danger = true) {
+                        Thread { BackupWriter.delete(e.name); view.post { refreshBackups() } }.start()
+                    }
+                })
+            }
+        }.start()
+    }
+
+    private fun backupNow() {
+        if (a.snapshot.busy) {
+            a.toast(tr("Cuisson en cours : sauvegardez à la fin du programme"), Ui.WARN)
+            return
+        }
+        a.toast(tr("Sauvegarde…"))
+        Thread {
+            val r = BackupWriter.create(a)
+            view.post {
+                a.toast(r.message, if (r.ok) Ui.OK else Ui.WARN)
+                refreshBackups()
+            }
+        }.start()
     }
 
     /** Also called after resuming Camybrith from the Lidl app (spec 007, US4): same checks. */

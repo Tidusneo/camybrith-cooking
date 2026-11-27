@@ -162,14 +162,14 @@ Dépôt existant (plan.md › Project Structure) : `core/` (Kotlin pur), `app/`,
 
 **Independent Test**: quickstart §B scénario B8 (partie sauvegarde et récupération) ; §C étape 7
 
-- [ ] T050 [P] [US6] Manifeste de sauvegarde dans `core/src/main/kotlin/app/toque/core/backup/Manifest.kt` : `data-model.md` Sauvegarde.format, Sauvegarde.createdAt, Sauvegarde.app.versionName, Sauvegarde.app.versionCode, Sauvegarde.pilot.versionCode, Sauvegarde.robot, Sauvegarde.sections, Sauvegarde.summary, Sauvegarde.files, Sauvegarde.secretsIncluded
-- [ ] T051 [P] [US6] Filtre des secrets dans `core/src/main/kotlin/app/toque/core/backup/Secrets.kt` (`data-model.md` Sauvegarde › Clés secrètes exclues)
-- [ ] T052 [US6] Tests JUnit de T050 et T051 dans `core/src/test/kotlin/app/toque/core/BackupTest.kt` (aucune valeur de `mqttPassword` en sortie, clé inconnue exclue)
-- [ ] T053 [US6] Export dans `app/src/main/kotlin/app/toque/backup/BackupWriter.kt` : sections de `data-model.md` Sauvegarde.sections depuis `recettes.db` (favoris ; recettes de source IMPORTED et USER uniquement), `toque.xml` filtré (T051) et `pilote.xml` ; zip en flux, empreintes SHA-256 pour Sauvegarde.files, empreinte anonymisée pour Sauvegarde.robot ; vérification d'espace avant de commencer (`Space.kt`, FR-019 : refus clair et proposition de supprimer les plus anciennes) ; rangement dans `/data/adb/camybrith/sauvegardes/` et conservation des 5 dernières
-- [ ] T054 [US6] Sous-commande `sauvegarder` dans `modules/secours/camybrith` (déclenche l'export de l'interface, refus code 1 si elle est absente)
-- [ ] T055 [US6] Section « Sauvegardes » dans `app/src/main/kotlin/app/toque/ui/screens/SettingsScreen.kt` : espace libre et alerte sous 10 % (FR-020), Sauvegarder maintenant (pendant une cuisson : proposer à la fin), liste, Supprimer (`contracts/ui.md`)
-- [ ] T056 [US6] Script `outils/sauvegarde.sh` : `creer`, `lister`, `recuperer [nom]` vers `sauvegardes/`
-- [ ] T057 [P] [US6] Textes de T055 dans `app/src/main/assets/lang/en.json` et `app/src/main/assets/lang/es.json`
+- [X] T050 [P] [US6] Manifeste de sauvegarde dans `core/src/main/kotlin/app/toque/core/backup/Manifest.kt` : `data-model.md` Sauvegarde.format, Sauvegarde.createdAt, Sauvegarde.app.versionName, Sauvegarde.app.versionCode, Sauvegarde.pilot.versionCode, Sauvegarde.robot, Sauvegarde.sections, Sauvegarde.summary, Sauvegarde.files, Sauvegarde.secretsIncluded
+- [X] T051 [P] [US6] Filtre des secrets dans `core/src/main/kotlin/app/toque/core/backup/Secrets.kt` (`data-model.md` Sauvegarde › Clés secrètes exclues)
+- [X] T052 [US6] Tests JUnit de T050 et T051 dans `core/src/test/kotlin/app/toque/core/BackupTest.kt` (aucune valeur de `mqttPassword` en sortie, clé inconnue exclue)
+- [X] T053 [US6] Export dans `app/src/main/kotlin/app/toque/backup/BackupWriter.kt` : sections de `data-model.md` Sauvegarde.sections depuis `recettes.db` (favoris ; recettes de source IMPORTED et USER uniquement), `toque.xml` filtré (T051) et `pilote.xml` ; zip en flux, empreintes SHA-256 pour Sauvegarde.files, empreinte anonymisée pour Sauvegarde.robot ; vérification d'espace avant de commencer (`Space.kt`, FR-019 : refus clair et proposition de supprimer les plus anciennes) ; rangement dans `/data/adb/camybrith/sauvegardes/` et conservation des 5 dernières
+- [X] T054 [US6] Sous-commande `sauvegarder` dans `modules/secours/camybrith` (déclenche l'export de l'interface, refus code 1 si elle est absente)
+- [X] T055 [US6] Section « Sauvegardes » dans `app/src/main/kotlin/app/toque/ui/screens/SettingsScreen.kt` : espace libre et alerte sous 10 % (FR-020), Sauvegarder maintenant (pendant une cuisson : proposer à la fin), liste, Supprimer (`contracts/ui.md`)
+- [X] T056 [US6] Script `outils/sauvegarde.sh` : `creer`, `lister`, `recuperer [nom]` vers `sauvegardes/`
+- [X] T057 [P] [US6] Textes de T055 dans `app/src/main/assets/lang/en.json` et `app/src/main/assets/lang/es.json`
 - [ ] T058 [US6] Partie sauvegarde et récupération du scénario B8 dans `outils/banc-essai.sh` : sauvegarde chronométrée (échec au-delà de 30 s, SC-006) et recherche de la valeur secrète dans tout le fichier
 
 **Checkpoint**: une sauvegarde se crée et se récupère, sans secret
