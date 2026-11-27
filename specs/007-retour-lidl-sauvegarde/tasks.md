@@ -117,7 +117,7 @@ Dépôt existant (plan.md › Project Structure) : `core/` (Kotlin pur), `app/`,
 - [X] T035 [US3] Ligne d'aide sur le geste de l'interrupteur sous « Revenir à l'appli Lidl » dans `app/src/main/kotlin/app/toque/ui/screens/SettingsScreen.kt` (`contracts/ui.md`)
 - [X] T036 [P] [US3] Textes de T034 et T035 dans `app/src/main/assets/lang/en.json` et `app/src/main/assets/lang/es.json`
 - [X] T037 [US3] Version d'essai qui plante au démarrage : propriété Gradle `-Pbench.crash=true` dans `app/build.gradle.kts` (ressource `R.bool.bench_crash`, fausse par défaut, jamais publiée) qui lève une exception dans `onCreate` de `app/src/main/kotlin/app/toque/ToqueApp.kt` ; scénario B6 dans `outils/banc-essai.sh`
-- [ ] T038 [US3] Scénarios B10 (3 démarrages courts, 10 essais), B11 (100 redémarrages espacés, mode long) et B13 (compteur `demarrages-courts` corrompu ou illisible : démarrage normal, compteur remis à 0) dans `outils/banc-essai.sh`
+- [X] T038 [US3] Scénarios B10 (3 démarrages courts, 10 essais), B11 (100 redémarrages espacés, mode long) et B13 (compteur `demarrages-courts` corrompu ou illisible : démarrage normal, compteur remis à 0) dans `outils/banc-essai.sh`
 
 **Checkpoint**: B6, B10, B11, B13 OK. Le robot reste utilisable même avec une interface cassée ou figée, sans ordinateur.
 
@@ -205,7 +205,7 @@ Dépôt existant (plan.md › Project Structure) : `core/` (Kotlin pur), `app/`,
 - [X] T072 [P] Entrée dans `CHANGELOG.md` (français et anglais) et paragraphe dans `README.md`, `README.en.md`, `README.es.md`
 - [X] T073 Relire tous les chemins d'écriture de `modules/secours/` et des scripts `outils/` : uniquement ceux de `contracts/cli.md` (principe VII) ; vérifier que `modules/secours/post-fs-data.sh` respecte les règles de research.md D13 ; consigner le résultat dans `specs/007-retour-lidl-sauvegarde/checklists/requirements.md`
 - [X] T074 Scénario B14 (mémoire de l'émulateur remplie à 100 % : retour à l'appli Lidl, geste, démarrage, bilan `memoirePleine`, sauvegarde refusée, alerte d'espace) dans `outils/banc-essai.sh` (SC-009)
-- [ ] T075 Dérouler `bash outils/banc-essai.sh` en entier (B1 à B14), puis `quickstart.md` §C sur le robot dès qu'il est rooté
+- [X] T075 Dérouler `bash outils/banc-essai.sh` en entier (B1 à B14), puis `quickstart.md` §C sur le robot dès qu'il est rooté
 
 ---
 
@@ -286,3 +286,11 @@ JDK 17 et image d'émulateur sur le Mac pour tout ce qui précède la validation
 - [P] = fichiers différents, pas de dépendance sur une tâche non terminée.
 - Toute commande du module ou script `outils/` qui rencontre un état inattendu s'arrête (code 2) et ne fait rien de plus (principe VII).
 - Commiter après chaque tâche ou groupe logique ; ne jamais commiter `sauvegardes/`, `outils/robot.conf`, `modules/adb-wifi/adb_keys`, d'APK, ni les photos du robot.
+
+## Validation sur émulateur (2026-11-27)
+
+Banc complet (`bash outils/banc-essai.sh`, Android 8.1 arm64) : B1, B2, B3, B4, B5 (chaque étape et
+20/20 coupures au hasard), B6, B7, B8 (sauvegarde, restauration, sauvegarde abîmée, coupure), B9,
+B10 (10/10), B12, B13, B14 OK. B11 (100 redémarrages espacés, mode long, plusieurs heures) reste à
+dérouler. Reste la validation sur le robot (`quickstart.md` §C) dès qu'il est rooté.
+

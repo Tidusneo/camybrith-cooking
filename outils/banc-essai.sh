@@ -248,8 +248,9 @@ B2() {
   t1=$(date +%s)
   [ $((t1 - t0)) -le 180 ] || e="$e $((t1 - t0)) s (plus de 3 min);"
   grep -q "Résultat : réussi" "$LOGS/B2.txt" || e="$e bilan pas réussi (voir $LOGS/B2.txt);"
-  local p
-  for p in app.toque app.toque.pilote; do [ -n "$(sh_ "pidof $p")" ] && e="$e $p tourne;"; done
+  # The motor pilot must not run. The interface process may: it hosts the "Camybrith" bubble
+  # that the module starts over the Lidl app (US4), in Démo mode.
+  [ -n "$(sh_ "pidof app.toque.pilote")" ] && e="$e le pilote moteur tourne;"
   verdict "B2 retour à l'appli Lidl en $((t1 - t0)) s" "$e"
 }
 
