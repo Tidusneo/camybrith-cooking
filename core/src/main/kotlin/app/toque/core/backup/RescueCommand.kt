@@ -67,7 +67,7 @@ class RescueCommand(
             "surveiller" -> watch(a.getOrNull(1)?.toLongOrNull() ?: throw Stop(1, "usage : surveiller <instant du démarrage, en s>"))
             "reprendre" -> resume(origin = if ("--ordinateur" in a) Origin.COMPUTER else Origin.INTERFACE)
             "retrait" -> remove(withNavBar = "--avec-barre" in a, withFileServer = "--avec-serveur" in a)
-            "sauvegarder" -> throw Stop(1, "« ${a[0]} » n'est pas encore disponible dans cette version du module.")
+            "sauvegarder" -> backup()
             else -> {
                 out("Usage : camybrith etat|noter|noter-fin|inscrire|retour-lidl|bilan [--json]")
                 1
@@ -393,6 +393,29 @@ class RescueCommand(
         device.run("am", "start", "-n", "${RobotId.APP}/.ui.MainActivity", "--ez", "camybrith_resume", "true")
         out(if (json) Json.write(linkedMapOf("ok" to true, "bilan" to Report.fileName(report.date))) else report.text())
         return 0
+    }
+
+    // ------------------------------------------------------------------ backup (US6, T054)
+
+    /**
+     * Asks the interface to create a backup (it owns the data) and waits for the file. Refused
+     * when the interface is missing. The broadcast reaches it even when it is stopped.
+     */
+    private fun backup(): Int {
+        prepare()
+        if (!installed(RobotId.APP)) throw Stop(1, "interface Camybrith absente : pas de données à sauvegarder")
+        val dir = File(root, "sauvegardes")
+        val before = dir.list()?.toSet() ?: emptySet()
+        device.run("am", "broadcast", "-f", "32", "-n", "${RobotId.APP}/.backup.BackupReceiver")
+        for (i in 0 until 60) {
+            val created = (dir.list()?.toSet() ?: emptySet()) - before
+            created.firstOrNull { it.endsWith(".camybrith") }?.let {
+                out(if (json) Json.write(linkedMapOf("ok" to true, "sauvegarde" to it)) else "Sauvegarde créée : $it")
+                return 0
+            }
+            device.pause(1_000)
+        }
+        throw Stop(1, "l'interface n'a pas créé de sauvegarde (place insuffisante ? ouvrez Réglages › Sauvegardes)")
     }
 
     // ------------------------------------------------------------------ full removal (US5)
