@@ -619,7 +619,6 @@
   "Supprimer": "Delete",
   "Cuisson en cours : sauvegardez à la fin du programme": "Cooking in progress: back up when the program ends",
   "Sauvegarde…": "Backing up…",
-  "Module de secours absent : depuis l'ordinateur, lancez bash outils/secours.sh installer": "Rescue module missing: from the computer, run bash outils/secours.sh installer",
   "Pas assez de place pour une sauvegarde : supprimez d'anciennes sauvegardes ou des photos de recettes.": "Not enough space for a backup: delete old backups or recipe photos.",
   "Sauvegarde impossible : %s": "Backup failed: %s",
   "Sauvegarde créée : %d favoris, %d recettes perso.": "Backup created: %d favorites, %d own recipes.",
