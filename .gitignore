@@ -21,6 +21,8 @@ Thumbs.db
 # Ne jamais publier de contenu Lidl (recettes, images, bases)
 Recipes
 Recipes-journal
+# (sur Mac, « Recipes » attrape aussi les dossiers de code « recipes/ » : on les garde)
+!*/recipes/
 recipe_images/
 diagnostic-recettes.txt
 # Propre à chaque installation : jamais sur GitHub
@@ -28,6 +30,8 @@ outils/robot.conf
 apk/
 modules/*.zip
 modules/adb-wifi/adb_keys
+# Sauvegardes et registres récupérés du robot (outils/origine.sh, outils/sauvegarde.sh)
+sauvegardes/
 personnalisation/bootanimation*
 personnalisation/sons/*
 !personnalisation/sons/LISEZMOI.md

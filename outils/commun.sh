@@ -1,3 +1,4 @@
+# shellcheck shell=bash
 # Partie commune aux scripts de ce dossier (à ne pas lancer seul).
 # Trouve adb, l'adresse du robot, et vérifie que le robot répond.
 #
@@ -53,3 +54,31 @@ exiger_root() {
     exit 1
   fi
 }
+
+# ------------------------------------------------------------------ module de secours (spec 007)
+# Tout ce qui modifie le robot s'inscrit d'abord au registre du module, pour pouvoir être défait.
+
+# Chemin de la commande « camybrith » sur le robot (vide si le module n'est pas installé).
+chemin_secours() {
+  $A shell "su -c 'for c in /data/adb/modules/camybrith_secours/camybrith /data/adb/modules_update/camybrith_secours/camybrith; do [ -f \$c ] && echo \$c && break; done'" 2>/dev/null | tr -d '\r' | head -1
+}
+
+exiger_secours() {
+  SECOURS=$(chemin_secours)
+  if [ -z "$SECOURS" ]; then
+    echo "Le module de secours n'est pas installé : il garde la trace de ce que ce script modifie,"
+    echo "pour pouvoir toujours revenir à l'appli Lidl. Installe-le d'abord :"
+    echo "  bash outils/secours.sh installer"
+    exit 1
+  fi
+}
+
+# noter TYPE CIBLE AVANT APRES PORTEE : inscrit la modification et affiche son numéro.
+noter() {
+  local id
+  id=$($A shell "su -c 'sh $SECOURS noter $1 $2 $3 $4 $5 $(basename "$0")'" 2>/dev/null | tr -d '\r' | tail -1)
+  case "$id" in ''|*[!0-9]*) echo "Le registre a refusé la modification ($1 $2) : $id. Rien n'a été fait." >&2; exit 1 ;; esac
+  echo "$id"
+}
+
+noter_fin() { $A shell "su -c 'sh $SECOURS noter-fin $1 $2'" >/dev/null 2>&1; }

@@ -15,6 +15,7 @@ import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.TextView
 import app.toque.Prefs
+import app.toque.backup.Rescue
 import app.toque.Sounds
 import app.toque.core.machine.RootShell
 import app.toque.recipes.FileImport
@@ -73,6 +74,28 @@ class MainActivity : Activity() {
             if (keepAwake) lastActivityMs = System.currentTimeMillis()
             if (!sleeping && min > 0 && System.currentTimeMillis() - lastActivityMs >= min * 60_000L) sleepScreen()
             main.postDelayed(this, 10_000)
+        }
+    }
+
+    // ------------------------------------------------------------------ état de cuisson pour le module de secours
+    // (spec 007, research.md D12) : le module refuse un retour à l'appli Lidl pendant un programme.
+    // Écrit à chaque changement, et toutes les 30 s pendant un programme. Tourne aussi en arrière-plan.
+    private var cuissonEcrite: Boolean? = null
+    private var cuissonMaj = 0L
+    private val cuissonCheck = object : Runnable {
+        override fun run() {
+            if (prefs.mode == Prefs.Mode.HARDWARE) {
+                val s = snapshot
+                val now = System.currentTimeMillis()
+                if (s.busy != cuissonEcrite || (s.busy && now - cuissonMaj >= 30_000)) {
+                    cuissonEcrite = s.busy
+                    cuissonMaj = now
+                    val busy = s.busy
+                    val label = s.jobLabel
+                    Thread { Rescue.ecrireCuisson(busy, label) }.start()
+                }
+            }
+            main.postDelayed(this, 5_000)
         }
     }
 
@@ -155,6 +178,24 @@ class MainActivity : Activity() {
         Ui.apply(Ui.resolve(Ui.Theme.of(prefs.theme)))
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         window.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(Ui.BG))
+        if (prefs.mode == Prefs.Mode.HARDWARE) {
+            val robot = prefs.activeRobot
+            Thread {
+                Rescue.ecrireRobot(robot)
+                // L'écran d'accueil est passé de MainActivity à l'alias .ui.Accueil (spec 007) :
+                // on le déclare préféré une fois, pour qu'Android ne redemande pas quelle appli
+                // d'accueil utiliser. Jamais si l'alias est désactivé (robot revenu à l'appli Lidl).
+                if (!prefs.homeAliasSet) {
+                    val alias = android.content.ComponentName(this, "app.toque.ui.Accueil")
+                    val st = packageManager.getComponentEnabledSetting(alias)
+                    if (st != android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_DISABLED &&
+                        RootShell.run("cmd package set-home-activity app.toque/app.toque.ui.Accueil", 10_000).ok)
+                        prefs.homeAliasSet = true
+                }
+            }.start()
+        }
+        main.removeCallbacks(cuissonCheck)
+        main.post(cuissonCheck)
 
         root = FrameLayout(this)
         root.setBackgroundColor(Ui.BG)
@@ -336,6 +377,7 @@ class MainActivity : Activity() {
     }
 
     override fun onDestroy() {
+        main.removeCallbacks(cuissonCheck)
         Ui.tapSound = {}
         sounds.release()
         super.onDestroy()

@@ -7,6 +7,7 @@ import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import app.toque.Logbook
 import app.toque.Prefs
+import app.toque.backup.Rescue
 import app.toque.core.i18n.I18n
 import app.toque.core.i18n.tr
 import app.toque.core.machine.RobotModel
@@ -58,10 +59,19 @@ class LidlSync(private val context: Context, private val prefs: Prefs, private v
         return r
     }
 
-    /** Coupe (ou rétablit) l'accès de l'appli d'origine au moteur. */
+    /**
+     * Coupe (ou rétablit) l'accès de l'appli d'origine au moteur. La coupure est inscrite au
+     * registre du module de secours AVANT d'agir (spec 007), pour que le retour à l'appli Lidl
+     * sache la défaire. Module absent : la coupure se fait quand même ici, car laisser l'appli
+     * d'origine sur le port série pendant que Camybrith pilote serait dangereux ; le premier
+     * passage en Machine réelle, lui, exige le module (SettingsScreen.prepareHardware).
+     */
     fun setVendorHardware(enabled: Boolean): Boolean {
         val c = components().hardwareService ?: return false
-        return su("pm ${if (enabled) "enable" else "disable"} $pkg/$c").ok
+        val id = if (enabled) null else Rescue.noter("composant", "$pkg/$c", "enabled", "disabled", "lidl")
+        val ok = su("pm ${if (enabled) "enable" else "disable"} $pkg/$c").ok
+        id?.let { Rescue.noterFin(it, ok) }
+        return ok
     }
 
     fun forceStop() {

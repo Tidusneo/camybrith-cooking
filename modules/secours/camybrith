@@ -1,0 +1,16 @@
+#!/system/bin/sh
+# Commande du module de secours Camybrith (spec 007, contracts/cli.md), toujours en root :
+#   su -c /data/adb/modules/camybrith_secours/camybrith etat
+# La logique est en Kotlin (core/backup/Secours.kt, testée), lancée par app_process : elle marche
+# même si l'interface Camybrith est cassée ou désinstallée.
+MODDIR=${0%/*}
+if [ "$(id -u)" != 0 ]; then
+  echo "À lancer en root : su -c $0 $*"
+  exit 2
+fi
+if [ ! -f "$MODDIR/camybrith.apk" ]; then
+  echo "ÉTAT INATTENDU : $MODDIR/camybrith.apk manque. Réinstalle le module (bash outils/secours.sh installer)."
+  exit 2
+fi
+export CLASSPATH="$MODDIR/camybrith.apk"
+exec app_process /system/bin app.toque.core.backup.SecoursMain "$@"

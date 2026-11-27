@@ -18,5 +18,6 @@ $SECTION
 * \`Camybrith-pilote-*.apk\` + \`Camybrith-$V-rapide.apk\` : l'appli (pilote moteur + interface) · the app (motor pilot + interface)
 * \`Camybrith-$V-prudente.apk\` : interface de secours, plus lente · fallback interface, slower
 * \`camybrith_animation.zip\` : animation de démarrage (module Magisk) · boot animation (Magisk module)
+* \`camybrith_secours.zip\` : module de secours, retour à l'appli Lidl (module Magisk) · rescue module, back to the Lidl app (Magisk module)
 * \`camybrith-assistant-claude.zip\` : assistant Claude qui guide l'installation · Claude assistant guiding the install
 NOTES

@@ -1,0 +1,6 @@
+id=camybrith_secours
+name=Secours Camybrith
+version=1
+versionCode=1
+author=Camybrith Cooking
+description=Filet de sécurité : registre des modifications, retour à l'appli Lidl (commande camybrith), reprise après coupure. Ne modifie pas /system.

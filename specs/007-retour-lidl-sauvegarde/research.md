@@ -241,3 +241,37 @@ l'interface, sans trace, sans vérification, et pas si l'interface est cassée.
 - **À vérifier**: disponibilité d'une image `system-images;android-27;default;arm64-v8a` pour le
   Mac Apple Silicon de l'utilisateur (sinon API 28, la plus proche) ; un **JDK 17** est requis
   (absent du Mac au moment de l'étude : `sdkmanager` et Gradle en ont besoin).
+
+### D16. Moteur de la commande en Kotlin, lancé par `app_process` (décidé à l'implémentation)
+
+- **Decision**: la logique de `camybrith` (registre, journal, retour, vérification, reprise au
+  démarrage) est écrite une seule fois en Kotlin dans `core/backup/Secours.kt`, testée en JUnit sur
+  un faux Android (`SecoursTest`). Le module Magisk contient `camybrith.apk` (module Gradle
+  `moteur-secours`, jamais installé) et un lanceur shell de quelques lignes :
+  `CLASSPATH=camybrith.apk app_process /system/bin app.toque.core.backup.SecoursMain`.
+- **Rationale**: le shell d'Android 8.1 (toybox) n'a aucun outil pour lire ou écrire du JSON ; une
+  transcription en shell du registre (fusion, ordre d'annulation, validation des cibles) aurait été
+  fragile et non testable (principe III). `app_process` ne dépend pas de l'interface : le moteur
+  marche si elle est cassée ou désinstallée (US2, US3). Validé sur l'émulateur Android 8.1.
+- **Précisions apportées en même temps** (principe VII) :
+  - **Journal d'abord, sans bloquer** : le journal est écrit avant `am force-stop` et les `pm`,
+    mais une écriture impossible (mémoire pleine) n'arrête jamais le retour (D15). Sans journal
+    écrit avant les `pm`, une coupure pendant les annulations laisserait le robot à moitié revenu.
+  - **Écritures forcées sur le disque** (`fsync` avant renommage) et **redémarrage propre**
+    (`svc power reboot`, qui laisse Android écrire l'état des composants ; `reboot` en secours).
+  - **Garanties hors registre** : si une modification essentielle manque au registre (module
+    installé après coup, registre illisible), le retour remet quand même le service moteur Lidl et
+    désactive `BootReceiver` et `.ui.Accueil` ; c'est noté dans le bilan (`corrections`).
+  - **En mode Lidl, revérification à chaque démarrage** (`service.sh`) : une coupure juste après un
+    retour peut faire perdre à Android l'état des composants ; il est remis et noté
+    (`corrections-demarrage.json`).
+  - **Reprise d'un retour interrompu sans redémarrer** : au démarrage, le retour est terminé puis
+    l'appli Lidl est ouverte directement (pas de risque de boucle de redémarrages).
+  - **Module absent** : le premier passage en Machine réelle est refusé (il ne serait pas inscrit) ;
+    mais la recoupure de l'appli Lidl après une session Lidl se fait toujours, car la laisser sur le
+    port série pendant que Camybrith pilote serait dangereux (principe I).
+  - **`cuisson.json` et `robot.json`** sont écrits directement par l'interface (`su`, écriture
+    atomique), sans lancer le moteur : toutes les 30 s pendant un programme, il faut rester léger.
+- **Alternatives considered**: tout en shell (voir plus haut) ; moteur dans l'interface (inutilisable
+  quand elle est cassée) ; binaire natif (chaîne de compilation en plus, pas de tests JUnit).
+
