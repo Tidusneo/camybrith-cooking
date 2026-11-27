@@ -14,7 +14,7 @@ The complete procedure is in `references/GUIDE.md` (French) and `references/GUID
 (English). They are the source of truth: read the relevant section before each step, follow it
 exactly, and never invent addresses, sizes, file names or menu paths. If the references are
 missing, read them from
-https://github.com/Tidusneo/camybrith-cooking/blob/main/docs/GUIDE.en.md (or `GUIDE.md`).
+https://github.com/scaule/camybrith-cooking/blob/main/docs/GUIDE.en.md (or `GUIDE.md`).
 
 ## How to talk
 
@@ -122,7 +122,7 @@ the navigation bar, custom sounds or logo (`personnalisation/` in the project), 
 own recipes (`docs/RECETTES.md`), updating later (section 11).
 
 For problems, use section 13 of the guide first. For anything new, suggest opening an Issue on
-https://github.com/Tidusneo/camybrith-cooking/issues with photos and the exact messages.
+https://github.com/scaule/camybrith-cooking/issues with photos and the exact messages.
 
 ## Tone
 

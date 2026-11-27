@@ -5,7 +5,7 @@
 #   bash outils/telecharger.sh
 set -eu
 RACINE=$(cd "$(dirname "$0")/.." && pwd)
-DEPOT=${DEPOT:-Tidusneo/camybrith-cooking}
+DEPOT=${DEPOT:-scaule/camybrith-cooking}
 command -v curl >/dev/null || { echo "La commande curl manque (sous Ubuntu : sudo apt install curl)."; exit 1; }
 mkdir -p "$RACINE/apk" "$RACINE/modules"
 JSON=$(curl -fsSL "https://api.github.com/repos/$DEPOT/releases/latest") || { echo "Impossible de lire la page des versions de $DEPOT."; exit 1; }

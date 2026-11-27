@@ -151,7 +151,7 @@ window without changing anything on the PC.
 3. In the Ubuntu window, install the tools and get the project:
    ```
    sudo apt update && sudo apt install -y git e2fsprogs zip unzip curl python3-pil
-   git clone https://github.com/Tidusneo/camybrith-cooking ~/camybrith-cooking
+   git clone https://github.com/scaule/camybrith-cooking ~/camybrith-cooking
    cd ~/camybrith-cooking
    ```
 

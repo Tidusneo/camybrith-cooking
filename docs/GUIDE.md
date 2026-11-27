@@ -149,7 +149,7 @@ tourner Ubuntu dans une fenêtre, sans rien changer au PC.
 3. Dans la fenêtre Ubuntu, installe les outils et récupère le projet :
    ```
    sudo apt update && sudo apt install -y git e2fsprogs zip unzip curl python3-pil
-   git clone https://github.com/Tidusneo/camybrith-cooking ~/camybrith-cooking
+   git clone https://github.com/scaule/camybrith-cooking ~/camybrith-cooking
    cd ~/camybrith-cooking
    ```
 

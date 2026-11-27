@@ -10,7 +10,7 @@ tourner sur un Connect, avec son interface, ses sons et son animation.
 > Connect**. Toque, lui, y tourne tous les jours. Si tu veux juste une appli éprouvée sur ton
 > Connect, prends [Toque](https://github.com/Wuki60/MrCuisineVibeConnect). Si tu veux essayer
 > Camybrith Cooking, suis ce qui suit en restant prudent, et raconte-nous comment ça s'est passé
-> dans les [Issues](https://github.com/Tidusneo/camybrith-cooking/issues).
+> dans les [Issues](https://github.com/scaule/camybrith-cooking/issues).
 
 ## 1. Rooter le Connect avec le guide de Toque
 

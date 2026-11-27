@@ -10,7 +10,7 @@ with its interface, sounds and boot animation.
 > runs on it every day. If you just want a proven app on your Connect, use
 > [Toque](https://github.com/Wuki60/MrCuisineVibeConnect). If you want to try Camybrith Cooking,
 > follow the steps below carefully, and tell us how it went in the
-> [Issues](https://github.com/Tidusneo/camybrith-cooking/issues).
+> [Issues](https://github.com/scaule/camybrith-cooking/issues).
 
 ## 1. Root the Connect with Toque's guide
 
