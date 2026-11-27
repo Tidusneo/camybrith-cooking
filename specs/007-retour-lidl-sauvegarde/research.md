@@ -104,11 +104,15 @@ l'interface, sans trace, sans vérification, et pas si l'interface est cassée.
 ### D7. Mode de secours
 
 - **Decision**: `service.sh` compte pendant 120 s après `sys.boot_completed` les plantages de
-  `app.toque` dans `logcat -b crash` ; à 3, `camybrith retour-lidl --secours` (pose
+  `app.toque` dans `logcat -b crash` ; à 2, `camybrith retour-lidl --secours` (pose
   `secours.json`). La règle de décision est une fonction pure dans `core` (testée avec des journaux
   d'exemple) ; le shell n'en est qu'une transcription courte, couverte par le banc d'essai.
 - **Rationale**: inchangé par rapport à l'étude précédente ; seul le résultat (retour à l'appli
   Lidl) change.
+- **Seuil passé de 3 à 2 plantages** (constaté sur l'émulateur, scénario B6) : sous Android 8, un
+  écran d'accueil qui plante deux fois de suite en moins d'une minute n'est plus relancé, le
+  système demande quelle appli d'accueil utiliser ; un troisième plantage n'arrive donc jamais.
+  Un faux déclenchement ne coûte qu'un passage sur l'appli Lidl, que la bulle annule.
 
 ### D8. Inscription rétroactive
 

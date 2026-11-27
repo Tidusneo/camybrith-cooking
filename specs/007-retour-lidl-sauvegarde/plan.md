@@ -14,7 +14,7 @@ Approche ([research.md](research.md)) : un **registre des modifications** tenu p
 Magisk de secours** (sans superposition système) ; tout ce qui modifie le robot s'y inscrit avant
 d'agir ; le **retour à l'appli Lidl** annule les modifications de portée `lidl` (service moteur
 Lidl, démarrage de Camybrith) puis vérifie et redémarre ; la **reprise** les réapplique ; le
-**mode de secours** déclenche le retour après 3 plantages, et le **geste de l'interrupteur**
+**mode de secours** déclenche le retour après 2 plantages, et le **geste de l'interrupteur**
 (3 démarrages courts) le déclenche sans écran ni ordinateur ; en mode Lidl, une **bulle
 « Camybrith »** permet de revenir sur Camybrith depuis le robot. Les règles sont en Kotlin pur dans
 `core/` et testées ; un **banc d'essai sur émulateur** valide tout sans toucher au robot.

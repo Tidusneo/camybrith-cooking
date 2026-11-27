@@ -20,10 +20,13 @@ import java.util.zip.ZipOutputStream
 /**
  * Creates a manual backup (spec 007, US6, T053): favorites, the user's own and imported recipes
  * (never Lidl ones), settings without secrets, and the pilot settings. The zip is written in the
- * app's cache, then moved as root to /data/adb/camybrith/sauvegardes (5 kept).
+ * app's own folder [PENDING_DIR] (no root needed); it is then moved to /data/adb/camybrith/sauvegardes
+ * (5 kept), right away when root is available, otherwise by the rescue module (which is root).
  */
 object BackupWriter {
     const val DIR = "/data/adb/camybrith/sauvegardes"
+    /** Read by the rescue module (RescueCommand.APP_PENDING_BACKUPS). */
+    const val PENDING_DIR = "sauvegardes-a-ranger"
     private val NAME = Regex("camybrith-[0-9]{8}-[0-9]{6}\\.camybrith")
 
     class Result(val ok: Boolean, val message: String, val name: String? = null)
@@ -31,8 +34,6 @@ object BackupWriter {
     class Entry(val name: String, val size: Long)
 
     fun create(c: Context): Result {
-        if (!RootShell.run("[ -d /data/adb/camybrith ] && echo ok", 8_000).out.contains("ok"))
-            return Result(false, tr("Module de secours absent : depuis l'ordinateur, lancez bash outils/secours.sh installer"))
         val db = c.getDatabasePath("recettes.db")
         val estimated = (if (db.isFile) db.length() else 0L) + 1_000_000L
         if (!Space.canBackup(c.filesDir.usableSpace, estimated))
@@ -82,7 +83,8 @@ object BackupWriter {
             summary = summary,
             files = files.map { (path, bytes) -> BackupFile(path, bytes.size.toLong(), BackupContent.sha256(bytes)) },
         )
-        val tmp = File(c.cacheDir, name)
+        val pendingDir = File(c.filesDir, PENDING_DIR).apply { mkdirs() }
+        val tmp = File(pendingDir, name)
         try {
             ZipOutputStream(FileOutputStream(tmp)).use { z ->
                 for ((path, bytes) in files) { z.putNextEntry(ZipEntry(path)); z.write(bytes); z.closeEntry() }
@@ -92,10 +94,12 @@ object BackupWriter {
             tmp.delete()
             return Result(false, tr("Sauvegarde impossible : %s", e.message ?: ""))
         }
-        val moved = RootShell.run("mkdir -p $DIR && chmod 700 $DIR && cp ${tmp.path} $DIR/$name && chmod 600 $DIR/$name && echo ok", 20_000)
-        tmp.delete()
-        if (!moved.out.contains("ok")) return Result(false, tr("Sauvegarde impossible : %s", moved.err.take(200)))
-        BackupContent.toDelete(list().map { it.name }).forEach { delete(it) }
+        // Moved right away when root is available; otherwise the rescue module collects it.
+        val moved = RootShell.run("[ -d /data/adb/camybrith ] && mkdir -p $DIR && chmod 700 $DIR && cp ${tmp.path} $DIR/$name && chmod 600 $DIR/$name && echo ok", 20_000)
+        if (moved.out.contains("ok")) {
+            tmp.delete()
+            BackupContent.toDelete(list().map { it.name }).forEach { delete(it) }
+        }
         return Result(true, tr("Sauvegarde créée : %d favoris, %d recettes perso.", summary["favorites"] ?: 0, summary["recipes"] ?: 0), name)
     }
 

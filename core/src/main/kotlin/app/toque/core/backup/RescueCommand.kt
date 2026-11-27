@@ -295,7 +295,9 @@ class RescueCommand(
         val undone = ArrayList<Change>()
         val failures = LinkedHashMap<Int, String>()
         reg?.undoPlan(Scope.LIDL)?.forEach { c ->
-            val r = device.run(*Undo.command(c).toTypedArray())
+            // A component of an app that is no longer installed is as good as disabled.
+            val gone = (c.type == ChangeType.COMPONENT || c.type == ChangeType.STARTUP) && !installed(c.target.substringBefore('/'))
+            val r = if (gone) RescueCommand.Device.Result(0, "") else device.run(*Undo.command(c).toTypedArray())
             if (AndroidOutput.ok(r.code, r.out, r.err)) {
                 undone += c
                 reg = reg!!.mark(c.id, ChangeState.UNDONE)
@@ -409,9 +411,11 @@ class RescueCommand(
         prepare()
         if (!installed(RobotId.APP)) throw Stop(1, "interface Camybrith absente : pas de données à sauvegarder")
         val dir = File(root, "sauvegardes")
+        collectBackups()
         val before = dir.list()?.toSet() ?: emptySet()
         device.run("am", "broadcast", "-f", "32", "-n", "${RobotId.APP}/.backup.BackupReceiver")
         for (i in 0 until 60) {
+            collectBackups()
             val created = (dir.list()?.toSet() ?: emptySet()) - before
             created.firstOrNull { it.endsWith(".camybrith") }?.let {
                 out(if (json) Json.write(linkedMapOf("ok" to true, "sauvegarde" to it)) else "Sauvegarde créée : $it")
@@ -420,6 +424,21 @@ class RescueCommand(
             device.pause(1_000)
         }
         throw Stop(1, "l'interface n'a pas créé de sauvegarde (place insuffisante ? ouvrez Réglages › Sauvegardes)")
+    }
+
+    /**
+     * The interface writes its backups in its own folder (it needs no root for that); the module,
+     * which is root, moves them into /data/adb/camybrith/sauvegardes and keeps the last 5.
+     */
+    private fun collectBackups() {
+        val pending = File(APP_PENDING_BACKUPS).listFiles { f -> BACKUP_NAME.matches(f.name) } ?: return
+        val dir = File(root, "sauvegardes")
+        if (pending.isNotEmpty() && !dir.isDirectory) { dir.mkdirs(); device.run("chmod", "700", dir.path) }
+        for (f in pending) {
+            val dest = File(dir, f.name)
+            try { f.copyTo(dest, overwrite = true); device.run("chmod", "600", dest.path); f.delete() } catch (_: IOException) {}
+        }
+        BackupContent.toDelete(dir.list()?.toList() ?: emptyList()).forEach { File(dir, it).delete() }
     }
 
     // ------------------------------------------------------------------ full removal (US5)
@@ -615,6 +634,7 @@ class RescueCommand(
                 write(last, r.copy(afterBoot = Check("appli Lidl au premier plan", ok, front ?: "rien")).toJson())
             }
         }
+        collectBackups()
         // In Lidl mode, the "Camybrith" bubble over the Lidl app is the way back (D14).
         if (Mode.parse(read(modeFile)).lidl) showBubble()
         if (!json) out("Démarrage traité.")
@@ -646,6 +666,9 @@ class RescueCommand(
     companion object {
         const val GESTURE_THRESHOLD = 3
         const val MODULE_DIR = "/data/adb/modules/camybrith_secours"
+        /** Folder where the interface leaves its backups (BackupWriter.PENDING_DIR). */
+        const val APP_PENDING_BACKUPS = "/data/data/app.toque/files/sauvegardes-a-ranger"
+        private val BACKUP_NAME = Regex("camybrith-[0-9]{8}-[0-9]{6}\\.camybrith")
         const val DISK_WRITE_WAIT_MS = 12_000L
         const val NAVBAR = "nu.nav.bar"
         const val HTTP_FILE_SERVER = "slowscript.httpfileserver"

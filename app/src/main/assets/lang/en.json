@@ -598,7 +598,7 @@
   "Camybrith Cooking ne s'ouvrira plus au démarrage": "Camybrith Cooking will no longer open at startup",
   "Camybrith Cooking ne sera plus l'écran d'accueil": "Camybrith Cooking will no longer be the home screen",
   "l'appli Lidl retrouve l'accès au moteur": "the Lidl app gets access to the motor again",
-  "Le robot fonctionne avec l'appli Lidl depuis le %s, suite à 3 plantages au démarrage.": "The robot has been running the Lidl app since %s, after 3 crashes at startup.",
+  "Le robot fonctionne avec l'appli Lidl depuis le %s, suite à des plantages de Camybrith Cooking au démarrage.": "The robot has been running the Lidl app since %s, after Camybrith Cooking crashed at startup.",
   "Le robot fonctionne avec l'appli Lidl depuis le %s, suite au geste de l'interrupteur.": "The robot has been running the Lidl app since %s, after the power switch gesture.",
   "Le robot fonctionne avec l'appli Lidl depuis le %s.": "The robot has been running the Lidl app since %s.",
   "Appli Lidl": "Lidl app",

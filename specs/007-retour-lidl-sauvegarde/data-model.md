@@ -130,7 +130,7 @@ Fichier `robot.json` écrit par l'interface : `vendorPackage`, `hardwareServiceS
 ## État de secours
 
 Fichier `secours.json` : date, nombre de plantages comptés, version de Camybrith en cause.
-Règle de décision (fonction pure dans `core`) : au moins **3 plantages de `app.toque` dans les
+Règle de décision (fonction pure dans `core`) : au moins **2 plantages de `app.toque` dans les
 120 s** suivant `sys.boot_completed` ; jamais pendant le traitement d'un journal d'opération.
 
 ## Sauvegarde (manuelle, exportable)

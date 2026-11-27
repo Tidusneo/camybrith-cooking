@@ -418,7 +418,11 @@ B8_restore() {
   local local_copy=$1 name e=""
   name=$(basename "${local_copy:-x}")
   [ -n "$local_copy" ] || { verdict "B8 restauration" " pas de sauvegarde à restaurer"; return; }
-  restore() { sh_ "am broadcast -f 32 -n app.toque/.backup.BackupReceiver --es restaurer $1 $2" >/dev/null; }
+  # The interface has no root on the emulator: the bench puts a copy of the backup in its cache.
+  restore() {
+    sh_ "f=/data/data/app.toque/cache/$1; mkdir -p \${f%/*}; cp $CAM/sauvegardes/$1 \$f && chown \$(stat -c %u:%g /data/data/app.toque) \${f%/*} \$f" >/dev/null
+    sh_ "am broadcast -f 32 -n app.toque/.backup.BackupReceiver --es restaurer $1 $2" >/dev/null
+  }
   set_theme() { sh_ "am force-stop app.toque; sed -i 's#<string name=\"theme\">[^<]*</string>#<string name=\"theme\">$1</string>#' /data/data/app.toque/shared_prefs/toque.xml" >/dev/null; }
   theme() { sh_ "grep -o 'name=\"theme\">[^<]*' /data/data/app.toque/shared_prefs/toque.xml" | sed 's/.*>//'; }
   # 1. Normal restore: the setting comes back, an automatic backup of the current state is made.

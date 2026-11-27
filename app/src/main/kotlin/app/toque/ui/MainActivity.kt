@@ -698,8 +698,9 @@ class MainActivity : Activity() {
     private fun checkLidlMode() {
         Thread {
             val mode = Rescue.mode()
-            lidlMode = mode.lidl
-            if (!mode.lidl) return@Thread
+            // mode.json needs root; the copy set by the bubble does not (and survives a refused su).
+            lidlMode = mode.lidl || prefs.lidlMode
+            if (!lidlMode) return@Thread
             val report = Rescue.lastReport()?.lines()?.take(2)?.joinToString("\n") ?: ""
             main.post { showLidlBanner(mode, report) }
         }.start()
@@ -710,7 +711,7 @@ class MainActivity : Activity() {
             java.text.SimpleDateFormat("dd/MM/yyyy HH:mm", java.util.Locale.ROOT).format(java.util.Date(it))
         } ?: mode.since
         val text = when (mode.origin?.key) {
-            "secours" -> tr("Le robot fonctionne avec l'appli Lidl depuis le %s, suite à 3 plantages au démarrage.", since)
+            "secours" -> tr("Le robot fonctionne avec l'appli Lidl depuis le %s, suite à des plantages de Camybrith Cooking au démarrage.", since)
             "geste" -> tr("Le robot fonctionne avec l'appli Lidl depuis le %s, suite au geste de l'interrupteur.", since)
             else -> tr("Le robot fonctionne avec l'appli Lidl depuis le %s.", since)
         }
@@ -746,6 +747,7 @@ class MainActivity : Activity() {
         if (intent?.getBooleanExtra(EXTRA_RESUMED, false) != true) return
         intent.removeExtra(EXTRA_RESUMED)
         lidlMode = false
+        prefs.lidlMode = false
         closeOverlay()
         SettingsScreen(this).also { push(it) }.prepareHardware()
     }

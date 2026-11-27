@@ -22,7 +22,7 @@ fermeture**. Un appui ouvre Camybrith sur le bandeau ci-dessous.
 
 ## Ouverture de Camybrith après un retour (par la bulle)
 
-Bandeau : « Le robot fonctionne avec l'appli Lidl depuis le <date> » (ou « … suite à 3 plantages
+Bandeau : « Le robot fonctionne avec l'appli Lidl depuis le <date> » (ou « … suite à des plantages de Camybrith Cooking
 au démarrage » si `secours`, « … suite au geste de l'interrupteur » si `geste`), lien vers le bilan, boutons **Reprendre Camybrith** (`camybrith
 reprendre`, puis vérifications de Machine réelle) et **Rester sur l'appli Lidl**.
 
