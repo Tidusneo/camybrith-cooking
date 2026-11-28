@@ -62,6 +62,11 @@ These mistakes have already cost other people their robot. Read them again befor
 
 * A **Monsieur Cuisine Smart SKMS 1200 A1**. The guide was tested on a 2021 unit with Android 8.1
   and system version **V01.00.83** (June 2022).
+
+  > ⚠️ **Check your system version first** (Monsieur Cuisine app: menu, Réglages, À propos).
+  > Newer A1 units on **V01.00.95** (made late 2022 and after) have a locked boot: SP Flash Tool
+  > and mtkclient are refused, this guide's method doesn't work. The **SKMS 1200 C1** (Allwinner
+  > R818 board) has no known root method yet either.
 * A **Windows 10 or 11 PC** with about **6 GB of free space**. SP Flash Tool, the tool that reads
   and writes the robot's memory, only exists for Windows (and Linux).
 * A **USB-A male to USB-A male** cable, preferably **USB 2.0** (a few euros). Careful: many

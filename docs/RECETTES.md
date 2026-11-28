@@ -116,11 +116,19 @@ ordinateur, une tablette ou un téléphone au lieu de préparer `data.json` à l
    (« 5 sec/vit. 5 », « 20 min/100°C/sens inverse/vit. mijotage », « cuire 10 minutes à 100 degrés
    vitesse 2 », « Varoma », « Pétrin/3 min », « Turbo/0.5 sec/3 fois »). Le résultat s'ouvre comme
    une nouvelle recette, à relire avant d'enregistrer. Colle uniquement des recettes que tu as le
-   droit d'utiliser : l'éditeur ne va jamais chercher une recette sur internet.
+   droit d'utiliser.
+   **Importer depuis un lien** (même page) : colle l'adresse d'une recette, le robot télécharge la
+   page et y lit le titre, les ingrédients, les étapes, la catégorie, les temps et l'auteur (le
+   format « recette » que publient la plupart des sites et blogs). Pour les recettes écrites pour
+   le Thermomix (Cookomix, Yummix…), les réglages sont convertis ; pour les autres, la conversion
+   est partielle et tu choisis les réglages toi‑même. Dans les deux cas, à l'import :
+   « Mettre 100 g de farine » devient une pesée, les étapes au four restent sans le robot, et
+   « Thermomix » devient « robot ». Les pages qui demandent une connexion et les adresses du réseau
+   local sont refusées. La photo n'est pas encore récupérée.
 4. Le panneau **Sur le robot** montre, pendant la saisie et dans la langue de l'appli, ce que
    l'importeur fera de chaque étape, et lesquelles sont à vérifier ou se feront à la main.
 5. **Enregistrer** : la recette est convertie par le même importeur que `data.json` et apparaît
-   aussitôt dans **Recettes d'autres robots**. La supprimer dans l'éditeur la retire aussi de l'appli.
+   aussitôt dans l'onglet **Thermomix** du robot, filtre **Éditeur**. La supprimer dans l'éditeur la retire aussi de l'appli.
 
 Les recettes sont gardées dans le stockage privé de l'appli (`files/editeur/data.json` et
 `files/editeur/images/`), au même format que ci-dessus. L'éditeur ne tourne que s'il est activé et

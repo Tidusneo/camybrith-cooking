@@ -109,11 +109,18 @@ phone instead of preparing `data.json` by hand.
    robot splits it and spots settings written the Thermomix way ("5 sec/vit. 5",
    "20 min/100°C/sens inverse/vit. mijotage", "Varoma", "Pétrin/3 min", "Turbo/0.5 sec/3 fois";
    French wording for now). The result opens as a new recipe, to review before saving. Only paste
-   recipes you have the right to use: the editor never fetches a recipe from the internet.
+   recipes you have the right to use.
+   **Import from a link** (same page): paste a recipe's address, the robot downloads the page and
+   reads the title, ingredients, steps, category, times and author (the "recipe" format most sites
+   and blogs publish). For recipes written for the Thermomix (Cookomix, Yummix…) settings are
+   converted; for others the conversion is partial and you choose the settings yourself. Either
+   way, on import: "Mettre 100 g de farine" becomes a weighing, oven steps stay without the robot,
+   and "Thermomix" becomes "robot". Pages that need a login and local network addresses are
+   refused. The photo isn't fetched yet.
 4. The **On the robot** panel shows, while you type and in the app's language, what the importer
    will make of each step, and which ones need checking or will be done manually.
 5. **Save**: the recipe is converted by the same importer as `data.json` and immediately appears in
-   **Recipes from other machines**. Deleting it in the editor also removes it from the app.
+   the robot's **Thermomix** tab, **Editor** filter. Deleting it in the editor also removes it from the app.
 
 The recipes are kept in the app's private storage (`files/editeur/data.json` and
 `files/editeur/images/`), in the same format as above. The editor only runs while it is enabled and
