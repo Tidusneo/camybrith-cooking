@@ -44,6 +44,7 @@ class SmartTx(val atMs: Long, val raw: ByteArray) {
     val seq = raw[7].toInt() and 0xFF
     val opcode = ((p[0].toInt() and 0xFF) shl 8) or (p[1].toInt() and 0xFF)
     val temperatureLevel = p[2].toInt()
+    val constantTemperature = p[4].toInt() and 0xFF
     val speedLevel = p[8].toInt()
     val reverse = p[9].toInt() != 0
     val function = p[11].toInt() and 0xFF
@@ -613,11 +614,60 @@ class SmartControllerTest {
         assertEquals(RobotModel.SMART, RobotModel.detect { it == "com.tecpal.device.mc30" })
         assertEquals(RobotModel.CONNECT, RobotModel.detect { it == "de.silpion.mc2" })
         assertEquals(RobotModel.CONNECT, RobotModel.detect { false })
+        assertEquals(RobotModel.SMART_R818, RobotModel.detect({ false }, { true }))
         assertTrue(RobotModel.isHardwareService("com.tecpal.device.serialport.service.SerialPortMC30Service"))
         assertTrue(RobotModel.isHardwareService("de.silpion.mc2.HardwareMachineService"))
         assertFalse(RobotModel.isHardwareService("org.eclipse.paho.android.service.MqttService"))
         assertEquals("/dev/ttyMT1", RobotModel.SMART.serialDevice)
+        assertEquals("/dev/ttyS2", RobotModel.SMART_R818.serialDevice)
         assertEquals(9600, RobotModel.SMART.baud)
+        assertEquals(9600, RobotModel.SMART_R818.baud)
+        assertTrue(RobotModel.SMART.isSmart)
+        assertTrue(RobotModel.SMART_R818.isSmart)
+        assertFalse(RobotModel.CONNECT.isSmart)
+    }
+
+    @Test fun staleIdleTimeoutOnlyAppliesWhenResting() {
+        // Profil R818 avec staleIdleMs élargi à 4000 ms mais staleMs strict à 1500 ms
+        val config = SmartConfig(staleMs = 1500, staleIdleMs = 4000)
+        val b = SmartBench(config).ready()
+        assertEquals(LinkState.READY, b.c.link)
+
+        // Au repos : un silence de 2000 ms ne coupe pas la liaison
+        b.clock.now += 2000
+        b.c.tick()
+        assertEquals(LinkState.READY, b.c.link)
+
+        // Mais après 4100 ms au repos, la liaison est perdue
+        b.clock.now += 2100
+        b.c.tick()
+        assertEquals(LinkState.LOST, b.c.link)
+
+        // Réarmement
+        b.ready()
+        assertEquals(LinkState.READY, b.c.link)
+
+        // En marche (programme manuel) : un silence de 1600 ms coupe immédiatement
+        assertTrue(b.c.startJob(Programs.manual(1, 0, cw, 60_000L)).ok)
+        b.step(200)
+        assertEquals(LinkState.READY, b.c.link)
+        b.clock.now += 1600
+        b.c.tick()
+        assertEquals(LinkState.LOST, b.c.link)
+    }
+
+    @Test fun constantTemperatureOnlySentWhenConfigured() {
+        // MediaTek par défaut : constantTemperature = 0
+        val bMtk = SmartBench(SmartConfig(sendConstantTemperature = false)).ready()
+        assertTrue(bMtk.c.startJob(Programs.manual(1, connectLevel(70), cw, 60_000L)).ok)
+        bMtk.step(400)
+        assertEquals(0, bMtk.last().constantTemperature)
+
+        // Profil R818 : constantTemperature = 70
+        val bR818 = SmartBench(SmartConfig(sendConstantTemperature = true)).ready()
+        assertTrue(bR818.c.startJob(Programs.manual(1, connectLevel(70), cw, 60_000L)).ok)
+        bR818.step(400)
+        assertEquals(70, bR818.last().constantTemperature)
     }
 
     /** La vraie boucle (fils d'émission et de réception) avec la base simulée du Smart. */

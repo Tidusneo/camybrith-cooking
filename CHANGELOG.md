@@ -2,6 +2,113 @@
 
 🇫🇷 Français, puis 🇬🇧 English.
 
+## 1.5.0
+
+### ⭐ Éditeur de recettes, depuis ton téléphone ou ton ordinateur
+
+**Écris tes recettes dans un navigateur, elles arrivent sur le robot.** Active l'éditeur dans
+*Réglages › Éditeur de recettes*, scanne le QR code avec ton téléphone : c'est tout.
+
+| | |
+|---|---|
+| <img src="https://raw.githubusercontent.com/Tidusneo/camybrith-cooking/main/docs/images/editeur-reglages.png" width="420"> | <img src="https://raw.githubusercontent.com/Tidusneo/camybrith-cooking/main/docs/images/editeur-liste.png" width="200"> <img src="https://raw.githubusercontent.com/Tidusneo/camybrith-cooking/main/docs/images/editeur-pesee.png" width="200"> |
+| Sur le robot : le QR code et la clé d'accès | Sur le téléphone : tes recettes et leurs étapes |
+
+* **Créer, modifier, supprimer** tes recettes : ingrédients, étapes avec le réglage du robot ou
+  une pesée, photo.
+* **Importer depuis un lien** : colle l'adresse d'une recette, le robot récupère le titre, les
+  ingrédients et les étapes. Pour les recettes écrites pour le Thermomix (Cookomix, Yummix…), les
+  réglages sont convertis automatiquement pour le Monsieur Cuisine Smart. Pour les autres sites,
+  la conversion est partielle : tu choisis toi‑même les réglages du robot.
+* **Coller une recette** : même conversion à partir d'un texte copié.
+* **Conversion soignée** : « Mettre 100 g de farine » devient une pesée guidée, les étapes au four
+  restent des étapes sans le robot, et « Thermomix » devient « robot ». Tu relis tout avant
+  d'enregistrer, avec les réglages adaptés marqués « à vérifier ».
+* **Aperçu « Sur le robot »** : ce que le robot fera vraiment de chaque étape. Un réglage
+  impossible ne pourra jamais être lancé.
+* **Accès protégé** : désactivé par défaut, clé aléatoire dans le QR code, blocage après 10
+  mauvaises clés. Fonctionne uniquement sur ton Wi‑Fi, sans compte.
+
+| | |
+|---|---|
+| <img src="https://raw.githubusercontent.com/Tidusneo/camybrith-cooking/main/docs/images/recette-importee.png" width="420"> | <img src="https://raw.githubusercontent.com/Tidusneo/camybrith-cooking/main/docs/images/pesee-importee.png" width="420"> |
+| Une recette Cookomix importée par lien, avec ses pesées | La pesée guidée sur le robot |
+
+Les recettes de l'éditeur s'affichent dans l'onglet **Thermomix** du robot, avec un filtre
+**Éditeur** pour les retrouver d'un coup d'œil.
+
+<img src="https://raw.githubusercontent.com/Tidusneo/camybrith-cooking/main/docs/images/onglet-editeur.png" width="420">
+
+Éditeur proposé et programmé par **miguelangellv**, merci à lui ! Mode d'emploi :
+[docs/RECETTES.md](docs/RECETTES.md).
+
+### 🇩🇪 L'appli parle allemand
+
+*Réglages › Langue › Deutsch*. Les recettes Lidl arrivent alors en allemand.
+
+<img src="https://raw.githubusercontent.com/Tidusneo/camybrith-cooking/main/docs/images/accueil-deutsch.png" width="420">
+
+### Monsieur Cuisine Smart C1 (carte Allwinner R818)
+
+L'appli sait maintenant piloter le Smart C1, grâce au travail de **topes1**. Il n'existe pas
+encore de méthode publique pour rooter un C1 : pour l'instant, ça ne concerne que les robots déjà
+rootés.
+
+### Plus solide
+
+* Après une installation manuelle, la version rapide vérifie qu'Android l'a bien préparée, et le
+  fait elle‑même sinon (écran « Préparation de l'appli… » une ou deux minutes). Fini l'appli qui
+  redémarre en boucle.
+* Plus de fausse alerte « Anomalie du compilateur » en changeant de langue.
+* Après une mise à jour, le téléphone charge automatiquement la nouvelle version de l'éditeur.
+
+> Mise à jour directement depuis le robot, *Réglages › Mises à jour*.
+
+🇬🇧
+
+### ⭐ Recipe editor, from your phone or computer
+
+**Write your recipes in a browser, they land on the robot.** Turn the editor on in *Settings ›
+Recipe editor*, scan the QR code with your phone: that's it.
+
+* **Create, edit, delete** your recipes: ingredients, steps with the robot's setting or a
+  weighing, photo.
+* **Import from a link**: paste a recipe's address, the robot gets the title, ingredients and
+  steps. For recipes written for the Thermomix (Cookomix, Yummix…), settings are converted
+  automatically for the Monsieur Cuisine Smart. For other sites the conversion is partial: you
+  choose the robot settings yourself.
+* **Paste a recipe**: same conversion from copied text.
+* **Careful conversion**: "Put 100 g of flour" becomes a guided weighing, oven steps stay steps
+  without the robot, and "Thermomix" becomes "robot". You review everything before saving, with
+  adapted settings marked "to check".
+* **"On the robot" preview**: what the robot will really do with each step. An impossible setting
+  can never be started.
+* **Protected access**: off by default, random key inside the QR code, blocked after 10 wrong
+  keys. Works only on your Wi‑Fi, no account.
+
+Editor recipes show up in the robot's **Thermomix** tab, with an **Editor** filter.
+
+Editor suggested and built by **miguelangellv**, many thanks! How‑to:
+[docs/RECIPES.en.md](docs/RECIPES.en.md).
+
+### 🇩🇪 The app speaks German
+
+*Settings › Language › Deutsch*. Lidl recipes then come in German.
+
+### Monsieur Cuisine Smart C1 (Allwinner R818 board)
+
+The app can now drive the Smart C1, thanks to **topes1**. There's no public way to root a C1 yet,
+so for now this only helps robots that are already rooted.
+
+### Sturdier
+
+* After a manual install, the fast version checks that Android prepared it, and does it itself
+  otherwise ("Preparing the app…" screen for a minute or two). No more restart loop.
+* No more false "Compiler anomaly" alert when switching language.
+* After an update, the phone loads the new version of the editor by itself.
+
+> Update straight from the robot, *Settings › Updates*.
+
 ## 1.4.2
 
 * **Nouvelle adresse du projet** : [github.com/Tidusneo/camybrith-cooking](https://github.com/Tidusneo/camybrith-cooking).

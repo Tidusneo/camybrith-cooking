@@ -56,6 +56,11 @@ esac
 echo "3/5  Accès root de l'interface…"
 accorder_root app.toque "Camybrith Cooking"
 
+$A shell cmd appops set app.toque.pilote START_FOREGROUND allow >/dev/null 2>&1 || true
+$A shell cmd appops set app.toque.pilote RUN_IN_BACKGROUND allow >/dev/null 2>&1 || true
+$A shell cmd appops set app.toque START_FOREGROUND allow >/dev/null 2>&1 || true
+$A shell cmd appops set app.toque RUN_IN_BACKGROUND allow >/dev/null 2>&1 || true
+
 $A shell am force-stop app.toque
 SDK=$($A shell getprop ro.build.version.sdk | tr -d '\r')
 if [ "$MODE" = rapide ] && [ "${SDK:-0}" -lt 24 ] 2>/dev/null; then

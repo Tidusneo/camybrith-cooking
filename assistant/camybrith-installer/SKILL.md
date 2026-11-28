@@ -42,8 +42,10 @@ https://github.com/Tidusneo/camybrith-cooking/blob/main/docs/GUIDE.en.md (or `GU
      experimental and untested, and that Toque (github.com/Wuki60/MrCuisineVibeConnect) is the
      proven choice there;
    * its Android system version (Monsieur Cuisine app: menu, Réglages, À propos). The guide was
-     tested on **V01.00.83 (June 2022)**. Another version is not a reason to stop, but say that
-     it is untested and insist even more on the backup;
+     tested on **V01.00.83 (June 2022)**. On **V01.00.95** the boot is locked (SP Flash Tool and
+     mtkclient are refused with DA_IMAGE_SIG_VERIFY_FAIL): stop there and explain that this
+     guide can't root it yet. Another version is not a reason to stop, but say that it is
+     untested and insist even more on the backup;
    * a **Windows PC** is available (SP Flash Tool needs it), plus a USB-A male to USB-A male cable
      with data wires and a small Torx screwdriver;
    * which computer they will use from step 7 on (Windows with Ubuntu WSL, Mac or Linux).

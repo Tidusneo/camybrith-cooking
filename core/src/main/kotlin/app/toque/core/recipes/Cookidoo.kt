@@ -1,5 +1,6 @@
 package app.toque.core.recipes
 
+import app.toque.core.i18n.tr
 import app.toque.core.json.list
 import app.toque.core.json.obj
 import app.toque.core.json.str
@@ -30,6 +31,11 @@ import kotlin.math.floor
  * - fourchette de temps (« 25-30 min ») : la plus courte, l'autre est indiquée dans le texte ;
  * - réglage sans durée : laissé à faire à la main (pas de durée inventée).
  * Toute étape dont le réglage a été modifié est marquée « à vérifier » avant lancement.
+ *
+ * Une étape (HowToStep) peut aussi donner directement le réglage du Monsieur Cuisine et une
+ * pesée, avec les champs du format de l'appli ([RecipeCodec]) : `"machine": {program, seconds,
+ * speed, tempC, reverse, accessory, pulses}` et `"weigh": {label, grams}`. Ces étapes ne sont
+ * pas converties ; elles ne sont « à vérifier » que si le réglage enfreint une règle de sécurité.
  */
 object Cookidoo {
     const val ID_PREFIX = "tm-"
@@ -74,9 +80,13 @@ object Cookidoo {
         val ingredients = ingredientLines.map { clean(it) }.filter { it.isNotEmpty() }.map { ingredient(it) }
 
         val steps = ArrayList<Step>()
+        var thermomix = false
         fun add(s: Any?) {
             when (s) {
-                is String -> steps += steps(s)
+                is String -> {
+                    if (SETTING.containsMatchIn(s)) thermomix = true
+                    steps += steps(s)
+                }
                 is Map<*, *> -> {
                     val o = s.obj()
                     val items = o["itemListElement"].list()
@@ -85,7 +95,15 @@ object Cookidoo {
                         val name = clean(o.str("name").orEmpty())
                         if (name.isNotEmpty()) steps += Step("$name :")
                         items.forEach { add(it) }
-                    } else steps += steps(o.str("text").orEmpty())
+                    } else {
+                        val native = nativeStep(o)
+                        if (native != null) steps += native
+                        else {
+                            val text = o.str("text").orEmpty()
+                            if (SETTING.containsMatchIn(text)) thermomix = true
+                            steps += steps(text)
+                        }
+                    }
                 }
             }
         }
@@ -93,12 +111,21 @@ object Cookidoo {
         val review = steps.count { it.needsReview }
         val manual = steps.count { it.text.contains(MANUAL_MARK) }
 
-        val notes = buildString {
-            append("Recette Thermomix adaptée automatiquement pour le Monsieur Cuisine Smart.")
-            if (review > 0) append(" ").append(review).append(if (review > 1) " réglages modifiés sont à vérifier." else " réglage modifié est à vérifier.")
-            if (manual > 0) append(" ").append(manual).append(if (manual > 1) " étapes sont à régler à la main." else " étape est à régler à la main.")
-        }
-        val tags = (m["tags"].list().mapNotNull { (it as? String)?.trim() } + "Thermomix").filter { it.isNotEmpty() }.distinct()
+        val notes = listOfNotNull(
+            if (thermomix) tr("Recette Thermomix adaptée automatiquement pour le Monsieur Cuisine Smart.") else null,
+            when {
+                review > 1 -> tr("%d réglages sont à vérifier.", review)
+                review == 1 -> tr("1 réglage est à vérifier.")
+                else -> null
+            },
+            when {
+                manual > 1 -> tr("%d étapes sont à régler à la main.", manual)
+                manual == 1 -> tr("1 étape est à régler à la main.")
+                else -> null
+            },
+        ).joinToString(" ")
+        val tags = (m["tags"].list().mapNotNull { (it as? String)?.trim() } + if (thermomix) listOf("Thermomix") else emptyList())
+            .filter { it.isNotEmpty() }.distinct()
         return Recipe(
             id = id,
             title = title,
@@ -109,7 +136,7 @@ object Cookidoo {
             totalMinutes = minutes(schema.str("totalTime")),
             ingredients = if (ingredients.isEmpty()) emptyList() else listOf(IngredientGroup("", ingredients)),
             steps = steps,
-            source = RecipeSource.IMPORTED,
+            source = if (m["editor"] == true) RecipeSource.USER else RecipeSource.IMPORTED,
             image = imageName(id),
             notes = notes,
             author = m.str("author")?.trim().orEmpty(),
@@ -120,7 +147,18 @@ object Cookidoo {
 
     // ------------------------------------------------------------------ étapes
 
-    const val MANUAL_MARK = "À régler à la main"
+    /** Début de la note d'une étape à régler à la main, dans la langue de l'appli. */
+    val MANUAL_MARK: String get() = tr("À régler à la main")
+
+    /** Étape au format du Monsieur Cuisine (champs « machine » et « weigh »), null sinon. */
+    fun nativeStep(o: Map<String, Any?>): Step? {
+        val mc = (o["machine"] as? Map<*, *>)?.let { RecipeCodec.parseMachine(it.obj()) }
+        val w = (o["weigh"] as? Map<*, *>)?.let { RecipeCodec.parseWeigh(it.obj()) }
+        if (mc == null && w == null) return null
+        var text = clean(o.str("text").orEmpty())
+        if (text.isEmpty() && w != null) text = if (w.label.isEmpty()) tr("Peser %d g", w.grams) else tr("Peser %d g de %s", w.grams, w.label)
+        return Step(text, mc, w, needsReview = mc != null && mc.violations().isNotEmpty())
+    }
 
     /** Un paragraphe Thermomix peut contenir plusieurs réglages : une étape Toque par réglage. */
     fun steps(html: String): List<Step> {
@@ -139,7 +177,7 @@ object Cookidoo {
                 c == null -> out += Step(t)
                 c.machines.isEmpty() -> out += Step(listOf(t, c.note).filter { it.isNotEmpty() }.joinToString("\n"))
                 else -> c.machines.forEachIndexed { i, mc ->
-                    val body = if (i == 0) t else "Encore une fois : " + mc.summary
+                    val body = if (i == 0) t else tr("Encore une fois : %s", mc.summary)
                     out += Step(listOf(body, if (i == 0) c.note else "").filter { it.isNotEmpty() }.joinToString("\n"), mc, needsReview = c.review)
                 }
             }
@@ -224,7 +262,7 @@ object Cookidoo {
         for (p0 in parts) {
             val p = p0.lowercase()
             when {
-                p == REVERSE.toString() -> reverse = true
+                p == REVERSE.toString() || p == "sens inverse" -> reverse = true
                 p.startsWith("pétrin") || p.startsWith("petrin") || p.contains(DOUGH) -> dough = true
                 p.startsWith("mixage") || p.contains(BLEND) -> blend = true
                 p == "turbo" -> turbo = true
@@ -232,7 +270,7 @@ object Cookidoo {
                 p.endsWith("°c") -> tempC = p.removeSuffix("°c").trim().replace(',', '.').toDoubleOrNull()?.toInt() ?: 0
                 p.startsWith("vitesse") -> {
                     val v = p.removePrefix("vitesse").trim()
-                    if (v.isEmpty() || v.contains(SPOON)) spoon = true
+                    if (v.isEmpty() || v.contains(SPOON) || v.startsWith("mijot")) spoon = true
                     else {
                         // « vitesse 5-10 » : monter progressivement ; le Smart démarre doucement tout seul.
                         val r = range(v)
@@ -246,97 +284,97 @@ object Cookidoo {
         }
 
         fun result(machines: List<StepMachine>, label: String): Conversion {
-            val note = if (changes.isEmpty()) "" else "Adapté du Thermomix ($raw) : " + changes.joinToString(" ; ") + "."
+            val note = if (changes.isEmpty()) "" else tr("Adapté du Thermomix (%s) : %s.", raw, changes.joinToString(" ; "))
             return Conversion(machines, label, note, changes.isNotEmpty())
         }
 
         val secs = seconds
-        val rangeNote = secs?.takeIf { it.first != it.last }?.let { " (jusqu'à ${fmt(it.last)})" }.orEmpty()
+        val rangeNote = secs?.takeIf { it.first != it.last }?.let { " " + tr("(jusqu'à %s)", fmt(it.last)) }.orEmpty()
 
         // Turbo : impulsions.
         if (turbo) {
             val n = pulses?.first ?: 1
-            if (pulses != null && pulses.first != pulses.last) changes += "${pulses.first} impulsions (jusqu'à ${pulses.last})"
+            if (pulses != null && pulses.first != pulses.last) changes += tr("%d impulsions (jusqu'à %d)", pulses.first, pulses.last)
             val mc = StepMachine(program = StepProgram.TURBO, pulses = n)
             return result(listOf(mc), "Turbo × $n")
         }
         if (secs == null) {
-            return Conversion(emptyList(), raw, "$MANUAL_MARK : la recette ne donne pas de durée ($raw).", true)
+            return Conversion(emptyList(), raw, MANUAL_MARK + " : " + tr("la recette ne donne pas de durée (%s).", raw), true)
         }
         val chosen = secs.first
-        if (secs.first != secs.last) changes += "durée la plus courte, ${fmt(secs.first)}"
+        if (secs.first != secs.last) changes += tr("durée la plus courte, %s", fmt(secs.first))
 
         // Pétrin : Malaxer, 2 min par fois, 2 fois d'affilée au plus.
         if (dough) {
             val max = (Limits.MAX_MS_KNEAD / 1000).toInt()
             if (chosen > 2 * max) {
-                changes += "le Smart malaxe 2 × 2 min au plus d'affilée"
-                return result(listOf(StepMachine(StepProgram.KNEAD, max), StepMachine(StepProgram.KNEAD, max)), "Malaxer 2 × 2 min$rangeNote")
+                changes += tr("le Smart malaxe 2 × 2 min au plus d'affilée")
+                return result(listOf(StepMachine(StepProgram.KNEAD, max), StepMachine(StepProgram.KNEAD, max)), tr("Malaxer 2 × 2 min") + rangeNote)
             }
             if (chosen > max) {
-                changes += "en deux fois (2 min au plus par fois)"
-                return result(listOf(StepMachine(StepProgram.KNEAD, max), StepMachine(StepProgram.KNEAD, chosen - max)), "Malaxer ${fmt(chosen)} en deux fois$rangeNote")
+                changes += tr("en deux fois (2 min au plus par fois)")
+                return result(listOf(StepMachine(StepProgram.KNEAD, max), StepMachine(StepProgram.KNEAD, chosen - max)), tr("Malaxer %s en deux fois", fmt(chosen)) + rangeNote)
             }
-            return result(listOf(StepMachine(StepProgram.KNEAD, chosen)), "Malaxer ${fmt(chosen)}$rangeNote")
+            return result(listOf(StepMachine(StepProgram.KNEAD, chosen)), tr("Malaxer %s", fmt(chosen)) + rangeNote)
         }
 
         // Mode mixage du TM6 : programme Mixer du Smart (5 s à 3 min).
         if (blend) {
-            changes += "programme Mixer du Smart"
+            changes += tr("programme Mixer du Smart")
             val s = ((chosen + 4) / 5 * 5).coerceIn(5, 180)
-            if (s != chosen) changes += "durée ${fmt(s)}"
-            return result(listOf(StepMachine(StepProgram.PUREE, s)), "Mixer ${fmt(s)}$rangeNote")
+            if (s != chosen) changes += tr("durée %s", fmt(s))
+            return result(listOf(StepMachine(StepProgram.PUREE, s)), tr("Mixer %s", fmt(s)) + rangeNote)
         }
 
         // Varoma : programme Vapeur.
         if (varoma) {
-            if (reverse || spoon || (speed ?: 1.0) > 1.0) changes += "le programme Vapeur remue lui-même doucement"
-            return result(listOf(StepMachine(StepProgram.STEAM, chosen, tempC = 120)), "${fmt(chosen)}/vapeur$rangeNote")
+            if (reverse || spoon || (speed ?: 1.0) > 1.0) changes += tr("le programme Vapeur remue lui-même doucement")
+            return result(listOf(StepMachine(StepProgram.STEAM, chosen, tempC = 120)), fmt(chosen) + "/" + tr("vapeur") + rangeNote)
         }
 
         // Cuisson ou mixage manuel.
         var t = 0
         if (tempC >= 37) {
             t = TemperatureTable.current.let { table -> table.celsius(table.levelAtMost(tempC)) }
-            if (t != tempC) changes += "$t °C (graduation du Smart)"
-        } else if (tempC > 0) changes += "sans chauffe (le Smart chauffe à partir de 37 °C)"
+            if (t != tempC) changes += tr("%d °C (graduation du Smart)", t)
+        } else if (tempC > 0) changes += tr("sans chauffe (le Smart chauffe à partir de 37 °C)")
         val heated = t > 0
         var sp: Int
         if (spoon) {
             sp = 1
-            if (!reverse) changes += "vitesse 1 en sens inverse à la place de la vitesse mijotage"
+            if (!reverse) changes += tr("vitesse 1 en sens inverse à la place de la vitesse mijotage")
             reverse = true
         } else {
             val v = speed ?: 0.0
             sp = if (v % 1.0 != 0.0) (if (heated) floor(v) else ceil(v)).toInt() else v.toInt()
-            if (v % 1.0 != 0.0) changes += "vitesse $sp (pas de demi-vitesse)"
+            if (v % 1.0 != 0.0) changes += tr("vitesse %d (pas de demi-vitesse)", sp)
         }
-        if (progressive) changes += "vitesse $sp directement (montée progressive au Thermomix)"
-        if (sp <= 0) return Conversion(emptyList(), raw, "$MANUAL_MARK : vitesse non précisée ($raw).", true)
+        if (progressive) changes += tr("vitesse %d directement (montée progressive au Thermomix)", sp)
+        if (sp <= 0) return Conversion(emptyList(), raw, MANUAL_MARK + " : " + tr("vitesse non précisée (%s).", raw), true)
         if (heated && sp > Limits.MAX_SPEED_HEATED) {
             sp = Limits.MAX_SPEED_HEATED
-            changes += "vitesse ${Limits.MAX_SPEED_HEATED} au plus en chauffe"
+            changes += tr("vitesse %d au plus en chauffe", Limits.MAX_SPEED_HEATED)
         }
         if (reverse && sp > Limits.MAX_SPEED_REVERSE) {
             sp = Limits.MAX_SPEED_REVERSE
-            changes += "vitesse ${Limits.MAX_SPEED_REVERSE} au plus en sens inverse"
+            changes += tr("vitesse %d au plus en sens inverse", Limits.MAX_SPEED_REVERSE)
         }
         val accessory = if (whisk) Accessory.WHISK else Accessory.BLADE
         if (whisk && sp > Accessory.WHISK.maxSpeed) {
             sp = Accessory.WHISK.maxSpeed
-            changes += "vitesse ${Accessory.WHISK.maxSpeed} au plus avec le fouet"
+            changes += tr("vitesse %d au plus avec le fouet", Accessory.WHISK.maxSpeed)
         }
         var dur = chosen
         if (sp > 6 && dur > 600) {
             dur = 600
-            changes += "10 min au plus au-delà de la vitesse 6"
+            changes += tr("10 min au plus au-delà de la vitesse 6")
         }
         if (dur < 1) dur = 1
         val label = buildString {
             append(fmt(dur))
             if (heated) append("/").append(t).append(" °C")
-            if (reverse) append("/sens inverse")
-            append("/vitesse ").append(sp)
+            if (reverse) append("/").append(tr("sens inverse"))
+            append("/").append(tr("vitesse %d", sp))
             append(rangeNote)
         }
         return result(listOf(StepMachine(StepProgram.MANUAL, dur, sp, t, reverse, accessory)), label)

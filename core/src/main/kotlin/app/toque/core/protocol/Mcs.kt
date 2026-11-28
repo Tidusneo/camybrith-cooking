@@ -163,6 +163,7 @@ class McsTelemetry(
 
 object Mcs {
     const val DEVICE_PATH = "/dev/ttyMT1"
+    const val DEVICE_PATH_ALLWINNER = "/dev/ttyS2"
     const val BAUD_RATE = 9600
 
     const val HEADER = 0xAA

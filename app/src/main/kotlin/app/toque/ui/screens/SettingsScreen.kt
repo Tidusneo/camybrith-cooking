@@ -25,7 +25,9 @@ import app.toque.core.update.Release
 import app.toque.recipes.FileImport
 import app.toque.recipes.LidlSync
 import app.toque.recipes.OnlineSync
+import app.toque.recipes.WebEditor
 import app.toque.ui.Icon
+import app.toque.ui.Qr
 import app.toque.ui.MainActivity
 import app.toque.ui.Screen
 import app.toque.ui.Section
@@ -46,6 +48,8 @@ class SettingsScreen(a: MainActivity) : Screen(a) {
     private lateinit var twinBox: LinearLayout
     private lateinit var host: EditText
     private lateinit var port: EditText
+    private lateinit var serialBox: LinearLayout
+    private lateinit var serialDeviceField: EditText
     private lateinit var syncText: TextView
     private lateinit var bowlText: TextView
     private lateinit var linkText: TextView
@@ -138,6 +142,10 @@ class SettingsScreen(a: MainActivity) : Screen(a) {
         twinBox.addView(host, LinearLayout.LayoutParams(0, Ui.u(58), 1f).apply { rightMargin = Ui.u(10) })
         twinBox.addView(port, LinearLayout.LayoutParams(Ui.u(120), Ui.u(58)))
         machine.addView(twinBox, Ui.lp(t = 12))
+        serialBox = Ui.horizontal(c)
+        serialDeviceField = field(a.prefs.serialDevice, "/dev/ttyS2, /dev/ttyMT1…")
+        serialBox.addView(serialDeviceField, LinearLayout.LayoutParams(Ui.MATCH, Ui.u(58)))
+        machine.addView(serialBox, Ui.lp(t = 12))
         linkText = Ui.text(c, "", 16f, Ui.TEXT2).apply { setLineSpacing(0f, 1.15f) }
         machine.addView(linkText, Ui.lp(t = 12))
         machine.addView(Ui.button(c, tr("Appliquer"), Ui.Style.PRIMARY, Icon.Kind.CHECK, height = 58) { applyMode() }, Ui.lp(Ui.WRAP, Ui.WRAP, t = 14))
@@ -256,6 +264,51 @@ class SettingsScreen(a: MainActivity) : Screen(a) {
                 }
             }.start()
         }, Ui.lp(Ui.WRAP, Ui.WRAP, t = 10))
+
+        // ---- Éditeur de recettes web
+        val editor = section(tr("Éditeur de recettes"), Icon.Kind.BOOK)
+        editor.addView(Ui.text(c, tr("Écrivez vos recettes depuis un ordinateur, une tablette ou un téléphone sur le même réseau Wi-Fi : ouvrez l'adresse ci-dessous dans un navigateur et saisissez le code. Les recettes enregistrées arrivent dans l'appli, converties pour le Monsieur Cuisine Smart."),
+            15f, Ui.TEXT2).apply { setLineSpacing(0f, 1.15f) })
+        val editorText = Ui.text(c, "", 17f, Ui.TEXT).apply { setLineSpacing(0f, 1.2f) }
+        val editorKey = Ui.text(c, "", 34f, Ui.ACCENT).apply { typeface = android.graphics.Typeface.MONOSPACE; letterSpacing = 0.08f }
+        val editorQr = android.widget.ImageView(c).apply { visibility = View.GONE }
+        fun paintEditor() {
+            val urls = if (a.prefs.editorEnabled && WebEditor.running && WebEditor.error.isEmpty()) WebEditor.addresses() else emptyList()
+            editorText.text = when {
+                !a.prefs.editorEnabled -> tr("Éditeur arrêté")
+                WebEditor.error.isNotEmpty() -> tr("Démarrage impossible : %s", WebEditor.error)
+                !WebEditor.running -> tr("Démarrage…")
+                urls.isEmpty() -> tr("Aucun réseau : connectez le robot au Wi-Fi")
+                else -> tr("Scannez le QR code avec votre téléphone, ou ouvrez sur un appareil du même Wi-Fi :") + "\n" + urls.joinToString("\n")
+            }
+            editorKey.text = if (urls.isNotEmpty()) a.prefs.editorCode else ""
+            editorKey.visibility = if (urls.isNotEmpty()) View.VISIBLE else View.GONE
+            // Le QR code ouvre la page et porte la clé après « # » : elle ne part pas dans l'adresse.
+            val qr = urls.firstOrNull()?.let { Qr.bitmap(it + "/#k=" + a.prefs.editorCode, Ui.u(220)) }
+            editorQr.setImageBitmap(qr)
+            editorQr.visibility = if (qr != null) View.VISIBLE else View.GONE
+        }
+        val refresh = { view.post { paintEditor() }; Unit }
+        editor.addView(toggle(tr("Activer l'éditeur sur le réseau local"), a.prefs.editorEnabled) {
+            a.prefs.editorEnabled = it
+            paintEditor()
+            WebEditor.apply(a.app) { refresh() }
+        }, Ui.lp(t = 10))
+        paintEditor()
+        val editorRow = Ui.horizontal(c)
+        editorRow.addView(editorQr, LinearLayout.LayoutParams(Ui.u(220), Ui.u(220)).apply { rightMargin = Ui.u(20) })
+        val editorInfo = Ui.vertical(c)
+        editorInfo.addView(editorText)
+        editorInfo.addView(Ui.text(c, tr("Clé d'accès"), 13f, Ui.TEXT3), Ui.lp(t = 12))
+        editorInfo.addView(editorKey)
+        editorRow.addView(editorInfo, LinearLayout.LayoutParams(0, Ui.WRAP, 1f))
+        editor.addView(editorRow, Ui.lp(t = 10))
+        editor.addView(Ui.button(c, tr("Nouvelle clé"), Ui.Style.SECONDARY, Icon.Kind.SYNC, height = 52) {
+            a.prefs.newEditorCode()
+            paintEditor()
+        }, Ui.lp(Ui.WRAP, Ui.WRAP, t = 10))
+        editor.addView(Ui.text(c, tr("Une nouvelle clé déconnecte les navigateurs déjà connectés. Après 10 mauvaises clés, l'accès se bloque une minute. Sur le réseau local, la clé circule en clair : n'activez l'éditeur que sur le Wi-Fi de la maison."),
+            14f, Ui.TEXT3).apply { setLineSpacing(0f, 1.1f) }, Ui.lp(t = 10))
 
         // ---- Mises à jour
         val updates = section(tr("Mises à jour"), Icon.Kind.INFO)
@@ -432,11 +485,12 @@ class SettingsScreen(a: MainActivity) : Screen(a) {
             }, mode == m) { mode = m; renderModes() }, Ui.lp(Ui.WRAP, Ui.WRAP, r = 8))
         }
         twinBox.visibility = if (mode == Prefs.Mode.TWIN) View.VISIBLE else View.GONE
+        serialBox.visibility = if (mode == Prefs.Mode.HARDWARE) View.VISIBLE else View.GONE
         linkText.text = when (mode) {
             Prefs.Mode.DEMO -> tr("Base moteur simulée : pour essayer l'appli sur n'importe quel appareil Android.")
             Prefs.Mode.TWIN -> tr("Jumeau numérique du SDK lancé sur un PC (tools/twin.py). Avec « adb reverse tcp:8765 tcp:8765 », gardez 127.0.0.1.")
             Prefs.Mode.HARDWARE -> tr("Pilote le vrai moteur par le port série. Exige le root. L'appli d'origine est coupée du moteur (réversible).")
-        } + if (mode == Prefs.Mode.TWIN) "" else "\n" + tr("Robot : %s", a.prefs.robotModel.label)
+        } + if (mode == Prefs.Mode.TWIN) "" else "\n" + tr("Robot : %s", a.prefs.robotModel.label) + " (" + a.prefs.serialDevice + ")"
     }
 
     private fun applyMode() {
@@ -459,6 +513,8 @@ class SettingsScreen(a: MainActivity) : Screen(a) {
 
     private fun save() {
         a.prefs.mode = mode
+        val customDev = serialDeviceField.text.toString().trim()
+        if (customDev.isNotEmpty()) a.prefs.serialDevice = customDev
         TemperatureTable.current = a.prefs.activeRobot.temperatures
         a.prefs.bootLaunch = true
         a.prefs.twinHost = host.text.toString().trim().ifEmpty { "127.0.0.1" }

@@ -175,6 +175,11 @@ class RecipesScreen(
             chips.addView(Ui.toggleChip(c, label, selected, icon) { filter = f; buildChips(); search() }, Ui.lp(Ui.WRAP, Ui.WRAP, r = 9))
         }
         chip(tr("Toutes"), filter == base, base)
+        if (thermomix) {
+            // Recettes écrites, collées ou importées par lien dans l'éditeur, ou venues de fichiers Thermomix.
+            chip(tr("Éditeur"), filter.source == app.toque.core.recipes.RecipeSource.USER, base.copy(source = app.toque.core.recipes.RecipeSource.USER), Icon.Kind.BOOK)
+            chip(tr("Fichiers Thermomix"), filter.source == app.toque.core.recipes.RecipeSource.IMPORTED, base.copy(source = app.toque.core.recipes.RecipeSource.IMPORTED))
+        }
         chip(tr("Favoris"), filter.favoritesOnly, base.copy(favoritesOnly = true), Icon.Kind.STAR)
         chip(tr("30 min max"), filter.maxMinutes == 30, base.copy(maxMinutes = 30), Icon.Kind.CLOCK)
         for (cat in a.app.recipes.index.categories(base).take(30)) chip(cat, filter.category == cat, base.copy(category = cat))

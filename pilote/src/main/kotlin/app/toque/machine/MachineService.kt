@@ -24,8 +24,8 @@ import app.toque.core.machine.MachineEvent
 import app.toque.core.machine.MachineLoop
 import app.toque.core.machine.MonotonicClock
 import app.toque.core.machine.RobotModel
-import app.toque.core.machine.TemperatureTable
 import app.toque.core.machine.RootSerialTransport
+import app.toque.core.machine.TemperatureTable
 import app.toque.core.machine.SimBoard
 import app.toque.core.machine.SimTransport
 import app.toque.core.machine.Snapshot
@@ -113,7 +113,7 @@ class MachineService : Service() {
                 val vendor = cfg.vendorPackage.ifBlank { model.vendorPackage }
                 ({ RootSerialTransport(dev, model.baud, vendor) })
             }
-            else -> if (model == RobotModel.SMART) {
+            else -> if (model.isSmart) {
                 val board = SmartSimBoard(MonotonicClock)
                 smartSim = board
                 ({ SmartSimTransport(board) })

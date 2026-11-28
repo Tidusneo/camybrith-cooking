@@ -232,10 +232,7 @@ object RecipeCodec {
             val s = sAny.obj()
             val text = s.str("text")?.trim().orEmpty()
             val mc = s["machine"]?.obj()?.let { parseMachine(it) }
-            val w = s["weigh"]?.obj()?.let { wm ->
-                val g = wm.int("grams") ?: 0
-                if (g > 0) Weigh(wm.str("label").orEmpty(), g) else null
-            }
+            val w = s["weigh"]?.obj()?.let { parseWeigh(it) }
             if (text.isEmpty() && mc == null) null else Step(text, mc, w, s.bool("needsReview") ?: false)
         }
         return Recipe(
@@ -259,7 +256,14 @@ object RecipeCodec {
         )
     }
 
-    private fun parseMachine(m: Map<String, Any?>): StepMachine? {
+    /** Pesée d'une étape (`{label, grams}`), null sans poids. */
+    fun parseWeigh(m: Map<String, Any?>): Weigh? {
+        val g = m.int("grams") ?: 0
+        return if (g > 0) Weigh(m.str("label")?.trim().orEmpty(), g) else null
+    }
+
+    /** Réglage d'une étape (`{program, seconds, speed, tempC, reverse, accessory, pulses}`), null si programme inconnu. */
+    fun parseMachine(m: Map<String, Any?>): StepMachine? {
         val program = StepProgram.of(m.str("program")) ?: return null
         val acc = Accessory.values().firstOrNull { it.name.equals(m.str("accessory"), true) } ?: Accessory.BLADE
         return StepMachine(

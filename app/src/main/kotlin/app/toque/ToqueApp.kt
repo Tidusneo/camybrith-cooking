@@ -11,6 +11,7 @@ import app.toque.core.i18n.I18n
 import app.toque.core.machine.TemperatureTable
 import app.toque.machine.MachineClient
 import app.toque.recipes.RecipeRepo
+import app.toque.recipes.WebEditor
 import app.toque.ui.MainActivity
 import java.util.Locale
 
@@ -54,10 +55,31 @@ class ToqueApp : Application() {
             }
         }
         log.write("interface", "démarrage")
+        CompileGuard.check(this, log)
         TimeSync.start(this, prefs, log)
+        if (prefs.editorEnabled) WebEditor.apply(this)
         homeAssistant.restart()
         // Version prudente (tout interprété) : rien à surveiller.
-        if (applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_VM_SAFE_MODE == 0) compilerWatch.start()
+        if (applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_VM_SAFE_MODE == 0 && !CompileGuard.compiling) compilerWatch.start()
+    }
+
+    /**
+     * Pendant la compilation lancée par [CompileGuard] : écran d'attente tout simple, sans le reste
+     * de l'interface (son code pourrait être mal compilé d'ici là). Vrai si l'écran d'attente est affiché.
+     */
+    fun prepare(activity: android.app.Activity): Boolean {
+        if (!CompileGuard.compiling) return false
+        activity.window.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        val text = android.widget.TextView(activity).apply {
+            text = app.toque.core.i18n.tr("Préparation de l'appli après la mise à jour (une à deux minutes)…")
+            textSize = 26f
+            setTextColor(android.graphics.Color.WHITE)
+            gravity = android.view.Gravity.CENTER
+            setBackgroundColor(android.graphics.Color.BLACK)
+            setPadding(64, 64, 64, 64)
+        }
+        activity.setContentView(text)
+        return true
     }
 
     private fun isMainProcess(): Boolean {

@@ -12,11 +12,26 @@ moteur, la chauffe et la balance, et garde les recettes officielles Monsieur Cui
 > ce qui annule probablement la garantie et comporte un petit risque de le rendre inutilisable si
 > on se trompe d'étape. Le guide est écrit pour l'éviter, avec une sauvegarde complète avant de
 > toucher à quoi que ce soit, mais tu fais tout **à tes risques**. Testé sur un Smart SKMS 1200 A1
-> (Android 8.1, version système V01.00.83 de juin 2022) en novembre 2026.
+> (Android 8.1, version système V01.00.83 de juin 2022) en novembre 2026. Les Smart A1 plus récents
+> en version système V01.00.95 semblent verrouillés : la méthode du guide ne marche pas dessus.
 
 <p align="center"><img src="docs/images/animation_demarrage.gif" width="560" alt="Animation de démarrage Camybrith Cooking"></p>
 
 <p align="center"><img src="docs/images/pesee-195g.gif" width="560" alt="Pesée : le bol se remplit à l'écran"><br><sub>La pesée en vrai : le bol se remplit à l'écran pendant qu'on verse.</sub></p>
+
+## Nouveau dans la 1.5
+
+**Écris ou importe tes recettes depuis ton téléphone, elles arrivent sur le robot.** Colle le lien
+d'une recette Thermomix (Cookomix, Yummix…) : les réglages sont convertis pour le Smart, et
+« 100 g de farine » devient une pesée guidée. L'appli parle aussi allemand. Tout le détail :
+[CHANGELOG.md](CHANGELOG.md).
+
+| | |
+|---|---|
+| ![Éditeur sur le robot](docs/images/editeur-reglages.png) | ![Recette importée](docs/images/recette-importee.png) |
+| **Éditeur de recettes** : scanne le QR code avec ton téléphone | **Recette importée par lien**, avec ses pesées |
+| <img src="docs/images/editeur-liste.png" width="200"> <img src="docs/images/editeur-pesee.png" width="200"> | ![Pesée guidée](docs/images/pesee-importee.png) |
+| **Sur le téléphone** : tes recettes et leurs étapes | **Pesée guidée** sur le robot |
 
 | | |
 |---|---|
@@ -29,7 +44,7 @@ moteur, la chauffe et la balance, et garde les recettes officielles Monsieur Cui
 | ![Recherche](docs/images/recherche.png) | ![Réglages](docs/images/reglages.png) |
 | **Recherche** instantanée, même avec des fautes | **Réglages** : thème clair ou sombre, langue, sons |
 
-<sub>Captures prises sur le robot. Les photos des recettes sont celles de Monsieur Cuisine (Lidl). L'appli existe en français, en anglais et en espagnol.</sub>
+<sub>Captures prises sur le robot. Les photos des recettes sont celles de Monsieur Cuisine (Lidl). L'appli existe en français, en anglais, en espagnol et en allemand.</sub>
 
 ## Installer
 
@@ -80,9 +95,9 @@ assistant et lui demander de te guider pas à pas.
   par ingrédients, filtres, favoris.
 * **Cuisson guidée** : chaque étape se lance d'un appui, la suivante s'affiche toute seule, la
   pesée est intégrée (molette ou boutons +10 g et +50 g pour atteindre le poids voulu).
-* **Tes propres recettes** écrites pour un autre robot (fichier JSON, voir
-  [docs/RECETTES.md](docs/RECETTES.md)) : les vitesses, températures, Varoma et pétrin sont
-  convertis pour le Smart, dans un onglet à part.
+* **Tes propres recettes**, écrites depuis ton téléphone dans l'éditeur, collées ou importées par
+  lien, ou venues d'un fichier écrit pour un autre robot (voir [docs/RECETTES.md](docs/RECETTES.md)) :
+  les vitesses, températures, Varoma et pétrin sont convertis pour le Smart, dans un onglet à part.
 * **Cuisson manuelle**, vapeur, rissoler, pétrir, Turbo, balance.
 * **Couvercle ouvert = pause**, et reprise d'un appui quand on le referme.
 * **Hors ligne** : rien ne dépend d'un serveur.
@@ -119,6 +134,7 @@ personnalisation/    tes sons, ton logo, et les outils pour les fabriquer
 core/                logique en Kotlin pur, testée sans Android (protocole, sécurité, recettes)
 commun/              code partagé entre l'interface et le pilote
 pilote/              appli « pilote moteur » (app.toque.pilote)
+editeur/             éditeur de recettes web (Ktor + Compose HTML), lancé par l'appli
 app/                 appli interface (app.toque)
 ```
 
@@ -128,7 +144,7 @@ Les APK sont fabriqués et publiés automatiquement par GitHub (onglet **Actions
 **Releases**). Pour les fabriquer sur ton ordinateur : JDK 17, SDK Android, puis
 
 ```
-./gradlew :core:test :pilote:assembleRelease :app:assembleRelease
+./gradlew :core:test :editeur:jvmTest :pilote:assembleRelease :app:assembleRelease
 ./gradlew -Pprudent=true :app:assembleRelease     # version prudente
 ```
 
@@ -136,6 +152,14 @@ La version **rapide** est compilée par Android avant la première ouverture (c'
 `outils/installer.sh`) : sur ce robot, la compilation « au fil de l'eau » d'Android fait planter
 l'interface. La version **prudente** n'est jamais compilée : plus lente, mais à l'abri de ce
 problème.
+
+Pour essayer l'éditeur de recettes web sans le robot (http://localhost:8099, code 123456 ; les
+recettes sont gardées dans le dossier donné ; ajoute `EDITEUR_LANG=es` ou `en` pour une autre
+langue, `EDITEUR_DARK=1` pour le thème sombre) :
+
+```
+EDITEUR_DEV=/tmp/recettes ./gradlew :editeur:jvmTest --tests app.toque.editeur.DevRun
+```
 
 ## Ajouter une langue
 

@@ -13,10 +13,25 @@ el calentamiento y la báscula, y conserva las recetas oficiales de Monsieur Cui
 > si un paso sale mal. La guía está escrita para evitarlo, con una copia de seguridad completa antes
 > de tocar nada, pero todo lo haces **bajo tu propia responsabilidad**. Probado en un Smart
 > SKMS 1200 A1 (Android 8.1, versión del sistema V01.00.83 de junio de 2022) en noviembre de 2026.
+> Los A1 más recientes con la versión V01.00.95 parecen bloqueados: el método de la guía no funciona en ellos.
 
 <p align="center"><img src="docs/images/animation_demarrage.gif" width="560" alt="Animación de arranque de Camybrith Cooking"></p>
 
 <p align="center"><img src="docs/images/pesee-195g.gif" width="560" alt="Pesaje: el vaso se llena en pantalla"><br><sub>El pesaje en directo: el vaso se llena en pantalla mientras viertes.</sub></p>
+
+## Novedades de la 1.5
+
+**Escribe o importa tus recetas desde el móvil y llegan al robot.** Pega el enlace de una receta
+Thermomix (Cookomix, Yummix…): los ajustes se convierten para el Smart y «100 g de harina» se
+convierte en un pesaje guiado. La app también habla alemán. Todos los detalles:
+[CHANGELOG.md](CHANGELOG.md).
+
+| | |
+|---|---|
+| ![Editor en el robot](docs/images/editeur-reglages.png) | ![Receta importada](docs/images/recette-importee.png) |
+| **Editor de recetas**: escanea el código QR con el móvil | **Receta importada desde un enlace**, con sus pesajes |
+| <img src="docs/images/editeur-liste.png" width="200"> <img src="docs/images/editeur-pesee.png" width="200"> | ![Pesaje guiado](docs/images/pesee-importee.png) |
+| **En el móvil**: tus recetas y sus pasos | **Pesaje guiado** en el robot |
 
 | | |
 |---|---|

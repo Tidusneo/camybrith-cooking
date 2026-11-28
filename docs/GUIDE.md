@@ -58,6 +58,11 @@ Ces erreurs ont déjà coûté des robots à d'autres personnes. Relis-les avant
 
 * Un **Monsieur Cuisine Smart SKMS 1200 A1**. Le guide a été testé sur un exemplaire de 2021 avec
   Android 8.1 et la version système **V01.00.83** (juin 2022).
+
+  > ⚠️ **Vérifie ta version système avant tout** (appli Monsieur Cuisine : menu, Réglages, À propos).
+  > Les Smart A1 plus récents, en **V01.00.95** (fabriqués fin 2022 et après), ont un démarrage
+  > verrouillé : SP Flash Tool et mtkclient y sont refusés, la méthode de ce guide ne marche pas.
+  > Le **SKMS 1200 C1** (carte Allwinner R818) n'a pas encore de méthode de root connue non plus.
 * Un **PC sous Windows 10 ou 11**, avec environ **6 Go d'espace libre**. SP Flash Tool, l'outil qui
   lit et écrit la mémoire du robot, n'existe que sous Windows (et Linux).
 * Un câble **USB-A mâle vers USB-A mâle**, en **USB 2.0** de préférence (quelques euros). Attention :

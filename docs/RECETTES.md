@@ -10,6 +10,9 @@ jamais effacées par la synchronisation des recettes Lidl.
 Le projet ne fournit aucune recette et n'explique pas comment en récupérer sur un site : utilise
 uniquement des recettes que tu as le droit de copier (les tiennes, celles de tes proches…).
 
+Les recettes peuvent s'écrire directement dans un navigateur avec l'[éditeur de recettes
+web](#éditeur-de-recettes-web), ou se préparer dans un fichier `data.json` envoyé par ADB.
+
 ## Le format du fichier `data.json`
 
 Une liste d'objets. Chaque objet a un identifiant (`id`) et une recette au format
@@ -47,6 +50,29 @@ Réglages reconnus, par exemple : `15-30 sec/vitesse 7`, `10 min/100°C/vitesse 
 `20 min/Varoma/vitesse 1`, `Pétrin/2 min`, `Turbo/0.5 sec/3-5 fois`. Une fourchette de temps
 devient la durée la plus courte ; un réglage sans durée est laissé « à régler à la main ».
 
+### Réglages du Monsieur Cuisine et pesées (facultatif)
+
+Au lieu d'un réglage Thermomix dans le texte, une étape peut porter le réglage du Monsieur Cuisine
+lui-même, dans un champ `machine`, ou une pesée, dans un champ `weigh`. C'est ce qu'écrit
+l'éditeur web :
+
+```json
+{"@type": "HowToStep", "text": "Cuire le riz.", "machine": {"program": "manuel", "seconds": 1200, "speed": 1, "tempC": 100, "reverse": true}},
+{"@type": "HowToStep", "text": "Ajouter le riz.", "weigh": {"label": "riz", "grams": 300}}
+```
+
+- `program` : `manuel`, `petrir`, `vapeur`, `rissoler`, `turbo`, et sur le Smart `mixer`,
+  `smoothie`, `sous-vide`, `mijoter`, `fermenter`.
+- `seconds` : une durée précise (pas de fourchette). `tempC` : 0 (sans chauffe) ou de 40 à 130 °C
+  de 5 en 5 en cuisson manuelle ; les programmes du Smart ont leur propre plage (la vapeur est
+  toujours à 120 °C).
+- `speed` : de 1 à 10 en cuisson manuelle, 3 au plus en chauffe ou en sens inverse, 4 avec le
+  fouet (`"accessory": "whisk"`), et 10 min au plus au-delà de la vitesse 6. `pulses` : impulsions
+  turbo (1 à 20).
+- `weigh.grams` : de 1 à 5000 g. L'appli affiche la balance à cette étape.
+
+Un réglage que le robot refuserait est marqué « à vérifier » à l'import.
+
 ## Les photos (facultatif)
 
 Un dossier `images/` à côté de `data.json`, avec une photo JPEG par recette nommée d'après son
@@ -66,3 +92,46 @@ favoris gardés.
 **Relis toujours les étapes « à vérifier » avant de les lancer** : la conversion respecte les
 limites de sécurité du Smart, mais un Thermomix et un Monsieur Cuisine ne se comportent pas
 exactement pareil.
+
+## Éditeur de recettes web
+
+L'appli peut servir un éditeur de recettes sur le réseau local, pour écrire tes recettes depuis un
+ordinateur, une tablette ou un téléphone au lieu de préparer `data.json` à la main.
+
+1. Sur le robot : **Réglages**, **Éditeur de recettes**, active **Activer l'éditeur sur le réseau
+   local**. L'appli affiche un QR code, l'adresse (`http://<IP du robot>:8080`) et une clé d'accès
+   de 8 caractères (par exemple `K7M4-Q9TX`).
+2. Scanne le QR code avec ton téléphone : la page s'ouvre déjà connectée. Sinon, ouvre l'adresse
+   dans un navigateur sur le même réseau Wi-Fi et saisis la clé (tirets, espaces et majuscules ne
+   comptent pas).
+3. La liste montre les recettes déjà écrites (y compris celles importées avant avec `data.json`).
+   Crées-en une ou ouvre-la pour la modifier : informations, ingrédients (un par ligne), photo, et
+   les étapes, groupées en parties facultatives. Pour chaque étape, choisis **Sans le robot**,
+   **Avec le robot** (le programme du Monsieur Cuisine et ses options : durée précise, température
+   de 40 à 130 °C de 5 en 5, vitesse de 1 à 10, sens inverse, fouet, impulsions turbo ; les valeurs
+   que le robot refuserait ne sont pas proposées) ou **Peser** (ingrédient et grammes). Les étapes
+   Thermomix d'un ancien `data.json` restent en **Texte libre** et sont toujours converties.
+   **Coller une recette** : colle le texte d'une recette trouvée ailleurs (titre, ingrédients,
+   étapes). Le robot la découpe et repère les réglages écrits à la manière Thermomix
+   (« 5 sec/vit. 5 », « 20 min/100°C/sens inverse/vit. mijotage », « cuire 10 minutes à 100 degrés
+   vitesse 2 », « Varoma », « Pétrin/3 min », « Turbo/0.5 sec/3 fois »). Le résultat s'ouvre comme
+   une nouvelle recette, à relire avant d'enregistrer. Colle uniquement des recettes que tu as le
+   droit d'utiliser.
+   **Importer depuis un lien** (même page) : colle l'adresse d'une recette, le robot télécharge la
+   page et y lit le titre, les ingrédients, les étapes, la catégorie, les temps et l'auteur (le
+   format « recette » que publient la plupart des sites et blogs). Pour les recettes écrites pour
+   le Thermomix (Cookomix, Yummix…), les réglages sont convertis ; pour les autres, la conversion
+   est partielle et tu choisis les réglages toi‑même. Dans les deux cas, à l'import :
+   « Mettre 100 g de farine » devient une pesée, les étapes au four restent sans le robot, et
+   « Thermomix » devient « robot ». Les pages qui demandent une connexion et les adresses du réseau
+   local sont refusées. La photo n'est pas encore récupérée.
+4. Le panneau **Sur le robot** montre, pendant la saisie et dans la langue de l'appli, ce que
+   l'importeur fera de chaque étape, et lesquelles sont à vérifier ou se feront à la main.
+5. **Enregistrer** : la recette est convertie par le même importeur que `data.json` et apparaît
+   aussitôt dans l'onglet **Thermomix** du robot, filtre **Éditeur**. La supprimer dans l'éditeur la retire aussi de l'appli.
+
+Les recettes sont gardées dans le stockage privé de l'appli (`files/editeur/data.json` et
+`files/editeur/images/`), au même format que ci-dessus. L'éditeur ne tourne que s'il est activé et
+n'est fait que pour un réseau domestique de confiance : pas de HTTPS, seulement la clé d'accès
+(**Nouvelle clé** dans les réglages la change et déconnecte les navigateurs ; après 10 mauvaises
+clés, l'accès se bloque une minute ; un navigateur reste connecté 30 jours au plus).

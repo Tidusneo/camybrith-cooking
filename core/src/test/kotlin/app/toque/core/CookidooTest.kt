@@ -4,7 +4,9 @@ import app.toque.core.json.Json
 import app.toque.core.machine.Accessory
 import app.toque.core.machine.TemperatureTable
 import app.toque.core.recipes.Cookidoo
+import app.toque.core.recipes.StepMachine
 import app.toque.core.recipes.StepProgram
+import app.toque.core.recipes.Weigh
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -187,5 +189,34 @@ class CookidooTest {
             {"@type":"HowToStep","text":"Hacher <nobr>2 sec/vitesse 8</nobr>."}]}]}}]"""
         val r = Cookidoo.parseAll(Json.parse(json)).first.single()
         assertEquals(listOf("La sauce :", "Hacher 2 s/vitesse 8."), r.steps.map { it.text })
+    }
+
+    @Test
+    fun etapesAuFormatDuMonsieurCuisine() {
+        val json = """[{"id":"r3","title":"Natif","ingredients":["300 g de riz"],
+          "schema":{"recipeInstructions":[
+            {"@type":"HowToStep","text":"","weigh":{"label":"riz","grams":300}},
+            {"@type":"HowToStep","text":"Cuire.","machine":{"program":"manuel","seconds":600,"speed":1,"tempC":100,"reverse":true,"accessory":"blade","pulses":0}},
+            {"@type":"HowToStep","text":"Trop vite.","machine":{"program":"manuel","seconds":60,"speed":8,"tempC":100}},
+            {"@type":"HowToStep","text":"Mixer.","machine":{"program":"mixer","seconds":30}}]}}]"""
+        val saved = TemperatureTable.current
+        TemperatureTable.current = TemperatureTable.SMART
+        try {
+            val r = Cookidoo.parseAll(Json.parse(json)).first.single()
+            assertEquals(4, r.steps.size)
+            assertEquals(Weigh("riz", 300), r.steps[0].weigh)
+            assertEquals("Peser 300 g de riz", r.steps[0].text)
+            val cook = r.steps[1].machine!!
+            assertEquals(StepMachine(StepProgram.MANUAL, 600, 1, 100, true), cook)
+            assertEquals("Cuire.", r.steps[1].text)
+            assertFalse(r.steps[1].needsReview)
+            assertTrue(r.steps[2].needsReview)
+            assertEquals(StepProgram.PUREE, r.steps[3].machine!!.program)
+            assertFalse(r.steps[3].needsReview)
+            assertFalse("Thermomix" in r.tags)
+            assertEquals("1 réglage est à vérifier.", r.notes)
+        } finally {
+            TemperatureTable.current = saved
+        }
     }
 }
