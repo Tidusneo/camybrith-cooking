@@ -39,7 +39,7 @@ Les recettes de l'éditeur s'affichent dans l'onglet **Thermomix** du robot, ave
 
 <img src="https://raw.githubusercontent.com/Tidusneo/camybrith-cooking/main/docs/images/onglet-editeur.png" width="420">
 
-Éditeur proposé et programmé par **miguelangellv**, merci à lui ! Mode d'emploi :
+Éditeur proposé et programmé par @miguelangellv, merci à lui ! Mode d'emploi :
 [docs/RECETTES.md](docs/RECETTES.md).
 
 ### 🇩🇪 L'appli parle allemand
@@ -50,7 +50,7 @@ Les recettes de l'éditeur s'affichent dans l'onglet **Thermomix** du robot, ave
 
 ### Monsieur Cuisine Smart C1 (carte Allwinner R818)
 
-L'appli sait maintenant piloter le Smart C1, grâce au travail de **topes1**. Il n'existe pas
+L'appli sait maintenant piloter le Smart C1, grâce au travail de @topes1. Il n'existe pas
 encore de méthode publique pour rooter un C1 : pour l'instant, ça ne concerne que les robots déjà
 rootés.
 
@@ -88,7 +88,7 @@ Recipe editor*, scan the QR code with your phone: that's it.
 
 Editor recipes show up in the robot's **Thermomix** tab, with an **Editor** filter.
 
-Editor suggested and built by **miguelangellv**, many thanks! How‑to:
+Editor suggested and built by @miguelangellv, many thanks! How‑to:
 [docs/RECIPES.en.md](docs/RECIPES.en.md).
 
 ### 🇩🇪 The app speaks German
@@ -97,7 +97,7 @@ Editor suggested and built by **miguelangellv**, many thanks! How‑to:
 
 ### Monsieur Cuisine Smart C1 (Allwinner R818 board)
 
-The app can now drive the Smart C1, thanks to **topes1**. There's no public way to root a C1 yet,
+The app can now drive the Smart C1, thanks to @topes1. There's no public way to root a C1 yet,
 so for now this only helps robots that are already rooted.
 
 ### Sturdier
