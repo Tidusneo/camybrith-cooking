@@ -12,11 +12,26 @@ scale itself, and keeps the official Monsieur Cuisine recipes.
 > "rooted", which probably voids the warranty and carries a small risk of making it unusable if a
 > step goes wrong. The guide is written to avoid that, with a full backup before touching anything,
 > but you do everything **at your own risk**. Tested on a Smart SKMS 1200 A1 (Android 8.1, system
-> version V01.00.83 from June 2022) in November 2026.
+> version V01.00.83 from June 2022) in November 2026. Newer A1 units on system version V01.00.95
+> seem locked: the guide's method doesn't work on them.
 
 <p align="center"><img src="docs/images/animation_demarrage.gif" width="560" alt="Camybrith Cooking boot animation"></p>
 
 <p align="center"><img src="docs/images/pesee-195g.gif" width="560" alt="Weighing: the bowl fills up on screen"><br><sub>Weighing for real: the bowl fills up on screen while you pour.</sub></p>
+
+## New in 1.5
+
+**Write or import your recipes from your phone, they land on the robot.** Paste the link of a
+Thermomix recipe (Cookomix, Yummix…): settings are converted for the Smart, and "100 g of flour"
+becomes a guided weighing. The app also speaks German. Full details:
+[CHANGELOG.md](CHANGELOG.md).
+
+| | |
+|---|---|
+| ![Editor on the robot](docs/images/editeur-reglages.png) | ![Imported recipe](docs/images/recette-importee.png) |
+| **Recipe editor**: scan the QR code with your phone | **Recipe imported from a link**, with its weighings |
+| <img src="docs/images/editeur-liste.png" width="200"> <img src="docs/images/editeur-pesee.png" width="200"> | ![Guided weighing](docs/images/pesee-importee.png) |
+| **On the phone**: your recipes and their steps | **Guided weighing** on the robot |
 
 | | |
 |---|---|
