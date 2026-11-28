@@ -166,7 +166,7 @@ internal object Pasting {
 /**
  * Import par lien : le robot télécharge la page et lit sa recette dans les données schema.org
  * ([WebRecipe]). Seulement des pages publiques en http(s) : ni le réseau local (la page
- * pourrait viser la box ou un autre appareil), ni Cookidoo (réservé à ses abonnés).
+ * pourrait viser la box ou un autre appareil),.
  */
 internal object Linking {
     class Refused(message: String) : Exception(message)
@@ -196,7 +196,6 @@ internal object Linking {
         if (u.protocol != "https" && u.protocol != "http") throw Refused(tr("Lien invalide"))
         val host = u.host.lowercase()
         if (host.isEmpty()) throw Refused(tr("Lien invalide"))
-        if (host == "cookidoo" || host.contains("cookidoo.")) throw Refused(tr("Les recettes Cookidoo sont réservées aux abonnés : elles ne s'importent pas"))
         val addresses = try { java.net.InetAddress.getAllByName(host).toList() } catch (_: Exception) { throw Refused(tr("Site introuvable : %s", host)) }
         if (addresses.any { it.isLoopbackAddress || it.isSiteLocalAddress || it.isLinkLocalAddress || it.isAnyLocalAddress || it.isMulticastAddress })
             throw Refused(tr("Seules les pages publiques d'Internet peuvent être importées"))
