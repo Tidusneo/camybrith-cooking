@@ -704,5 +704,6 @@
   "Scannez le QR code avec votre téléphone, ou ouvrez sur un appareil du même Wi-Fi :": "Scannen Sie den QR-Code mit dem Handy oder öffnen Sie auf einem Gerät im selben WLAN:",
   "Clé d'accès": "Zugangsschlüssel",
   "Nouvelle clé": "Neuer Schlüssel",
-  "Une nouvelle clé déconnecte les navigateurs déjà connectés. Après 10 mauvaises clés, l'accès se bloque une minute. Sur le réseau local, la clé circule en clair : n'activez l'éditeur que sur le Wi-Fi de la maison.": "Ein neuer Schlüssel meldet bereits verbundene Browser ab. Nach 10 falschen Schlüsseln wird der Zugriff für eine Minute gesperrt. Im lokalen Netzwerk wird der Schlüssel unverschlüsselt übertragen: Den Editor nur zu Hause aktivieren."
+  "Une nouvelle clé déconnecte les navigateurs déjà connectés. Après 10 mauvaises clés, l'accès se bloque une minute. Sur le réseau local, la clé circule en clair : n'activez l'éditeur que sur le Wi-Fi de la maison.": "Ein neuer Schlüssel meldet bereits verbundene Browser ab. Nach 10 falschen Schlüsseln wird der Zugriff für eine Minute gesperrt. Im lokalen Netzwerk wird der Schlüssel unverschlüsselt übertragen: Den Editor nur zu Hause aktivieren.",
+  "Préparation de l'appli après la mise à jour (une à deux minutes)…": "Die App wird nach dem Update vorbereitet (ein bis zwei Minuten)…"
 }

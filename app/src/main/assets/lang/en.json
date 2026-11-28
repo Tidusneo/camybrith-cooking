@@ -704,5 +704,6 @@
   "Scannez le QR code avec votre téléphone, ou ouvrez sur un appareil du même Wi-Fi :": "Scan the QR code with your phone, or open on a device on the same Wi‑Fi:",
   "Clé d'accès": "Access key",
   "Nouvelle clé": "New key",
-  "Une nouvelle clé déconnecte les navigateurs déjà connectés. Après 10 mauvaises clés, l'accès se bloque une minute. Sur le réseau local, la clé circule en clair : n'activez l'éditeur que sur le Wi-Fi de la maison.": "A new key signs out browsers that are already connected. After 10 wrong keys, access is blocked for a minute. On the local network the key travels unencrypted: only turn the editor on at home."
+  "Une nouvelle clé déconnecte les navigateurs déjà connectés. Après 10 mauvaises clés, l'accès se bloque une minute. Sur le réseau local, la clé circule en clair : n'activez l'éditeur que sur le Wi-Fi de la maison.": "A new key signs out browsers that are already connected. After 10 wrong keys, access is blocked for a minute. On the local network the key travels unencrypted: only turn the editor on at home.",
+  "Préparation de l'appli après la mise à jour (une à deux minutes)…": "Preparing the app after the update (one to two minutes)…"
 }

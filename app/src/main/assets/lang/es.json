@@ -704,5 +704,6 @@
   "Scannez le QR code avec votre téléphone, ou ouvrez sur un appareil du même Wi-Fi :": "Escanea el código QR con tu móvil, o abre en un dispositivo de la misma Wi‑Fi:",
   "Clé d'accès": "Clave de acceso",
   "Nouvelle clé": "Nueva clave",
-  "Une nouvelle clé déconnecte les navigateurs déjà connectés. Après 10 mauvaises clés, l'accès se bloque une minute. Sur le réseau local, la clé circule en clair : n'activez l'éditeur que sur le Wi-Fi de la maison.": "Una nueva clave desconecta los navegadores ya conectados. Tras 10 claves erróneas, el acceso se bloquea un minuto. En la red local la clave viaja sin cifrar: activa el editor solo en la Wi‑Fi de casa."
+  "Une nouvelle clé déconnecte les navigateurs déjà connectés. Après 10 mauvaises clés, l'accès se bloque une minute. Sur le réseau local, la clé circule en clair : n'activez l'éditeur que sur le Wi-Fi de la maison.": "Una nueva clave desconecta los navegadores ya conectados. Tras 10 claves erróneas, el acceso se bloquea un minuto. En la red local la clave viaja sin cifrar: activa el editor solo en la Wi‑Fi de casa.",
+  "Préparation de l'appli après la mise à jour (une à deux minutes)…": "Preparando la aplicación tras la actualización (uno o dos minutos)…"
 }

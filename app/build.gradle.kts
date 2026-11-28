@@ -18,8 +18,8 @@ android {
         // Version prudente (tout interprété, -Pprudent=true) : numéro au-dessus de la rapide, pour
         // pouvoir l'installer par-dessus en cas d'anomalie du compilateur.
         val prudent = (project.findProperty("prudent") as String?) == "true"
-        versionCode = if (prudent) 52 else 51
-        versionName = if (prudent) "1.4.8-prudente" else "1.4.8-rapide"
+        versionCode = if (prudent) 54 else 53
+        versionName = if (prudent) "1.4.9-prudente" else "1.4.9-rapide"
         manifestPlaceholders["safeMode"] = prudent.toString()
     }
 

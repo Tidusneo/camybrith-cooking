@@ -123,6 +123,7 @@ class MainActivity : Activity() {
     }
 
     override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
+        if (preparing) return super.dispatchTouchEvent(ev)
         if (sleeping && ev.actionMasked == MotionEvent.ACTION_DOWN) {
             wakeScreen()
             swallowGesture = true
@@ -146,9 +147,16 @@ class MainActivity : Activity() {
     val machine get() = app.machine
     val snapshot: Snapshot get() = app.machine.snapshot
 
+    /** Vrai pendant la compilation de l'appli (voir CompileGuard) : écran d'attente seulement. */
+    private var preparing = false
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         app = ToqueApp.of(this)
+        if (app.prepare(this)) {
+            preparing = true
+            return
+        }
         val dm = resources.displayMetrics
         Ui.init(dm.widthPixels, dm.heightPixels)
         Ui.loadFonts(this)
@@ -287,6 +295,7 @@ class MainActivity : Activity() {
     }
 
     override fun onStart() {
+        if (preparing) { super.onStart(); return }
         super.onStart()
         unsubscribe = app.machine.onSnapshot { s -> dispatchSnapshot(s) }
         unsubscribeEvents = app.machine.onEvent { e -> onMachineEvent(e) }
@@ -318,6 +327,7 @@ class MainActivity : Activity() {
     }
 
     override fun onResume() {
+        if (preparing) { super.onResume(); return }
         super.onResume()
         immersive()
         prefs.returnBubble = false
@@ -327,6 +337,7 @@ class MainActivity : Activity() {
     }
 
     override fun onStop() {
+        if (preparing) { super.onStop(); return }
         unsubscribe?.invoke()
         unsubscribeEvents?.invoke()
         main.removeCallbacks(themeCheck)
@@ -337,6 +348,7 @@ class MainActivity : Activity() {
     }
 
     override fun onDestroy() {
+        if (preparing) { super.onDestroy(); return }
         Ui.tapSound = {}
         sounds.release()
         super.onDestroy()
@@ -344,6 +356,7 @@ class MainActivity : Activity() {
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
+        if (preparing) return
         if (hasFocus) immersive()
     }
 
@@ -430,6 +443,7 @@ class MainActivity : Activity() {
     }
 
     override fun onBackPressed() {
+        if (preparing) return
         if (overlay.visibility == View.VISIBLE) {
             closeOverlay()
             return
@@ -440,6 +454,7 @@ class MainActivity : Activity() {
     // ------------------------------------------------------------------ bouton rotatif
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        if (preparing) return super.dispatchKeyEvent(event)
         if (sleeping) {
             if (event.action == KeyEvent.ACTION_DOWN) wakeScreen("molette")
             return true
@@ -467,6 +482,7 @@ class MainActivity : Activity() {
     }
 
     override fun dispatchGenericMotionEvent(event: MotionEvent): Boolean {
+        if (preparing) return super.dispatchGenericMotionEvent(event)
         if (sleeping) {
             if (event.action == MotionEvent.ACTION_SCROLL) wakeScreen("molette")
             return true
