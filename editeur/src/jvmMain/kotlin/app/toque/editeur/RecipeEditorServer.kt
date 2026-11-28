@@ -287,6 +287,34 @@ internal fun Application.editorModule(store: RecipeStore, host: EditorHost) {
     /** Entrée data.json d'un brouillon, sans l'enregistrer (aperçu). */
     fun draftEntry(r: EditorRecipe): Map<String, Any?> = store.entryOf(r)
 
+    /**
+     * Convertit les réglages d'un brouillon tout de suite : le texte brut (« <nobr>3 min/vit. 3</nobr> »)
+     * passe par l'importeur de l'appli, puis revient en étapes « Avec le robot » avec les vrais réglages
+     * Monsieur Cuisine, à relire. Si rien n'est converti, le brouillon d'origine est renvoyé tel quel.
+     */
+    fun converted(draft: EditorRecipe): EditorRecipe {
+        val recipe = Conversion.recipe(draftEntry(draft)) ?: return draft
+        val steps = recipe.steps.map { s ->
+            when {
+                s.machine != null -> EditorStep(
+                    text = s.text,
+                    machine = Machine(
+                        program = Program.of(s.machine!!.program.key) ?: Program.MANUAL,
+                        seconds = s.machine!!.seconds,
+                        speed = s.machine!!.speed,
+                        tempC = s.machine!!.tempC,
+                        reverse = s.machine!!.reverse,
+                        whisk = s.machine!!.accessory == app.toque.core.machine.Accessory.WHISK,
+                        pulses = s.machine!!.pulses,
+                    ),
+                )
+                s.weigh != null -> EditorStep(text = s.text, weigh = Weighing(s.weigh!!.label, s.weigh!!.grams))
+                else -> EditorStep(text = s.text)
+            }
+        }.ifEmpty { draft.sections.firstOrNull()?.steps ?: listOf(EditorStep()) }
+        return draft.copy(sections = listOf(EditorSection(steps = steps)))
+    }
+
     routing {
         get("/") { resource(call, "index.html") }
         get("/{file}") { resource(call, call.parameters["file"].orEmpty()) }
@@ -371,14 +399,15 @@ internal fun Application.editorModule(store: RecipeStore, host: EditorHost) {
                 val text = call.receive<Paste>().text
                 if (text.isBlank()) return@post call.respond(HttpStatusCode.BadRequest, tr("Collez d'abord le texte d'une recette"))
                 if (text.length > RecipeEditorServer.MAX_PASTE) return@post call.respond(HttpStatusCode.BadRequest, tr("Texte trop long pour une recette"))
-                call.respond(Pasting.draft(text))
+                call.respond(converted(Pasting.draft(text)))
             }
             post("link") {
                 if (!authorized(call)) return@post call.respond(HttpStatusCode.Unauthorized)
                 val url = call.receive<Link>().url
                 if (url.isBlank()) return@post call.respond(HttpStatusCode.BadRequest, tr("Collez d'abord le lien d'une recette"))
                 try {
-                    call.respond(kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { Linking.draft(url) })
+                    val draft = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { Linking.draft(url) }
+                    call.respond(converted(draft))
                 } catch (e: Linking.Refused) {
                     call.respond(HttpStatusCode.BadRequest, e.message.orEmpty())
                 } catch (e: java.io.IOException) {

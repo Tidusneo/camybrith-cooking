@@ -99,7 +99,13 @@ class ServerTest {
             assertEquals("Soupe de carottes", draft.title)
             assertEquals(4, draft.servings)
             assertEquals(2, draft.ingredients.size)
-            assertEquals(2, draft.sections.single().steps.count { it.raw })
+            // Les réglages sont convertis à l'import : étapes « Avec le robot », pas du texte brut <nobr>.
+            val machineSteps = draft.sections.single().steps.filter { it.machine != null }
+            assertEquals(2, machineSteps.size)
+            assertTrue(draft.sections.single().steps.none { it.raw })
+            assertEquals(5, machineSteps[0].machine!!.seconds)
+            assertEquals(1200, machineSteps[1].machine!!.seconds)
+            assertEquals(100, machineSteps[1].machine!!.tempC)
             // Un brouillon n'est jamais enregistré tout seul.
             assertTrue(store.list().isEmpty())
             assertTrue(host.published.isEmpty())
