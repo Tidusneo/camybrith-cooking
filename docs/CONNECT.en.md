@@ -10,7 +10,7 @@ with its interface, sounds and boot animation.
 > runs on it every day. If you just want a proven app on your Connect, use
 > [Toque](https://github.com/Wuki60/MrCuisineVibeConnect). If you want to try Camybrith Cooking,
 > follow the steps below carefully, and tell us how it went in the
-> [Issues](https://github.com/Tidusneo24150/camybrith-cooking/issues).
+> [Issues](https://github.com/Tidusneo/camybrith-cooking/issues).
 
 ## 1. Root the Connect with Toque's guide
 
@@ -69,8 +69,8 @@ Issue with the log (**Settings**, **Tools**, **Log**).
 
 * **Lidl recipes**: **Settings**, **Lidl recipes**, **Sync**. On the Connect you can also import
   the stock app's recipes.
-* **Updates**: `bash outils/telecharger.sh` then `bash outils/installer.sh`. In-app updates are
-  disabled so that the interface and the pilot always stay on the same version.
+* **Updates**: `bash outils/telecharger.sh` then `bash outils/installer.sh`. Or, simpler,
+  **Settings › Updates** in the app.
 * **Back to Toque**: uninstall Camybrith Cooking, then reinstall Toque with its own script.
   ```
   ~/platform-tools/adb -s ROBOT_ADDRESS:5555 uninstall app.toque

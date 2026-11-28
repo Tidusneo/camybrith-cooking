@@ -149,7 +149,7 @@ tourner Ubuntu dans une fenêtre, sans rien changer au PC.
 3. Dans la fenêtre Ubuntu, installe les outils et récupère le projet :
    ```
    sudo apt update && sudo apt install -y git e2fsprogs zip unzip curl python3-pil
-   git clone https://github.com/Tidusneo24150/camybrith-cooking ~/camybrith-cooking
+   git clone https://github.com/Tidusneo/camybrith-cooking ~/camybrith-cooking
    cd ~/camybrith-cooking
    ```
 
@@ -519,8 +519,11 @@ Si l'un de ces essais ne se passe pas comme décrit, coupe le robot à l'interru
 
 ## 11. Mettre à jour
 
-Les mises à jour automatiques de l'appli sont désactivées sur le Smart, par sécurité. Pour passer
-à une nouvelle version :
+**Depuis le robot (le plus simple)** : quand une nouvelle version sort, l'appli le signale à
+l'ouverture. Va dans **Réglages › Mises à jour**, puis **Installer** : elle télécharge le pilote et
+l'interface, les installe et redémarre (environ une minute, jamais pendant une cuisson).
+
+**Depuis l'ordinateur** (si le robot n'a pas Internet, ou en dépannage) :
 
 ```
 cd ~/camybrith-cooking

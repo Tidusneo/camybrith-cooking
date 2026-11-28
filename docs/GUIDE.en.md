@@ -151,7 +151,7 @@ window without changing anything on the PC.
 3. In the Ubuntu window, install the tools and get the project:
    ```
    sudo apt update && sudo apt install -y git e2fsprogs zip unzip curl python3-pil
-   git clone https://github.com/Tidusneo24150/camybrith-cooking ~/camybrith-cooking
+   git clone https://github.com/Tidusneo/camybrith-cooking ~/camybrith-cooking
    cd ~/camybrith-cooking
    ```
 
@@ -511,7 +511,11 @@ to **Demo**, and open a ticket (the project's **Issues** tab) describing what yo
 
 ## 11. Updating
 
-Automatic in-app updates are disabled on the Smart, for safety. To move to a new version:
+**From the robot (easiest)**: when a new version is out, the app says so when it opens. Go to
+**Settings › Updates**, then **Install**: it downloads the pilot and the interface, installs them
+and restarts (about a minute, never while cooking).
+
+**From the computer** (if the robot has no Internet, or to troubleshoot):
 
 ```
 cd ~/camybrith-cooking

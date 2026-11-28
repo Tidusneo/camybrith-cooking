@@ -60,7 +60,7 @@ guide, moves forward one step at a time, checks file sizes and screen photos wit
 delicate step, and stops if anything looks wrong.
 
 1. Download `camybrith-assistant-claude.zip` from the
-   [Releases](https://github.com/Tidusneo24150/camybrith-cooking/releases/latest) page.
+   [Releases](https://github.com/Tidusneo/camybrith-cooking/releases/latest) page.
 2. On claude.ai or in the Claude app: make sure code execution and file creation are enabled in
    **Settings > Capabilities**, then go to **Customize > Skills**, click **+**, **Create skill**,
    **Upload a skill**, and pick the ZIP.
@@ -90,6 +90,12 @@ another assistant and ask it to guide you step by step.
 * **Offline**: nothing depends on a server.
 * **Everything can be customized**: sounds, the boot animation with your own logo, even the name
   and icon (see [personnalisation/README.en.md](personnalisation/README.en.md)).
+
+## Home Assistant
+
+Camybrith can send the robot's state to Home Assistant over MQTT (status, program, temperature,
+weight, time remaining, lid, alert), with automatic sensor discovery. Read only: nothing can start
+the robot remotely. See [docs/HOME-ASSISTANT.en.md](docs/HOME-ASSISTANT.en.md).
 
 ## Cooking safety
 

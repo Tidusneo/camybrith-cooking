@@ -130,6 +130,59 @@ class Prefs(context: Context) {
             p.edit().putBoolean("sound", v).commit()
         }
 
+    /**
+     * Mise en veille de l'écran, en minutes sans toucher l'écran ni la molette (0 : jamais). Le robot
+     * n'a pas de bouton pour rallumer un écran éteint par Android : c'est l'appli qui le met au noir,
+     * rétroéclairage au minimum, et un appui ou un tour de molette le rallume.
+     */
+    var screenSleepMin: Int
+        get() = p.getInt("screenSleepMin", 5)
+        set(v) {
+            p.edit().putInt("screenSleepMin", v).commit()
+        }
+
+    /** Dernière recherche automatique d'une nouvelle version (ms). */
+    var lastUpdateCheck: Long
+        get() = p.getLong("lastUpdateCheck", 0L)
+        set(v) {
+            p.edit().putLong("lastUpdateCheck", v).commit()
+        }
+
+    /** Code couleur sur l'anneau de la molette (problème, pause, à vous, en cours). */
+    var knobColours: Boolean
+        get() = p.getBoolean("knobColours", true)
+        set(v) {
+            p.edit().putBoolean("knobColours", v).commit()
+        }
+
+    // ---- Home Assistant (MQTT, lecture seule)
+    var mqttEnabled: Boolean
+        get() = p.getBoolean("mqttEnabled", false)
+        set(v) { p.edit().putBoolean("mqttEnabled", v).commit() }
+    var mqttHost: String
+        get() = p.getString("mqttHost", "") ?: ""
+        set(v) { p.edit().putString("mqttHost", v).commit() }
+    var mqttPort: Int
+        get() = p.getInt("mqttPort", 1883)
+        set(v) { p.edit().putInt("mqttPort", v).commit() }
+    var mqttUser: String
+        get() = p.getString("mqttUser", "") ?: ""
+        set(v) { p.edit().putString("mqttUser", v).commit() }
+    var mqttPassword: String
+        get() = p.getString("mqttPassword", "") ?: ""
+        set(v) { p.edit().putString("mqttPassword", v).commit() }
+    /** Racine des sujets publiés (camybrith/status, camybrith/weight…). */
+    var mqttTopic: String
+        get() = p.getString("mqttTopic", "camybrith") ?: "camybrith"
+        set(v) { p.edit().putString("mqttTopic", v).commit() }
+
+    /** Anneau de la molette pendant la veille de l'écran : « normal », « veilleuse » ou « eteint ». */
+    var knobStandby: String
+        get() = p.getString("knobStandby", "veilleuse") ?: "veilleuse"
+        set(v) {
+            p.edit().putString("knobStandby", v).commit()
+        }
+
     /** Petit son à chaque appui sur un bouton (si les sons sont activés). */
     var keySound: Boolean
         get() = p.getBoolean("keySound", true)

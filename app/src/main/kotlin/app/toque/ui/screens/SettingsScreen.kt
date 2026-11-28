@@ -32,6 +32,7 @@ import app.toque.ui.Section
 import app.toque.ui.Ui
 import app.toque.ui.tap
 import app.toque.update.Updater
+import app.toque.ui.KnobLight
 
 class SettingsScreen(a: MainActivity) : Screen(a) {
     override val title = tr("Réglages")
@@ -96,6 +97,27 @@ class SettingsScreen(a: MainActivity) : Screen(a) {
             a.prefs.language = code
             a.applyLanguage()
         }, Ui.lp(Ui.MATCH, Ui.u(54)))
+        // Mise en veille de l'écran
+        display.addView(Ui.label(c, tr("Mise en veille de l'écran"), Ui.TEXT2, 12f), Ui.lp(t = 24, b = 8))
+        val sleepChoices = listOf(0, 2, 5, 10, 30)
+        val sleepNow = sleepChoices.indexOf(a.prefs.screenSleepMin).let { if (it < 0) 2 else it }
+        display.addView(Ui.segmented(c, sleepChoices.map { m -> null to (if (m == 0) tr("Jamais") else tr("%d min", m)) },
+            sleepNow, 44) { i -> a.prefs.screenSleepMin = sleepChoices[i] }, Ui.lp(Ui.WRAP, Ui.WRAP))
+        display.addView(Ui.text(c, tr("Sans cuisson en cours, l'écran s'éteint après ce délai. Touchez l'écran ou tournez la molette pour le rallumer."),
+            15f, Ui.TEXT3).apply { setLineSpacing(0f, 1.15f) }, Ui.lp(t = 10))
+        // Anneau de la molette
+        display.addView(Ui.label(c, tr("Molette"), Ui.TEXT2, 12f), Ui.lp(t = 24, b = 4))
+        display.addView(toggle(tr("Couleurs sur la molette"), a.prefs.knobColours) {
+            a.prefs.knobColours = it
+            a.refreshKnob()
+        }, Ui.lp(t = 6))
+        display.addView(Ui.text(c, tr("Rouge : un problème. Orange : en pause. Vert : à vous de jouer. Cyan : en cours."),
+            15f, Ui.TEXT3).apply { setLineSpacing(0f, 1.15f) }, Ui.lp(t = 8))
+        display.addView(Ui.label(c, tr("Molette pendant la veille"), Ui.TEXT2, 12f), Ui.lp(t = 16, b = 8))
+        val knobModes = listOf("normal", "veilleuse", "eteint")
+        display.addView(Ui.segmented(c, listOf(null to tr("Normale"), null to tr("Veilleuse"), null to tr("Éteinte")),
+            knobModes.indexOf(a.prefs.knobStandby).let { if (it < 0) 1 else it }, 44) { i -> a.prefs.knobStandby = knobModes[i] },
+            Ui.lp(Ui.WRAP, Ui.WRAP))
         display.addView(Ui.label(c, tr("Sons"), Ui.TEXT2, 12f), Ui.lp(t = 24, b = 4))
         display.addView(toggle(tr("Sons"), a.prefs.sound) { a.prefs.sound = it }, Ui.lp(t = 6))
         display.addView(toggle(tr("Son des touches"), a.prefs.keySound) { a.prefs.keySound = it }, Ui.lp(t = 12))
@@ -126,6 +148,43 @@ class SettingsScreen(a: MainActivity) : Screen(a) {
         machine.addView(linkText, Ui.lp(t = 12))
         machine.addView(Ui.button(c, tr("Appliquer"), Ui.Style.PRIMARY, Icon.Kind.CHECK, height = 58) { applyMode() }, Ui.lp(Ui.WRAP, Ui.WRAP, t = 14))
         renderModes()
+
+        // ---- Home Assistant
+        val ha = section(tr("Home Assistant"), Icon.Kind.HOME)
+        ha.addView(Ui.text(c, tr("Envoie l'état du robot à Home Assistant en MQTT : état, programme, température, vitesse, poids, temps restant, couvercle, alerte. " +
+            "Les capteurs apparaissent tout seuls (découverte MQTT). Lecture seule : rien ne peut démarrer le robot à distance."),
+            15f, Ui.TEXT3).apply { setLineSpacing(0f, 1.15f) }, Ui.lp(b = 10))
+        var mqttOn = a.prefs.mqttEnabled
+        ha.addView(toggle(tr("Envoyer l'état en MQTT"), mqttOn) { mqttOn = it })
+        val mqttRow = Ui.horizontal(c)
+        val mqttHost = field(a.prefs.mqttHost, tr("Serveur MQTT (ex. 192.168.1.10)"))
+        val mqttPort = field(a.prefs.mqttPort.toString(), "Port").apply { inputType = InputType.TYPE_CLASS_NUMBER }
+        mqttRow.addView(mqttHost, LinearLayout.LayoutParams(0, Ui.u(58), 1f).apply { rightMargin = Ui.u(10) })
+        mqttRow.addView(mqttPort, LinearLayout.LayoutParams(Ui.u(120), Ui.u(58)))
+        ha.addView(mqttRow, Ui.lp(t = 12))
+        val credRow = Ui.horizontal(c)
+        val mqttUser = field(a.prefs.mqttUser, tr("Utilisateur"))
+        val mqttPass = field(a.prefs.mqttPassword, tr("Mot de passe")).apply {
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+        }
+        credRow.addView(mqttUser, LinearLayout.LayoutParams(0, Ui.u(58), 1f).apply { rightMargin = Ui.u(10) })
+        credRow.addView(mqttPass, LinearLayout.LayoutParams(0, Ui.u(58), 1f))
+        ha.addView(credRow, Ui.lp(t = 10))
+        val mqttTopic = field(a.prefs.mqttTopic, tr("Sujet (camybrith)"))
+        ha.addView(mqttTopic, Ui.lp(Ui.MATCH, Ui.u(58), t = 10))
+        val mqttStatus = Ui.text(c, a.app.homeAssistant.status, 15f, Ui.TEXT2).apply { setLineSpacing(0f, 1.1f) }
+        ha.addView(mqttStatus, Ui.lp(t = 10))
+        a.app.homeAssistant.listener = { mqttStatus.text = it }
+        ha.addView(Ui.button(c, tr("Enregistrer"), Ui.Style.PRIMARY, Icon.Kind.CHECK, height = 54) {
+            a.prefs.mqttEnabled = mqttOn
+            a.prefs.mqttHost = mqttHost.text.toString().trim()
+            a.prefs.mqttPort = mqttPort.text.toString().trim().toIntOrNull() ?: 1883
+            a.prefs.mqttUser = mqttUser.text.toString().trim()
+            a.prefs.mqttPassword = mqttPass.text.toString()
+            a.prefs.mqttTopic = mqttTopic.text.toString().trim().trimEnd('/').ifEmpty { "camybrith" }
+            a.app.homeAssistant.restart()
+            a.toast(if (mqttOn) tr("Home Assistant : réglages enregistrés") else tr("Envoi MQTT arrêté"), Ui.OK)
+        }, Ui.lp(Ui.WRAP, Ui.WRAP, t = 12))
 
         // ---- Sécurité
         val safety = section(tr("Sécurité"), Icon.Kind.WARNING)
@@ -445,6 +504,7 @@ class SettingsScreen(a: MainActivity) : Screen(a) {
         ) {
             a.prefs.mode = Prefs.Mode.DEMO
             a.prefs.bootLaunch = false
+            KnobLight.release()
             a.machine.reconfigure {
                 Thread {
                     val sync = LidlSync(a, a.prefs, a.app.recipes, a.app.log)
@@ -521,8 +581,7 @@ class SettingsScreen(a: MainActivity) : Screen(a) {
             Upd.UP_TO_DATE -> installed + "\n" + tr("Camybrith Cooking est à jour.")
             Upd.AVAILABLE -> installed + "\n" + tr("Nouvelle version disponible : %s", r?.version) + notes(r)
             Upd.DOWNLOADING -> tr("Téléchargement de la version %s… %d %%", r?.version, updPercent)
-            Upd.INSTALLING -> tr("Installation de la version %s… Camybrith Cooking va redémarrer.\n" +
-                "Si Android demande une confirmation, touchez « Installer ».", r?.version)
+            Upd.INSTALLING -> tr("Installation de la version %s… Le robot va redémarrer tout seul, puis Camybrith Cooking se rouvre.", r?.version)
             Upd.ERROR -> installed + "\n" + updMessage
         }
         updButtons.removeAllViews()
@@ -538,10 +597,27 @@ class SettingsScreen(a: MainActivity) : Screen(a) {
         }
     }
 
+    /**
+     * Résumé des nouveautés d'une version, tiré de ses notes (écrites depuis CHANGELOG.md) : la partie
+     * française, ou la partie anglaise (après 🇬🇧) si l'appli n'est pas en français.
+     */
     private fun notes(r: Release?): String {
-        val text = r?.notes?.lines()?.map { it.trim() }?.filter { it.isNotEmpty() }?.take(4)?.joinToString("\n") ?: ""
+        val all = r?.notes?.lines() ?: return ""
+        val start = all.indexOfFirst { it.startsWith("## Nouveaut") }.let { if (it < 0) 0 else it + 1 }
+        val section = all.drop(start).takeWhile { !it.startsWith("## ") }
+        val flag = section.indexOfFirst { it.trim().startsWith("🇬🇧") }
+        val french = I18n.current.code == "fr"
+        val part = when {
+            flag < 0 -> section
+            french -> section.take(flag)
+            else -> section.drop(flag + 1)
+        }
+        val text = part.map { it.trim() }.filter { it.isNotEmpty() && !it.startsWith(">") }
+            .joinToString("\n") { it.replace(Regex("^#+ *"), "").replace("**", "").replace("`", "").replace(Regex("^\\* "), "• ").replace("*", "") }
+            .replace(Regex("\n(?!• )"), " ")
+            .lines().take(5).joinToString("\n")
         if (text.isEmpty()) return ""
-        return "\n\n" + if (text.length > 280) text.substring(0, 280) + "…" else text
+        return "\n\n" + if (text.length > 420) text.substring(0, 420) + "…" else text
     }
 
     private fun checkUpdate() {
@@ -576,7 +652,7 @@ class SettingsScreen(a: MainActivity) : Screen(a) {
         a.confirm(
             tr("Version %s disponible", r.version),
             notes(r).trim().let { if (it.isEmpty()) "" else it + "\n\n" } +
-                tr("Camybrith Cooking va la télécharger depuis GitHub, l'installer puis redémarrer (environ une minute). " +
+                tr("Camybrith Cooking va la télécharger depuis GitHub, l'installer puis redémarrer le robot (une à deux minutes). " +
                     "Le moteur reste arrêté pendant l'opération."),
             tr("Installer"), tr("Plus tard"), icon = Icon.Kind.SYNC,
         ) {

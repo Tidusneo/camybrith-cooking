@@ -13,6 +13,7 @@ import app.toque.core.machine.RobotModel
 import app.toque.core.machine.RootShell
 import app.toque.core.update.Release
 import app.toque.core.update.Releases
+import app.toque.machine.Ipc
 import app.toque.ui.MainActivity
 import java.io.File
 import java.io.FileOutputStream
@@ -22,11 +23,20 @@ import java.net.URL
 import javax.net.ssl.SSLException
 
 /**
- * Mises à jour de Toque depuis les versions publiées sur GitHub.
+ * Mises à jour de Camybrith Cooking depuis les versions publiées sur GitHub (dépôt du projet).
+ *
+ * Une version comprend deux applis qui doivent rester de la même génération : le pilote moteur
+ * (app.toque.pilote) et l'interface (app.toque, variante rapide ou prudente, la même que celle
+ * installée). Les deux sont téléchargées et vérifiées, puis installées avec le root, pilote
+ * d'abord ; la variante rapide est ensuite compilée par Android (comme outils/installer.sh, le
+ * JIT d'Android 8.1 faisant planter l'interface sur ce processeur), puis l'interface est relancée.
  * Toutes les méthodes sont bloquantes : à appeler hors du fil de l'interface.
  */
 class Updater(private val context: Context) {
     class Failure(message: String) : Exception(message)
+
+    /** Fichiers téléchargés : l'interface, et le pilote s'il est plus récent que celui installé. */
+    class Download(val ui: File, val pilot: File?)
 
     private val log = ToqueApp.of(context).log
 
@@ -35,15 +45,13 @@ class Updater(private val context: Context) {
     val installedVersion: String = info.versionName ?: "0"
     @Suppress("DEPRECATION")
     val installedCode: Int = info.versionCode
+    private val variant = Releases.variantOf(installedVersion)
+    private val safeMode = context.applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_VM_SAFE_MODE != 0
+    @Suppress("DEPRECATION")
+    private val pilotCode: Int = try { context.packageManager.getPackageInfo(Ipc.PILOT_PACKAGE, 0).versionCode } catch (_: Exception) { -1 }
 
     /** Dernière version publiée (lève [Failure] avec un message lisible). */
     fun latest(): Release {
-        // Camybrith Cooking = deux applis (interface et pilote moteur) qui doivent rester de la même
-        // version, et les versions de Toque publiées par Wuki60 remplaceraient l'interface seule.
-        // Les mises à jour passent donc par les scripts du projet (outils/telecharger.sh puis
-        // outils/installer.sh), sur le Smart comme sur le Connect.
-        throw Failure(tr("Mises à jour depuis l'ordinateur : outils/telecharger.sh puis outils/installer.sh (voir le guide)"))
-        @Suppress("UNREACHABLE_CODE")
         val c = open(Releases.LATEST_URL, "application/vnd.github+json")
         try {
             when (val code = c.responseCode) {
@@ -53,7 +61,7 @@ class Updater(private val context: Context) {
                 else -> throw Failure(tr("GitHub a répondu %d", code))
             }
             val text = c.inputStream.bufferedReader().use { it.readText() }
-            val r = try { Releases.parse(text) } catch (e: IllegalArgumentException) { throw Failure(tr("Réponse GitHub illisible")) }
+            val r = try { Releases.parse(text, variant) } catch (e: IllegalArgumentException) { throw Failure(tr("Réponse GitHub illisible")) }
             log.write("maj", "dernière version publiée : ${r.version} (installée : $installedVersion)")
             return r
         } catch (e: IOException) {
@@ -65,19 +73,36 @@ class Updater(private val context: Context) {
 
     fun isNewer(r: Release): Boolean = Releases.isNewer(r.version, installedVersion)
 
-    /** Télécharge l'APK de la version et vérifie qu'il s'agit bien d'une version plus récente de Toque. */
-    fun download(r: Release, progress: (Int) -> Unit): File {
-        val url = r.apkUrl ?: throw Failure(tr("Cette version ne contient pas d'appli à installer"))
+    /** Télécharge l'interface (et le pilote s'il est plus récent) et les vérifie. */
+    fun download(r: Release, progress: (Int) -> Unit): Download {
+        val uiUrl = r.apkUrl ?: throw Failure(tr("Cette version ne contient pas d'appli à installer"))
         val dir = File(context.cacheDir, "maj")
         dir.mkdirs()
         dir.listFiles()?.forEach { it.delete() }
-        val file = File(dir, "Toque-${r.version}.apk")
+        val withPilot = r.pilotUrl != null
+        val total = r.apkSize + (if (withPilot) r.pilotSize else 0L)
+        var before = 0L
+        fun part(n: Long) { if (total > 0) progress(((before + n) * 100 / total).toInt().coerceIn(0, 100)) }
+        val ui = fetch(uiUrl, File(dir, "interface.apk"), r.apkSize, ::part)
+        verify(ui)
+        before += ui.length()
+        var pilot: File? = null
+        if (withPilot) {
+            val f = fetch(r.pilotUrl!!, File(dir, "pilote.apk"), r.pilotSize, ::part)
+            pilot = verifyPilot(f)
+        }
+        progress(100)
+        log.write("maj", "téléchargée : ${r.apkName} (${ui.length() / 1024} Ko)" +
+            (if (pilot != null) " + ${r.pilotName}" else " ; pilote déjà à jour"))
+        return Download(ui, pilot)
+    }
+
+    private fun fetch(url: String, file: File, size: Long, progress: (Long) -> Unit): File {
         val c = open(url, "application/octet-stream")
         try {
             if (c.responseCode != 200) throw Failure(tr("Téléchargement refusé (code %d)", c.responseCode))
-            val total = if (r.apkSize > 0) r.apkSize else c.contentLength.toLong()
             var done = 0L
-            var shown = -1
+            var last = 0L
             c.inputStream.use { input ->
                 FileOutputStream(file).use { out ->
                     val buf = ByteArray(32 * 1024)
@@ -86,25 +111,33 @@ class Updater(private val context: Context) {
                         if (n < 0) break
                         out.write(buf, 0, n)
                         done += n
-                        if (total > 0) {
-                            val pct = (done * 100 / total).toInt().coerceIn(0, 100)
-                            if (pct != shown) { shown = pct; progress(pct) }
-                        }
+                        if (done - last > 64 * 1024) { last = done; progress(done) }
                     }
                 }
             }
-            if (r.apkSize > 0 && done != r.apkSize) {
+            if (size > 0 && done != size) {
                 file.delete()
                 throw Failure(tr("Téléchargement incomplet, réessayez"))
             }
+            return file
         } catch (e: IOException) {
             file.delete()
             throw network(e)
         } finally {
             c.disconnect()
         }
-        verify(file)
-        log.write("maj", "téléchargée : ${file.name} (${file.length() / 1024} Ko)")
+    }
+
+    /** Le pilote téléchargé, ou null s'il n'est pas plus récent que celui déjà installé. */
+    @Suppress("DEPRECATION")
+    private fun verifyPilot(file: File): File? {
+        val pi = context.packageManager.getPackageArchiveInfo(file.path, 0)
+        if (pi == null || pi.packageName != Ipc.PILOT_PACKAGE) {
+            file.delete()
+            throw Failure(tr("Le fichier téléchargé n'est pas le pilote moteur de Camybrith Cooking"))
+        }
+        if (pi.versionCode < pilotCode) { file.delete(); throw Failure(tr("Cette version est plus ancienne que celle installée")) }
+        if (pi.versionCode == pilotCode) { file.delete(); return null }
         return file
     }
 
@@ -117,57 +150,47 @@ class Updater(private val context: Context) {
     }
 
     /**
-     * Installe l'APK. Robot rooté : installation silencieuse puis relance de Toque.
-     * Sinon : installateur d'Android (une confirmation s'affiche).
-     * En cas de succès Android arrête Toque : la fonction ne revient alors pas.
+     * Installe la mise à jour avec le root : pilote d'abord, puis interface, compilation de la
+     * variante rapide, et redémarrage du robot. Android arrête l'appli pendant l'installation : en cas de
+     * succès, la fonction ne revient pas.
      */
-    fun install(apk: File) {
-        if (RootShell.available()) installRoot(apk) else installSession(apk)
-    }
-
-    private fun installRoot(apk: File) {
-        val tmp = "/data/local/tmp/toque-maj.apk"
-        val out = "/data/local/tmp/toque-maj.log"
-        val copy = RootShell.run("cat '${apk.absolutePath}' > $tmp && chmod 644 $tmp && rm -f $out && echo ok", 60_000)
+    fun install(d: Download) {
+        if (!RootShell.available()) throw Failure(tr("Mise à jour impossible sans accès root (Magisk)"))
+        val dir = "/data/local/tmp"
+        val out = "$dir/camybrith-maj.log"
+        val ui = "$dir/camybrith-maj-interface.apk"
+        val pilot = "$dir/camybrith-maj-pilote.apk"
+        val copy = RootShell.run(
+            "rm -f $out && cat '${d.ui.absolutePath}' > $ui && chmod 644 $ui" +
+                (if (d.pilot != null) " && cat '${d.pilot.absolutePath}' > $pilot && chmod 644 $pilot" else "") +
+                " && echo ok",
+            90_000,
+        )
         if (!copy.out.contains("ok")) throw Failure(tr("Copie de la mise à jour impossible : %s", copy.err.trim()))
-        log.write("maj", "installation (root) de ${apk.name}")
-        // Lancée en arrière-plan : Android arrête Toque pendant l'installation, puis `am start` le relance.
-        val launch = "am start -n ${context.packageName}/${MainActivity::class.java.name}"
-        RootShell.run("(pm install -r $tmp > $out 2>&1; sleep 1; $launch > /dev/null 2>&1; rm -f $tmp) < /dev/null > /dev/null 2>&1 &", 10_000)
-        val deadline = System.currentTimeMillis() + 180_000
+        log.write("maj", "installation (root)" + (if (d.pilot != null) " du pilote et" else "") + " de l'interface")
+        val pkg = context.packageName
+        // Pas de compilation pour la variante prudente, ni sous Android 6 (déjà compilée à l'installation).
+        val compile = if (!safeMode && android.os.Build.VERSION.SDK_INT >= 24)
+            "echo compilation >> $out; cmd package compile -m speed -f $pkg >> $out 2>&1; am force-stop $pkg; " else ""
+        val pilotStep = if (d.pilot != null)
+            "echo pilote >> $out; pm install -r $pilot >> $out 2>&1 || exit 1; " else ""
+        // Lancé en arrière-plan : Android arrête l'appli pendant l'installation, la suite continue sans elle.
+        // Puis le robot redémarre : relancer seulement l'appli laissait parfois la liaison avec la base
+        // coupée (« Base absente », 24/11/2026) ; au démarrage, le pilote rouvre le port proprement.
+        val script = "( ${pilotStep}echo interface >> $out; pm install -r $ui >> $out 2>&1 || exit 1; " +
+            "${compile}rm -f $ui $pilot; echo redemarrage >> $out; sync; sleep 2; svc power reboot || reboot ) < /dev/null > /dev/null 2>&1 &"
+        RootShell.run(script, 10_000)
+        val deadline = System.currentTimeMillis() + 240_000
         while (System.currentTimeMillis() < deadline) {
             try { Thread.sleep(2_000) } catch (_: InterruptedException) { return }
             val result = RootShell.run("cat $out 2>/dev/null", 5_000).out.trim()
             if (result.contains("Failure") || result.contains("Error")) {
                 log.write("maj", "échec : $result")
+                RootShell.run("rm -f $ui $pilot", 5_000)
                 throw Failure(explain(result))
             }
         }
         throw Failure(tr("L'installation ne répond pas. Redémarrez le robot puis réessayez."))
-    }
-
-    private fun installSession(apk: File) {
-        val installer = context.packageManager.packageInstaller
-        val params = PackageInstaller.SessionParams(PackageInstaller.SessionParams.MODE_FULL_INSTALL)
-        params.setAppPackageName(context.packageName)
-        params.setSize(apk.length())
-        val id = installer.createSession(params)
-        val session = installer.openSession(id)
-        try {
-            session.openWrite("toque.apk", 0, apk.length()).use { out ->
-                apk.inputStream().use { it.copyTo(out) }
-                session.fsync(out)
-            }
-            val intent = Intent(context, InstallResultReceiver::class.java)
-            val pending = PendingIntent.getBroadcast(context, id, intent, PendingIntent.FLAG_UPDATE_CURRENT)
-            log.write("maj", "installation (installateur Android) de ${apk.name}")
-            session.commit(pending.intentSender)
-        } catch (e: Exception) {
-            session.abandon()
-            throw Failure(tr("Installation impossible : %s", e.message))
-        } finally {
-            session.close()
-        }
     }
 
     private fun open(url: String, accept: String): HttpURLConnection {
@@ -175,7 +198,7 @@ class Updater(private val context: Context) {
         c.connectTimeout = 15_000
         c.readTimeout = 30_000
         c.instanceFollowRedirects = true
-        c.setRequestProperty("User-Agent", "Toque/$installedVersion (Android)")
+        c.setRequestProperty("User-Agent", "CamybrithCooking/$installedVersion (Android)")
         c.setRequestProperty("Accept", accept)
         return c
     }

@@ -310,20 +310,32 @@ object Ui {
         val box = horizontal(c)
         box.setPadding(u(4), u(4), u(4), u(4))
         box.background = round(SURFACE2, (height + 8) / 2f)
+        val items = ArrayList<LinearLayout>()
+        // Le choix s'affiche tout de suite : l'écran n'est pas reconstruit après un appui.
+        fun mark(pick: Int) {
+            for ((i, b) in items.withIndex()) {
+                val on = i == pick
+                val fg = if (on) TEXT else TEXT2
+                b.background = if (on) round(SURFACE, height / 2f) else pressable(round(0, height / 2f), height / 2f)
+                b.elevation = if (on && !dark) uf(1.5f) else 0f
+                for (k in 0 until b.childCount) when (val v = b.getChildAt(k)) {
+                    is TextView -> v.setTextColor(fg)
+                    is Icon -> v.color = fg
+                }
+            }
+        }
         for ((i, o) in options.withIndex()) {
-            val on = i == selected
-            val fg = if (on) TEXT else TEXT2
             val b = horizontal(c, Gravity.CENTER)
             b.setPadding(u(16), 0, u(16), 0)
             b.minimumHeight = u(height)
-            b.background = if (on) round(SURFACE, height / 2f).also { } else pressable(round(0, height / 2f), height / 2f)
-            if (on) lift(b, 1.5f)
-            o.first?.let { b.addView(Icon(c, it, fg), LinearLayout.LayoutParams(u(19), u(19)).apply { if (o.second.isNotEmpty()) rightMargin = u(7) }) }
-            if (o.second.isNotEmpty()) b.addView(text(c, o.second, 16f, fg, MEDIUM))
+            o.first?.let { b.addView(Icon(c, it, TEXT2), LinearLayout.LayoutParams(u(19), u(19)).apply { if (o.second.isNotEmpty()) rightMargin = u(7) }) }
+            if (o.second.isNotEmpty()) b.addView(text(c, o.second, 16f, TEXT2, MEDIUM))
             b.isClickable = true
-            b.tap { onPick(i) }
+            b.tap { mark(i); onPick(i) }
+            items.add(b)
             box.addView(b, LinearLayout.LayoutParams(WRAP, WRAP).apply { if (i > 0) leftMargin = u(3) })
         }
+        mark(selected)
         return box
     }
 

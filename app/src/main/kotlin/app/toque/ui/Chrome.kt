@@ -43,6 +43,8 @@ abstract class Screen(val a: MainActivity) {
     open val subtitle: String = ""
     /** L'accueil dessine son propre en-tête. */
     open val showTopBar: Boolean = true
+    /** Une recette guidée affichée attend un geste de la personne : l'anneau de la molette passe au vert. */
+    open val cookWaiting: Boolean get() = false
     val view: View by lazy { build() }
     val c: Context get() = a
 
