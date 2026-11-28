@@ -19,7 +19,7 @@ android {
         // pouvoir l'installer par-dessus en cas d'anomalie du compilateur.
         val prudent = (project.findProperty("prudent") as String?) == "true"
         versionCode = if (prudent) 52 else 51
-        versionName = if (prudent) "1.5.0-prudente" else "1.5.0-rapide"
+        versionName = if (prudent) "1.4.8-prudente" else "1.4.8-rapide"
         manifestPlaceholders["safeMode"] = prudent.toString()
     }
 

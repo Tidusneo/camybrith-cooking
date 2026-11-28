@@ -14,8 +14,8 @@ android {
         applicationId = "app.toque.pilote"
         minSdk = 23
         targetSdk = 28
-        versionCode = 2
-        versionName = "1.1"
+        versionCode = 3
+        versionName = "1.2"
     }
 
     signingConfigs {
