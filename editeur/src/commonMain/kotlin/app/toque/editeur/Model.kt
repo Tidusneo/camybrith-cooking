@@ -139,4 +139,7 @@ data class Login(val code: String)
 data class Paste(val text: String)
 
 @Serializable
+data class Link(val url: String)
+
+@Serializable
 data class SaveResult(val recipe: EditorRecipe, val preview: Preview)

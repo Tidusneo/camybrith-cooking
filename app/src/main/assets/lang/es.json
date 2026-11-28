@@ -705,5 +705,21 @@
   "Clé d'accès": "Clave de acceso",
   "Nouvelle clé": "Nueva clave",
   "Une nouvelle clé déconnecte les navigateurs déjà connectés. Après 10 mauvaises clés, l'accès se bloque une minute. Sur le réseau local, la clé circule en clair : n'activez l'éditeur que sur le Wi-Fi de la maison.": "Una nueva clave desconecta los navegadores ya conectados. Tras 10 claves erróneas, el acceso se bloquea un minuto. En la red local la clave viaja sin cifrar: activa el editor solo en la Wi‑Fi de casa.",
-  "Préparation de l'appli après la mise à jour (une à deux minutes)…": "Preparando la aplicación tras la actualización (uno o dos minutos)…"
+  "Préparation de l'appli après la mise à jour (une à deux minutes)…": "Preparando la aplicación tras la actualización (uno o dos minutos)…",
+  "Cette page ne décrit pas sa recette dans un format lisible : copiez son texte et utilisez « Coller une recette »": "Esta página no describe su receta en un formato legible: copie su texto y use «Pegar una receta»",
+  "Lien invalide": "Enlace no válido",
+  "Les recettes Cookidoo sont réservées aux abonnés : elles ne s'importent pas": "Las recetas de Cookidoo son solo para suscriptores: no se pueden importar",
+  "Site introuvable : %s": "Sitio no encontrado: %s",
+  "Seules les pages publiques d'Internet peuvent être importées": "Solo se pueden importar páginas públicas de Internet",
+  "Le site a répondu %d": "El sitio respondió %d",
+  "Ce site demande une connexion ou refuse l'accès : copiez le texte de la recette et utilisez « Coller une recette »": "Este sitio pide iniciar sesión o deniega el acceso: copie el texto de la receta y use «Pegar una receta»",
+  "Page trop lourde": "Página demasiado grande",
+  "Trop de redirections": "Demasiadas redirecciones",
+  "Collez d'abord le lien d'une recette": "Pegue primero el enlace de una receta",
+  "Page injoignable : %s": "Página inaccesible: %s",
+  "Importer depuis un lien": "Importar desde un enlace",
+  "Collez l'adresse d'une page de recette (blog, site de cuisine) : le robot récupère le titre, les ingrédients et les étapes, et convertit les réglages Thermomix.": "Pegue la dirección de una página de receta (blog, web de cocina): el robot obtiene el título, los ingredientes y los pasos, y convierte los ajustes Thermomix.",
+  "Lecture de la page…": "Leyendo la página…",
+  "Importer": "Importar",
+  "Ou coller le texte": "O pegue el texto"
 }

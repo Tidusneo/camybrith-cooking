@@ -6,7 +6,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.web.attributes.InputType
 import org.jetbrains.compose.web.dom.Div
+import org.jetbrains.compose.web.dom.H2
+import org.jetbrains.compose.web.dom.Input
 import org.jetbrains.compose.web.dom.H1
 import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Text
@@ -22,13 +25,44 @@ fun PasteScreen(app: AppState) {
     var text by remember { mutableStateOf("") }
     var busy by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf("") }
+    var url by remember { mutableStateOf("") }
+    var linkError by remember { mutableStateOf("") }
 
     Div({ classes(S.header) }) {
         H1({ classes(S.title) }) { Text(tr("Coller une recette")) }
         // Sur téléphone, la barre de gauche est masquée : retour à la liste ici.
         PillButton(tr("Mes recettes"), Icon.BACK, "ghost") { app.go("#/") }
     }
+    // Par lien : le robot lit la recette publiée dans la page (données schema.org).
     Div({ classes(S.card) }) {
+        H2 { Text(tr("Importer depuis un lien")) }
+        P({ classes(S.muted) }) {
+            Text(tr("Collez l'adresse d'une page de recette (blog, site de cuisine) : le robot récupère le titre, les ingrédients et les étapes, et convertit les réglages Thermomix."))
+        }
+        Input(InputType.Url) {
+            classes(S.input)
+            attr("placeholder", "https://…")
+            value(url)
+            onInput { url = it.value; linkError = "" }
+        }
+        if (linkError.isNotEmpty()) P({ classes(S.error) }) { Text(linkError) }
+        Div({ style { property("margin-top", "12px") } }) {
+            PillButton(if (busy) tr("Lecture de la page…") else tr("Importer"), Icon.CHECK, "primary", enabled = url.isNotBlank() && !busy) {
+                busy = true
+                app.scope.launch {
+                    try {
+                        app.draft = Api.link(url)
+                        app.go("#/new")
+                    } catch (e: Throwable) {
+                        linkError = e.message ?: ""
+                    }
+                    busy = false
+                }
+            }
+        }
+    }
+    Div({ classes(S.card) }) {
+        H2 { Text(tr("Ou coller le texte")) }
         P({ classes(S.muted) }) {
             Text(tr("Collez une recette entière : titre, ingrédients et étapes. Les réglages écrits à la manière Thermomix (par exemple « 20 min/100°C/vit. 1 ») sont convertis pour le Monsieur Cuisine Smart. Vous relirez le résultat avant de l'enregistrer."))
         }

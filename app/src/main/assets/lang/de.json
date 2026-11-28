@@ -705,5 +705,21 @@
   "Clé d'accès": "Zugangsschlüssel",
   "Nouvelle clé": "Neuer Schlüssel",
   "Une nouvelle clé déconnecte les navigateurs déjà connectés. Après 10 mauvaises clés, l'accès se bloque une minute. Sur le réseau local, la clé circule en clair : n'activez l'éditeur que sur le Wi-Fi de la maison.": "Ein neuer Schlüssel meldet bereits verbundene Browser ab. Nach 10 falschen Schlüsseln wird der Zugriff für eine Minute gesperrt. Im lokalen Netzwerk wird der Schlüssel unverschlüsselt übertragen: Den Editor nur zu Hause aktivieren.",
-  "Préparation de l'appli après la mise à jour (une à deux minutes)…": "Die App wird nach dem Update vorbereitet (ein bis zwei Minuten)…"
+  "Préparation de l'appli après la mise à jour (une à deux minutes)…": "Die App wird nach dem Update vorbereitet (ein bis zwei Minuten)…",
+  "Cette page ne décrit pas sa recette dans un format lisible : copiez son texte et utilisez « Coller une recette »": "Diese Seite beschreibt ihr Rezept nicht in einem lesbaren Format: Text kopieren und „Rezept einfügen“ verwenden",
+  "Lien invalide": "Ungültiger Link",
+  "Les recettes Cookidoo sont réservées aux abonnés : elles ne s'importent pas": "Cookidoo-Rezepte sind Abonnenten vorbehalten: Sie können nicht importiert werden",
+  "Site introuvable : %s": "Website nicht gefunden: %s",
+  "Seules les pages publiques d'Internet peuvent être importées": "Nur öffentliche Internetseiten können importiert werden",
+  "Le site a répondu %d": "Die Website antwortete %d",
+  "Ce site demande une connexion ou refuse l'accès : copiez le texte de la recette et utilisez « Coller une recette »": "Diese Website verlangt eine Anmeldung oder verweigert den Zugriff: Rezepttext kopieren und „Rezept einfügen“ verwenden",
+  "Page trop lourde": "Seite zu groß",
+  "Trop de redirections": "Zu viele Weiterleitungen",
+  "Collez d'abord le lien d'une recette": "Zuerst den Link eines Rezepts einfügen",
+  "Page injoignable : %s": "Seite nicht erreichbar: %s",
+  "Importer depuis un lien": "Von einem Link importieren",
+  "Collez l'adresse d'une page de recette (blog, site de cuisine) : le robot récupère le titre, les ingrédients et les étapes, et convertit les réglages Thermomix.": "Fügen Sie die Adresse einer Rezeptseite ein (Blog, Kochseite): Das Gerät holt Titel, Zutaten und Schritte und wandelt Thermomix-Einstellungen um.",
+  "Lecture de la page…": "Seite wird gelesen…",
+  "Importer": "Importieren",
+  "Ou coller le texte": "Oder den Text einfügen"
 }

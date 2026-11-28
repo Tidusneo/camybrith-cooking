@@ -5,6 +5,7 @@ import app.toque.core.i18n.tr
 import app.toque.core.recipes.Cookidoo
 import app.toque.core.recipes.PastedText
 import app.toque.core.recipes.Recipe
+import app.toque.core.recipes.WebRecipe
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
@@ -162,6 +163,81 @@ internal object Pasting {
     }
 }
 
+/**
+ * Import par lien : le robot télécharge la page et lit sa recette dans les données schema.org
+ * ([WebRecipe]). Seulement des pages publiques en http(s) : ni le réseau local (la page
+ * pourrait viser la box ou un autre appareil), ni Cookidoo (réservé à ses abonnés).
+ */
+internal object Linking {
+    class Refused(message: String) : Exception(message)
+
+    private const val MAX_BYTES = 3_000_000
+
+    fun draft(url: String, fetch: (java.net.URL) -> String = ::download): EditorRecipe {
+        val u = check(url)
+        val r = WebRecipe.parse(fetch(u))
+            ?: throw Refused(tr("Cette page ne décrit pas sa recette dans un format lisible : copiez son texte et utilisez « Coller une recette »"))
+        val steps = r.steps.map { EditorStep.fromText(it) }.ifEmpty { listOf(EditorStep()) }
+        return EditorRecipe(
+            title = r.title,
+            author = r.author,
+            servings = r.servings,
+            prepMinutes = r.prepMinutes,
+            totalMinutes = r.totalMinutes,
+            category = r.category,
+            tags = listOf(u.host.removePrefix("www.")),
+            ingredients = r.ingredients,
+            sections = listOf(EditorSection(steps = steps)),
+        )
+    }
+
+    fun check(url: String): java.net.URL {
+        val u = try { java.net.URL(url.trim()) } catch (_: Exception) { throw Refused(tr("Lien invalide")) }
+        if (u.protocol != "https" && u.protocol != "http") throw Refused(tr("Lien invalide"))
+        val host = u.host.lowercase()
+        if (host.isEmpty()) throw Refused(tr("Lien invalide"))
+        if (host == "cookidoo" || host.contains("cookidoo.")) throw Refused(tr("Les recettes Cookidoo sont réservées aux abonnés : elles ne s'importent pas"))
+        val addresses = try { java.net.InetAddress.getAllByName(host).toList() } catch (_: Exception) { throw Refused(tr("Site introuvable : %s", host)) }
+        if (addresses.any { it.isLoopbackAddress || it.isSiteLocalAddress || it.isLinkLocalAddress || it.isAnyLocalAddress || it.isMulticastAddress })
+            throw Refused(tr("Seules les pages publiques d'Internet peuvent être importées"))
+        return u
+    }
+
+    private fun download(start: java.net.URL): String {
+        var u = start
+        repeat(5) {
+            val c = u.openConnection() as java.net.HttpURLConnection
+            c.instanceFollowRedirects = false
+            c.connectTimeout = 15_000
+            c.readTimeout = 20_000
+            c.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 8.1) CamybrithCooking")
+            c.setRequestProperty("Accept", "text/html")
+            val code = c.responseCode
+            if (code in 300..399) {
+                val next = c.getHeaderField("Location") ?: throw Refused(tr("Le site a répondu %d", code))
+                c.disconnect()
+                u = check(java.net.URL(u, next).toString())
+                return@repeat
+            }
+            if (code == 401 || code == 403) throw Refused(tr("Ce site demande une connexion ou refuse l'accès : copiez le texte de la recette et utilisez « Coller une recette »"))
+            if (code != 200) throw Refused(tr("Le site a répondu %d", code))
+            val bytes = c.inputStream.use { input ->
+                val out = java.io.ByteArrayOutputStream()
+                val buf = ByteArray(16_384)
+                while (true) {
+                    val n = input.read(buf)
+                    if (n < 0) break
+                    out.write(buf, 0, n)
+                    if (out.size() > MAX_BYTES) throw Refused(tr("Page trop lourde"))
+                }
+                out.toByteArray()
+            }
+            return String(bytes, Charsets.UTF_8)
+        }
+        throw Refused(tr("Trop de redirections"))
+    }
+}
+
 /** Limite les essais de code : 10 erreurs, puis une minute d'attente. */
 internal class Throttle(private val clock: () -> Long = System::currentTimeMillis) {
     private var failures = 0
@@ -296,6 +372,18 @@ internal fun Application.editorModule(store: RecipeStore, host: EditorHost) {
                 if (text.isBlank()) return@post call.respond(HttpStatusCode.BadRequest, tr("Collez d'abord le texte d'une recette"))
                 if (text.length > RecipeEditorServer.MAX_PASTE) return@post call.respond(HttpStatusCode.BadRequest, tr("Texte trop long pour une recette"))
                 call.respond(Pasting.draft(text))
+            }
+            post("link") {
+                if (!authorized(call)) return@post call.respond(HttpStatusCode.Unauthorized)
+                val url = call.receive<Link>().url
+                if (url.isBlank()) return@post call.respond(HttpStatusCode.BadRequest, tr("Collez d'abord le lien d'une recette"))
+                try {
+                    call.respond(kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { Linking.draft(url) })
+                } catch (e: Linking.Refused) {
+                    call.respond(HttpStatusCode.BadRequest, e.message.orEmpty())
+                } catch (e: java.io.IOException) {
+                    call.respond(HttpStatusCode.BadGateway, tr("Page injoignable : %s", e.message.orEmpty()))
+                }
             }
             post("preview") {
                 if (!authorized(call)) return@post call.respond(HttpStatusCode.Unauthorized)

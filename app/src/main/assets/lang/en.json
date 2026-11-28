@@ -705,5 +705,21 @@
   "Clé d'accès": "Access key",
   "Nouvelle clé": "New key",
   "Une nouvelle clé déconnecte les navigateurs déjà connectés. Après 10 mauvaises clés, l'accès se bloque une minute. Sur le réseau local, la clé circule en clair : n'activez l'éditeur que sur le Wi-Fi de la maison.": "A new key signs out browsers that are already connected. After 10 wrong keys, access is blocked for a minute. On the local network the key travels unencrypted: only turn the editor on at home.",
-  "Préparation de l'appli après la mise à jour (une à deux minutes)…": "Preparing the app after the update (one to two minutes)…"
+  "Préparation de l'appli après la mise à jour (une à deux minutes)…": "Preparing the app after the update (one to two minutes)…",
+  "Cette page ne décrit pas sa recette dans un format lisible : copiez son texte et utilisez « Coller une recette »": "This page doesn't describe its recipe in a readable format: copy its text and use “Paste a recipe”",
+  "Lien invalide": "Invalid link",
+  "Les recettes Cookidoo sont réservées aux abonnés : elles ne s'importent pas": "Cookidoo recipes are for subscribers only: they can't be imported",
+  "Site introuvable : %s": "Site not found: %s",
+  "Seules les pages publiques d'Internet peuvent être importées": "Only public web pages can be imported",
+  "Le site a répondu %d": "The site replied %d",
+  "Ce site demande une connexion ou refuse l'accès : copiez le texte de la recette et utilisez « Coller une recette »": "This site requires a login or refuses access: copy the recipe's text and use “Paste a recipe”",
+  "Page trop lourde": "Page too large",
+  "Trop de redirections": "Too many redirects",
+  "Collez d'abord le lien d'une recette": "Paste a recipe link first",
+  "Page injoignable : %s": "Page unreachable: %s",
+  "Importer depuis un lien": "Import from a link",
+  "Collez l'adresse d'une page de recette (blog, site de cuisine) : le robot récupère le titre, les ingrédients et les étapes, et convertit les réglages Thermomix.": "Paste the address of a recipe page (blog, cooking site): the robot gets the title, ingredients and steps, and converts Thermomix settings.",
+  "Lecture de la page…": "Reading the page…",
+  "Importer": "Import",
+  "Ou coller le texte": "Or paste the text"
 }

@@ -75,6 +75,8 @@ object Api {
 
     suspend fun paste(text: String): EditorRecipe = sendJson("POST", "/api/paste", Paste(text), Paste.serializer(), EditorRecipe.serializer())
 
+    suspend fun link(url: String): EditorRecipe = sendJson("POST", "/api/link", Link(url), Link.serializer(), EditorRecipe.serializer())
+
     suspend fun preview(r: EditorRecipe): Preview = sendJson("POST", "/api/preview", r, EditorRecipe.serializer(), Preview.serializer())
 
     suspend fun uploadImage(id: String, jpeg: Blob) { send("PUT", "/api/recipes/" + encodeURIComponent(id) + "/image", jpeg, "image/jpeg") }
