@@ -63,11 +63,30 @@ object I18n {
     }
 }
 
-/** Traduit un texte écrit en français dans la langue de l'interface (le français s'il manque). */
-fun tr(fr: String): String = I18n.current.texts[fr] ?: fr
+/**
+ * Traduit un texte écrit en français dans la langue de l'interface (le français s'il manque).
+ *
+ * Jamais `null` : sur le Smart, le compilateur d'Android recompile parfois de travers cette
+ * fonction très appelée et lui fait renvoyer `null` (interface qui plante en boucle, 28/11/2026).
+ * On garde donc une variable locale et on retombe sur le texte français au moindre doute ;
+ * [CompileGuard] recompile l'appli en arrière-plan pour corriger la cause.
+ */
+fun tr(fr: String): String {
+    val t = I18n.current.texts[fr]
+    @Suppress("SENSELESS_COMPARISON")
+    return if (t != null) t else fr
+}
 
-/** Comme [tr], avec des paramètres au format `String.format` (%s, %d…). */
-fun tr(fr: String, vararg args: Any?): String = String.format(I18n.locale, tr(fr), *args)
+/** Comme [tr], avec des paramètres au format `String.format` (%s, %d…). Ne plante jamais. */
+fun tr(fr: String, vararg args: Any?): String {
+    @Suppress("SENSELESS_COMPARISON")
+    val template = tr(fr).let { if (it != null) it else fr }
+    return try {
+        String.format(I18n.locale, template, *args)
+    } catch (_: Throwable) {
+        template
+    }
+}
 
 /** Marque un texte à traduire plus tard avec [tr] (sans le traduire tout de suite). */
 fun trKey(fr: String): String = fr

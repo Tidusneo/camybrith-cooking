@@ -33,9 +33,10 @@ object CompileGuard {
         if (store.getInt("verifiee", 0) == version) return
         try {
             if (!RootShell.available()) return
-            val state = RootShell.run("dumpsys package $pkg | grep -o 'status=[a-z-]*'", 8_000).out
-            // « speed » ou « everything » exactement : « speed-profile » ne compile qu'une partie de l'appli.
-            val levels = state.split(Regex("\\s+")).filter { it.startsWith("status=") }.map { it.removePrefix("status=") }
+            val state = RootShell.run("dumpsys package $pkg | grep -o 'compilation_filter=[a-z-]*'", 8_000).out
+            // « speed » ou « everything » exactement : « quicken » et « speed-profile » laissent le JIT
+            // recompiler au fil de l'eau, ce qui est précisément ce qui casse tr() sur ce robot.
+            val levels = state.split(Regex("\\s+")).filter { it.startsWith("compilation_filter=") }.map { it.removePrefix("compilation_filter=") }
             if (levels.isNotEmpty() && levels.all { it == "speed" || it == "everything" }) {
                 store.edit().putInt("verifiee", version).apply()
                 return
