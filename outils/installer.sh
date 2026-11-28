@@ -60,6 +60,7 @@ $A shell cmd appops set app.toque.pilote START_FOREGROUND allow >/dev/null 2>&1 
 $A shell cmd appops set app.toque.pilote RUN_IN_BACKGROUND allow >/dev/null 2>&1 || true
 $A shell cmd appops set app.toque START_FOREGROUND allow >/dev/null 2>&1 || true
 $A shell cmd appops set app.toque RUN_IN_BACKGROUND allow >/dev/null 2>&1 || true
+$A shell cmd appops set app.toque SYSTEM_ALERT_WINDOW allow >/dev/null 2>&1 || true
 
 $A shell am force-stop app.toque
 SDK=$($A shell getprop ro.build.version.sdk | tr -d '\r')
