@@ -69,7 +69,9 @@ object WebRecipe {
     }
 
     private fun convert(r: Map<*, *>): Result {
-        val title = text(r["name"])
+        // « Moelleux aux pommes au Thermomix » → « Moelleux aux pommes ».
+        val title = text(r["name"]).replace(Regex("\\s*(?:au|avec le|avec un|version|recette)\\s+thermomix\\b.*$", RegexOption.IGNORE_CASE), "")
+            .replace(Regex("\\s*thermomix\\s*$", RegexOption.IGNORE_CASE), "").trim()
         val ingredients = (r["recipeIngredient"] ?: r["ingredients"]).asList().map { text(it) }.filter { it.isNotEmpty() }
 
         // Étapes : texte simple, HowToStep, ou HowToSection (« La pâte ») avec ses étapes.

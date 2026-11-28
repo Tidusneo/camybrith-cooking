@@ -114,6 +114,14 @@ class ServerTest {
         }
     }
 
+    @Test fun weighingSentencesBecomeWeighSteps() {
+        assertEquals("farine" to 100, Weigh.fromText("Mettre 100 grammes de farine dans le bol."))
+        assertEquals("lait demi-écrémé" to 45, Weigh.fromText("Ajouter 45 g de lait demi-écrémé dans le bol"))
+        assertEquals("sucre" to 1500, Weigh.fromText("Ajouter 1,5 kg de sucre."))
+        assertEquals(null, Weigh.fromText("Ajouter 1 sachet de levure chimique dans le bol."))
+        assertEquals(null, Weigh.fromText("Mélanger 30 sec/vitesse 4."))
+    }
+
     @Test fun accessKey() {
         val k = AccessCode.generate(java.util.Random(1))
         assertTrue(k, Regex("^[A-Z2-9]{4}-[A-Z2-9]{4}$").matches(k))

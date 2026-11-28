@@ -48,4 +48,17 @@ class WebRecipeTest {
         assertNull(WebRecipe.parse("<html><script type=\"application/ld+json\">{\"@type\":\"WebPage\"}</script></html>"))
         assertNull(WebRecipe.parse("<html><body>Pas de données</body></html>"))
     }
+
+    @Test
+    fun ovenStepsStayTextAndThermomixWordsAreReplaced() {
+        val html = """<script type="application/ld+json">{"@type":"Recipe","name":"Moelleux aux pommes au thermomix",
+          "recipeInstructions":[{"@type":"HowToStep","text":"Mettre 100 grammes de farine dans le bol du Thermomix."},
+          {"@type":"HowToStep","text":"Mélanger 30 sec/vitesse 4."},
+          {"@type":"HowToStep","text":"Mettre dans le four pendant 20 min/180°C."}]}</script>"""
+        val r = WebRecipe.parse(html)!!
+        assertEquals("Moelleux aux pommes", r.title)
+        assertEquals("Mettre 100 grammes de farine dans le bol.", r.steps[0])
+        assertTrue(r.steps[1].contains("<nobr>"))
+        assertEquals("Mettre dans le four pendant 20 min/180°C.", r.steps[2])
+    }
 }

@@ -76,7 +76,29 @@ object PastedText {
             if (mode == Mode.INGREDIENTS) mode = Mode.STEPS
             rawSteps += l.replace(NUMBERED, "")
         }
-        return Result(title, servings, ingredients, rawSteps.flatMap { split(it) })
+        return Result(title, servings, ingredients, rawSteps.flatMap { split(it) }.map { robotWording(it) })
+    }
+
+    /** Une phrase qui parle du four : ses durées et températures sont celles du four, pas du robot. */
+    private val OVEN = Regex("\\b(?:four|oven|backofen|horno)\\b", RegexOption.IGNORE_CASE)
+
+    /**
+     * « le bol du Thermomix » → « le bol », « le Thermomix » → « le robot » : les recettes Thermomix
+     * parlent de leur appareil, la recette doit parler du Monsieur Cuisine.
+     */
+    fun robotWording(text: String): String {
+        var t = text
+        val rules = listOf(
+            "(le|du|au) bol (du|de votre|de ton) thermomix" to "$1 bol",
+            "dans (le|votre|ton) thermomix" to "dans le bol",
+            "(le )?contenu (du|de votre) thermomix" to "$1contenu du bol",
+            "(?:de votre|de ton|du) thermomix" to "du robot",
+            "(?:au|avec le|avec votre) thermomix" to "au robot",
+            "(?:le|votre|ton) thermomix" to "le robot",
+            "thermomix(?:®)?(?:\\s*tm\\s?\\d+)?" to "robot",
+        )
+        for ((from, to) in rules) t = Regex(from, RegexOption.IGNORE_CASE).replace(t, to)
+        return t.replaceFirstChar { it.uppercaseChar() }
     }
 
     private enum class Mode { AUTO, INGREDIENTS, STEPS }
@@ -101,7 +123,8 @@ object PastedText {
             if (out.isNotEmpty() && !out.last().contains("<nobr>")) out[out.size - 1] = out.last() + " " + restore(pending, kept)
             else out += restore(pending, kept)
         }
-        return out
+        // « mettre au four 20 min/180°C » : réglage du four, laissé en texte (étape sans le robot).
+        return out.map { if (OVEN.containsMatchIn(it)) it.replace("<nobr>", "").replace("</nobr>", "") else it }
     }
 
     private fun restore(s: String, kept: List<String>): String =

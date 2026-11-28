@@ -237,6 +237,27 @@ internal object Linking {
     }
 }
 
+/**
+ * « Mettre 100 grammes de farine dans le bol » → pesée de 100 g de farine : l'appli affiche la
+ * balance et prévient quand le poids est atteint. Seulement en grammes ou kilos (le reste, cuillères,
+ * sachets, pièces, reste du texte).
+ */
+internal object Weigh {
+    private val PATTERN = Regex(
+        "^(?:mettre|ajouter|verser|peser|placer|d[ée]poser|incorporer)\\s+(\\d+(?:[.,]\\d+)?)\\s*(kg|kilos?|g|gr|grammes?)\\.?\\s+(?:de\\s+|d['’]\\s*)?(.+?)(?:\\s+(?:dans|sur)\\s+(?:le|la)\\s+(?:bol|balance|robot)\\b.*)?[.!]?$",
+        RegexOption.IGNORE_CASE,
+    )
+
+    fun fromText(text: String): Pair<String, Int>? {
+        val m = PATTERN.find(text.trim()) ?: return null
+        val n = m.groupValues[1].replace(',', '.').toDoubleOrNull() ?: return null
+        val grams = (if (m.groupValues[2].lowercase().startsWith("k")) n * 1000 else n).toInt()
+        if (grams !in 1..5000) return null
+        val label = m.groupValues[3].trim().trimEnd('.', ',', ';')
+        return if (label.isEmpty() || label.length > 60) null else label to grams
+    }
+}
+
 /** Limite les essais de code : 10 erreurs, puis une minute d'attente. */
 internal class Throttle(private val clock: () -> Long = System::currentTimeMillis) {
     private var failures = 0
@@ -308,7 +329,8 @@ internal fun Application.editorModule(store: RecipeStore, host: EditorHost) {
                     ),
                 )
                 s.weigh != null -> EditorStep(text = s.text, weigh = Weighing(s.weigh!!.label, s.weigh!!.grams))
-                else -> EditorStep(text = s.text)
+                else -> Weigh.fromText(s.text)?.let { (label, grams) -> EditorStep(text = s.text, weigh = Weighing(label, grams)) }
+                    ?: EditorStep(text = s.text)
             }
         }.ifEmpty { draft.sections.firstOrNull()?.steps ?: listOf(EditorStep()) }
         return draft.copy(sections = listOf(EditorSection(steps = steps)))
