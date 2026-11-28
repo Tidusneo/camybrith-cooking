@@ -37,13 +37,16 @@ fun PasteScreen(app: AppState) {
     Div({ classes(S.card) }) {
         H2 { Text(tr("Importer depuis un lien")) }
         P({ classes(S.muted) }) {
-            Text(tr("Collez l'adresse d'une page de recette (blog, site de cuisine) : le robot récupère le titre, les ingrédients et les étapes, et convertit les réglages Thermomix."))
+            Text(tr("Collez l'adresse d'une page de recette : le robot récupère le titre, les ingrédients et les étapes."))
         }
         Input(InputType.Url) {
             classes(S.input)
             attr("placeholder", "https://…")
             value(url)
             onInput { url = it.value; linkError = "" }
+        }
+        P({ classes(S.hint) }) {
+            Text(tr("Réglages convertis automatiquement pour les recettes écrites pour le Thermomix (Cookomix, Yummix…). Pour les autres recettes, la conversion est partielle : choisissez vous-même les réglages du robot."))
         }
         if (linkError.isNotEmpty()) P({ classes(S.error) }) { Text(linkError) }
         Div({ style { property("margin-top", "12px") } }) {

@@ -717,8 +717,9 @@
   "Collez d'abord le lien d'une recette": "Paste a recipe link first",
   "Page injoignable : %s": "Page unreachable: %s",
   "Importer depuis un lien": "Import from a link",
-  "Collez l'adresse d'une page de recette (blog, site de cuisine) : le robot récupère le titre, les ingrédients et les étapes, et convertit les réglages Thermomix.": "Paste the address of a recipe page (blog, cooking site): the robot gets the title, ingredients and steps, and converts Thermomix settings.",
   "Lecture de la page…": "Reading the page…",
   "Importer": "Import",
-  "Ou coller le texte": "Or paste the text"
+  "Ou coller le texte": "Or paste the text",
+  "Collez l'adresse d'une page de recette : le robot récupère le titre, les ingrédients et les étapes.": "Paste the address of a recipe page: the robot gets the title, ingredients and steps.",
+  "Réglages convertis automatiquement pour les recettes écrites pour le Thermomix (Cookomix, Yummix…). Pour les autres recettes, la conversion est partielle : choisissez vous-même les réglages du robot.": "Settings are converted automatically for recipes written for the Thermomix (Cookomix, Yummix…). For other recipes the conversion is partial: choose the robot settings yourself."
 }

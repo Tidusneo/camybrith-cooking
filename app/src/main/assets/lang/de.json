@@ -717,8 +717,9 @@
   "Collez d'abord le lien d'une recette": "Zuerst den Link eines Rezepts einfügen",
   "Page injoignable : %s": "Seite nicht erreichbar: %s",
   "Importer depuis un lien": "Von einem Link importieren",
-  "Collez l'adresse d'une page de recette (blog, site de cuisine) : le robot récupère le titre, les ingrédients et les étapes, et convertit les réglages Thermomix.": "Fügen Sie die Adresse einer Rezeptseite ein (Blog, Kochseite): Das Gerät holt Titel, Zutaten und Schritte und wandelt Thermomix-Einstellungen um.",
   "Lecture de la page…": "Seite wird gelesen…",
   "Importer": "Importieren",
-  "Ou coller le texte": "Oder den Text einfügen"
+  "Ou coller le texte": "Oder den Text einfügen",
+  "Collez l'adresse d'une page de recette : le robot récupère le titre, les ingrédients et les étapes.": "Fügen Sie die Adresse einer Rezeptseite ein: Das Gerät holt Titel, Zutaten und Schritte.",
+  "Réglages convertis automatiquement pour les recettes écrites pour le Thermomix (Cookomix, Yummix…). Pour les autres recettes, la conversion est partielle : choisissez vous-même les réglages du robot.": "Für Rezepte, die für den Thermomix geschrieben sind (Cookomix, Yummix…), werden die Einstellungen automatisch umgewandelt. Bei anderen Rezepten ist die Umwandlung unvollständig: Wählen Sie die Geräteeinstellungen selbst."
 }
