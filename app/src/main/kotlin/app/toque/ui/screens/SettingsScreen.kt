@@ -46,6 +46,8 @@ class SettingsScreen(a: MainActivity) : Screen(a) {
     private lateinit var twinBox: LinearLayout
     private lateinit var host: EditText
     private lateinit var port: EditText
+    private lateinit var serialBox: LinearLayout
+    private lateinit var serialDeviceField: EditText
     private lateinit var syncText: TextView
     private lateinit var bowlText: TextView
     private lateinit var linkText: TextView
@@ -138,6 +140,10 @@ class SettingsScreen(a: MainActivity) : Screen(a) {
         twinBox.addView(host, LinearLayout.LayoutParams(0, Ui.u(58), 1f).apply { rightMargin = Ui.u(10) })
         twinBox.addView(port, LinearLayout.LayoutParams(Ui.u(120), Ui.u(58)))
         machine.addView(twinBox, Ui.lp(t = 12))
+        serialBox = Ui.horizontal(c)
+        serialDeviceField = field(a.prefs.serialDevice, "/dev/ttyS2, /dev/ttyMT1…")
+        serialBox.addView(serialDeviceField, LinearLayout.LayoutParams(Ui.MATCH, Ui.u(58)))
+        machine.addView(serialBox, Ui.lp(t = 12))
         linkText = Ui.text(c, "", 16f, Ui.TEXT2).apply { setLineSpacing(0f, 1.15f) }
         machine.addView(linkText, Ui.lp(t = 12))
         machine.addView(Ui.button(c, tr("Appliquer"), Ui.Style.PRIMARY, Icon.Kind.CHECK, height = 58) { applyMode() }, Ui.lp(Ui.WRAP, Ui.WRAP, t = 14))
@@ -432,11 +438,12 @@ class SettingsScreen(a: MainActivity) : Screen(a) {
             }, mode == m) { mode = m; renderModes() }, Ui.lp(Ui.WRAP, Ui.WRAP, r = 8))
         }
         twinBox.visibility = if (mode == Prefs.Mode.TWIN) View.VISIBLE else View.GONE
+        serialBox.visibility = if (mode == Prefs.Mode.HARDWARE) View.VISIBLE else View.GONE
         linkText.text = when (mode) {
             Prefs.Mode.DEMO -> tr("Base moteur simulée : pour essayer l'appli sur n'importe quel appareil Android.")
             Prefs.Mode.TWIN -> tr("Jumeau numérique du SDK lancé sur un PC (tools/twin.py). Avec « adb reverse tcp:8765 tcp:8765 », gardez 127.0.0.1.")
             Prefs.Mode.HARDWARE -> tr("Pilote le vrai moteur par le port série. Exige le root. L'appli d'origine est coupée du moteur (réversible).")
-        } + if (mode == Prefs.Mode.TWIN) "" else "\n" + tr("Robot : %s", a.prefs.robotModel.label)
+        } + if (mode == Prefs.Mode.TWIN) "" else "\n" + tr("Robot : %s", a.prefs.robotModel.label) + " (" + a.prefs.serialDevice + ")"
     }
 
     private fun applyMode() {
@@ -459,6 +466,8 @@ class SettingsScreen(a: MainActivity) : Screen(a) {
 
     private fun save() {
         a.prefs.mode = mode
+        val customDev = serialDeviceField.text.toString().trim()
+        if (customDev.isNotEmpty()) a.prefs.serialDevice = customDev
         TemperatureTable.current = a.prefs.activeRobot.temperatures
         a.prefs.bootLaunch = true
         a.prefs.twinHost = host.text.toString().trim().ifEmpty { "127.0.0.1" }

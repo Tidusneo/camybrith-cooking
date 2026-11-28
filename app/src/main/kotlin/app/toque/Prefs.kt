@@ -68,23 +68,32 @@ class Prefs(context: Context) {
             p.edit().putString("robot", v).commit()
         }
 
-    /** Modèle effectif : celui choisi, sinon celui dont l'appli d'origine est installée. */
+    /** Modèle effectif : celui choisi, sinon celui dont l'appli d'origine est installée ou la carte détectée. */
     val robotModel: RobotModel
-        get() = RobotModel.of(robot) ?: RobotModel.detect { pkg ->
+        get() = RobotModel.of(robot) ?: RobotModel.detect({ pkg ->
             try {
-                packages.getPackageInfo(pkg, 0)
+                @Suppress("DEPRECATION")
+                val flags = if (android.os.Build.VERSION.SDK_INT >= 24)
+                    PackageManager.MATCH_DISABLED_COMPONENTS
+                else
+                    PackageManager.GET_DISABLED_COMPONENTS
+                packages.getPackageInfo(pkg, flags)
                 true
             } catch (_: PackageManager.NameNotFoundException) {
                 false
             }
-        }
+        }, {
+            isR818Board()
+        })
 
     /** Robot dont Toque parle le protocole : le jumeau numérique ne parle que celui du Connect. */
     val activeRobot: RobotModel
         get() = if (mode == Mode.TWIN) RobotModel.CONNECT else robotModel
 
+    fun defaultSerialDevice(): String = robotModel.serialDevice
+
     var serialDevice: String
-        get() = p.getString("serialDevice", null) ?: robotModel.serialDevice
+        get() = p.getString("serialDevice", null) ?: defaultSerialDevice()
         set(v) {
             p.edit().putString("serialDevice", v).commit()
         }
@@ -288,4 +297,18 @@ class Prefs(context: Context) {
         set(v) {
             p.edit().putInt("guidedStep", v).commit()
         }
+
+    companion object {
+        fun isR818Board(): Boolean = try {
+            val hw = android.os.Build.HARDWARE.lowercase()
+            val platform = try {
+                val c = Class.forName("android.os.SystemProperties")
+                val get = c.getMethod("get", String::class.java)
+                (get.invoke(null, "ro.board.platform") as? String)?.lowercase().orEmpty()
+            } catch (_: Throwable) { "" }
+            hw.startsWith("sun50i") || platform == "peony"
+        } catch (_: Throwable) {
+            false
+        }
+    }
 }

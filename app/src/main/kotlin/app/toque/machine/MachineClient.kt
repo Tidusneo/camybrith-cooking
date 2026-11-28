@@ -112,7 +112,17 @@ class MachineClient(private val context: Context) {
         }
         if (pilotMissing) return
         startPilot(context)
-        bound = context.bindService(intent, connection, Context.BIND_AUTO_CREATE or Context.BIND_IMPORTANT)
+        fun tryBind(attempt: Int) {
+            if (bound) return
+            try {
+                bound = context.bindService(intent, connection, Context.BIND_AUTO_CREATE or Context.BIND_IMPORTANT)
+            } catch (_: Exception) {
+            }
+            if (!bound && attempt < 10) {
+                main.postDelayed({ tryBind(attempt + 1) }, 600)
+            }
+        }
+        tryBind(1)
     }
 
     /** Diffuse un état sans passer par le service : pour les captures d'écran de l'interface. */

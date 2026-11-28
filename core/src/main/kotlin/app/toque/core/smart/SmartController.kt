@@ -107,6 +107,10 @@ class SmartConfig(
     val freshMs: Long = 800,
     /** Sans réponse depuis plus longtemps, la liaison est perdue et tout s'arrête. */
     val staleMs: Long = 1_500,
+    /** Délai de perte de liaison au repos (sans programme en cours ni en pause). */
+    val staleIdleMs: Long = staleMs,
+    /** Envoyer constantTemperature dans les trames de consigne manuelle (profil R818). */
+    val sendConstantTemperature: Boolean = false,
     /** Accusés consécutifs d'une trame d'arrêt exigés avant d'autoriser une commande. */
     val armingSamples: Int = 3,
     /** Délai pour obtenir l'accusé d'une trame d'arrêt. */
@@ -381,7 +385,8 @@ class SmartController(private val clock: Clock, var config: SmartConfig = SmartC
         frames.clear()
         parser.expire(now, frames)
         for (f in frames) onFrame(f)
-        if ((link == LinkState.READY || link == LinkState.ARMING) && now - latestAtMs > config.staleMs) {
+        val timeout = if (job != null || turboActive) config.staleMs else config.staleIdleMs
+        if ((link == LinkState.READY || link == LinkState.ARMING) && now - latestAtMs > timeout) {
             setLink(LinkState.LOST)
             if (job?.active == true) raiseFault(SmartFaultCode.COMM_LOST, tr("Plus de réponse de la base moteur : tout est arrêté"))
         }
@@ -427,9 +432,11 @@ class SmartController(private val clock: Clock, var config: SmartConfig = SmartC
             val level = if (rest) 0 else SmartWire.temperatureLevel(target.temperatureLevel)
             val function = if (rest) Mcs.FN_STOP else SmartWire.function(target.operation)
             val seconds = if (rest) 0 else job?.runSeconds ?: 0
+            val constantTemperature = if (config.sendConstantTemperature && !rest && level > 0) Mcs.celsiusForLevel(level) else 0
             frame = Mcs.encode(
                 McsCommand(
-                    speedLevel = speed, temperatureLevel = level, reverse = !rest && SmartWire.reverse(target.direction),
+                    speedLevel = speed, temperatureLevel = level, constantTemperature = constantTemperature,
+                    reverse = !rest && SmartWire.reverse(target.direction),
                     function = function, seconds = seconds,
                 ),
                 seq,
