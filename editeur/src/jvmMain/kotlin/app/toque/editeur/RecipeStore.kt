@@ -236,6 +236,8 @@ class RecipeStore(private val dir: File, private val importDir: File? = null, pr
         out["tags"] = tags
         old?.forEach { (k, v) -> if (k !in out && k != "author" && k != "schema" && k != "updated") out[k] = v }
         out["updated"] = r.updated
+        // Recette de l'éditeur : l'appli la range sous « Éditeur » dans l'onglet Thermomix.
+        out["editor"] = true
         out["schema"] = schema
         return out
     }

@@ -136,7 +136,7 @@ object Cookidoo {
             totalMinutes = minutes(schema.str("totalTime")),
             ingredients = if (ingredients.isEmpty()) emptyList() else listOf(IngredientGroup("", ingredients)),
             steps = steps,
-            source = RecipeSource.IMPORTED,
+            source = if (m["editor"] == true) RecipeSource.USER else RecipeSource.IMPORTED,
             image = imageName(id),
             notes = notes,
             author = m.str("author")?.trim().orEmpty(),

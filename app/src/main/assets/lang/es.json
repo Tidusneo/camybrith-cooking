@@ -721,5 +721,7 @@
   "Importer": "Importar",
   "Ou coller le texte": "O pegue el texto",
   "Collez l'adresse d'une page de recette : le robot récupère le titre, les ingrédients et les étapes.": "Pegue la dirección de una página de receta: el robot obtiene el título, los ingredientes y los pasos.",
-  "Réglages convertis automatiquement pour les recettes écrites pour le Thermomix (Cookomix, Yummix…). Pour les autres recettes, la conversion est partielle : choisissez vous-même les réglages du robot.": "Los ajustes se convierten automáticamente en las recetas escritas para Thermomix (Cookomix, Yummix…). En las demás recetas la conversión es parcial: elija usted los ajustes del robot."
+  "Réglages convertis automatiquement pour les recettes écrites pour le Thermomix (Cookomix, Yummix…). Pour les autres recettes, la conversion est partielle : choisissez vous-même les réglages du robot.": "Los ajustes se convierten automáticamente en las recetas escritas para Thermomix (Cookomix, Yummix…). En las demás recetas la conversión es parcial: elija usted los ajustes del robot.",
+  "Éditeur": "Editor",
+  "Fichiers Thermomix": "Archivos Thermomix"
 }
