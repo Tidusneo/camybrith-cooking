@@ -22,6 +22,7 @@ import io.ktor.server.request.receiveChannel
 import io.ktor.server.response.header
 import io.ktor.server.response.respond
 import io.ktor.server.response.respondBytes
+import io.ktor.server.response.respondText
 import io.ktor.server.routing.RoutingCall
 import io.ktor.server.routing.delete
 import io.ktor.server.routing.get
@@ -337,7 +338,16 @@ internal fun Application.editorModule(store: RecipeStore, host: EditorHost) {
     }
 
     routing {
-        get("/") { resource(call, "index.html") }
+        get("/") {
+            // Le script porte le numéro de version : après une mise à jour, le navigateur du téléphone
+            // charge le nouveau au lieu de garder l'ancien en mémoire.
+            val html = RecipeEditorServer::class.java.classLoader?.getResourceAsStream("web/index.html")?.use { it.readBytes().toString(Charsets.UTF_8) }
+            if (html == null) call.respond(HttpStatusCode.NotFound)
+            else {
+                call.response.header(HttpHeaders.CacheControl, "no-store")
+                call.respondText(html.replace("src=\"editeur.js\"", "src=\"editeur.js?v=${java.net.URLEncoder.encode(host.version, "UTF-8")}\""), ContentType.Text.Html)
+            }
+        }
         get("/{file}") { resource(call, call.parameters["file"].orEmpty()) }
         get("/fonts/{name}") {
             val name = call.parameters["name"].orEmpty()
