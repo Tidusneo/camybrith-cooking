@@ -27,6 +27,8 @@ class CompilerWatch(private val log: Logbook, private val onProblem: (String) ->
     private val thread = HandlerThread("toque-sentinelle", android.os.Process.THREAD_PRIORITY_BACKGROUND).apply { start() }
     private val main = Handler(thread.looper)
     private var expected: List<String> = emptyList()
+    /** Langue dans laquelle [expected] a été calculé : changer de langue n'est pas une anomalie. */
+    private var expectedLanguage = ""
     private var rounds = 0L
     @Volatile var failed = false
         private set
@@ -55,6 +57,7 @@ class CompilerWatch(private val log: Logbook, private val onProblem: (String) ->
     fun start() {
         main.post {
             expected = compute()
+            expectedLanguage = app.toque.core.i18n.I18n.code
             main.postDelayed(tick, 1_000)
         }
     }
@@ -62,12 +65,22 @@ class CompilerWatch(private val log: Logbook, private val onProblem: (String) ->
     private val tick = object : Runnable {
         override fun run() {
             if (failed) return
+            // Nouvelle langue choisie dans les réglages : les textes témoins changent, on les recalcule.
+            if (app.toque.core.i18n.I18n.code != expectedLanguage) {
+                expected = compute()
+                expectedLanguage = app.toque.core.i18n.I18n.code
+            }
             val t0 = SystemClock.uptimeMillis()
             try {
                 // Cent passages : le compilateur traite ces fonctions comme très appelées.
                 repeat(100) {
                     val got = compute()
                     if (got != expected) {
+                        // Langue changée pendant ce contrôle : pas une anomalie, on recalcule au prochain.
+                        if (app.toque.core.i18n.I18n.code != expectedLanguage) {
+                            main.postDelayed(this, 1_000)
+                            return
+                        }
                         val i = got.indices.firstOrNull { got[it] != expected.getOrNull(it) } ?: -1
                         fail("calcul témoin $i : « ${expected.getOrNull(i)} » devenu « ${got.getOrNull(i)} »")
                         return
