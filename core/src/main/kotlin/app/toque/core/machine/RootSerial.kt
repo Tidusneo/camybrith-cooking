@@ -83,25 +83,41 @@ class RootSerialTransport(
     override val name: String get() = tr("Base moteur (%s)", device)
 
     @Volatile private var process: Process? = null
+    @Volatile private var directRaf: java.io.RandomAccessFile? = null
+    @Volatile private var directInput: InputStream? = null
+    @Volatile private var directOutput: java.io.OutputStream? = null
 
     override fun open() {
+        val f = java.io.File(device)
+        if (!f.exists()) throw IOException(tr("%s absent", device))
+
         val probe = RootShell.run(
-            "id -u; for b in /data/adb/magisk/busybox /sbin/.magisk/busybox/busybox /data/app/com.topjohnwu.magisk*/lib/arm*/libbusybox.so " +
-                "/system/xbin/busybox /system/bin/busybox; " +
+            "id -u; for b in /vendor/bin/busybox /vendor/xbin/busybox /data/adb/magisk/busybox /sbin/.magisk/busybox/busybox " +
+                "/data/app/com.topjohnwu.magisk*/lib/arm*/libbusybox.so /system/xbin/busybox /system/bin/busybox \$(which busybox 2>/dev/null); " +
                 "do if [ -x \$b ]; then echo BB=\$b; break; fi; done; [ -e $device ] && echo DEV=ok",
             10_000,
         )
         val lines = probe.out.lines().map { it.trim() }
-        if (lines.firstOrNull() != "0") throw IOException(tr("Accès root refusé (Magisk installé et autorisé ?)"))
+        val rootOk = lines.firstOrNull() == "0"
         val bb = lines.firstOrNull { it.startsWith("BB=") }?.substring(3)
-            ?: throw IOException(tr("busybox introuvable (fourni par Magisk)"))
-        if (lines.none { it == "DEV=ok" }) throw IOException(tr("%s absent", device))
+
+        // Pont root privilégié (Magisk) par défaut.
+        // Si root indisponible mais que le port est déjà accessible en lecture/écriture
+        // (ex : permissions système du robot Allwinner R818), repli direct sans élargir les droits.
+        if (!rootOk || bb == null) {
+            if (f.canRead() && f.canWrite()) {
+                openDirect(f)
+                return
+            }
+            if (!rootOk) throw IOException(tr("Accès root refusé (Magisk installé et autorisé ?)"))
+            throw IOException(tr("busybox introuvable (fourni par Magisk)"))
+        }
 
         if (vendorPackage != null) RootShell.run("am force-stop $vendorPackage", 8_000)
 
         val holders = RootShell.run(
-            "B=$bb; for p in /proc/[0-9]*; do for f in \$p/fd/*; do " +
-                "if [ \"\$(\$B readlink \$f 2>/dev/null)\" = \"$device\" ]; then " +
+            "B=$bb; CANON=\"\$(\$B readlink -f $device 2>/dev/null || echo $device)\"; for p in /proc/[0-9]*; do for f in \$p/fd/*; do " +
+                "TARGET=\"\$(\$B readlink \$f 2>/dev/null)\"; if [ \"\$TARGET\" = \"$device\" ] || [ \"\$TARGET\" = \"\$CANON\" ]; then " +
                 "echo \"\${p#/proc/} \$(\$B tr '\\000' ' ' < \$p/cmdline)\"; break; fi; done; done",
             20_000,
         )
@@ -111,7 +127,7 @@ class RootSerialTransport(
             if (l.isEmpty()) continue
             val pid = l.substringBefore(' ')
             val cmd = l.substringAfter(' ', "")
-            if (cmd.contains("cat") && cmd.contains(device) || cmd.trim() == "cat" || cmd.contains("busybox cat")) {
+            if (cmd.contains("cat") && (cmd.contains(device) || cmd.contains("tty")) || cmd.trim() == "cat" || cmd.contains("busybox cat")) {
                 RootShell.run("kill $pid", 5_000) // ancien pont de cette appli
             } else {
                 foreign += "$pid $cmd".trim()
@@ -146,18 +162,65 @@ class RootSerialTransport(
         }
     }
 
+    private fun openDirect(f: java.io.File) {
+        if (vendorPackage != null) {
+            try {
+                RootShell.run("am force-stop $vendorPackage", 5_000)
+            } catch (_: Throwable) {
+            }
+        }
+        for (cmd in listOf(
+            arrayOf("/system/bin/stty", "-F", device, baud.toString(), "raw", "-echo", "cs8", "-cstopb", "-parenb", "-crtscts", "clocal", "cread", "min", "1", "time", "0"),
+            arrayOf("stty", "-F", device, baud.toString(), "raw", "-echo", "cs8", "-cstopb", "-parenb", "-crtscts", "clocal", "cread", "min", "1", "time", "0")
+        )) {
+            try {
+                val p = ProcessBuilder(*cmd).redirectErrorStream(true).start()
+                if (p.waitFor(1, java.util.concurrent.TimeUnit.SECONDS) && p.exitValue() == 0) break
+            } catch (_: Throwable) {
+            }
+        }
+        val raf = java.io.RandomAccessFile(f, "rw")
+        directRaf = raf
+        directInput = java.io.FileInputStream(raf.fd)
+        directOutput = java.io.FileOutputStream(raf.fd)
+    }
+
     override fun write(frame: ByteArray) {
+        val o = directOutput
+        if (o != null) {
+            o.write(frame)
+            o.flush()
+            return
+        }
         val p = process ?: throw IOException(tr("port fermé"))
         p.outputStream.write(frame)
         p.outputStream.flush()
     }
 
     override fun read(buffer: ByteArray): Int {
+        val i = directInput
+        if (i != null) return i.read(buffer)
         val p = process ?: return -1
         return p.inputStream.read(buffer)
     }
 
     override fun close() {
+        try {
+            directInput?.close()
+        } catch (_: IOException) {
+        }
+        try {
+            directOutput?.close()
+        } catch (_: IOException) {
+        }
+        try {
+            directRaf?.close()
+        } catch (_: IOException) {
+        }
+        directInput = null
+        directOutput = null
+        directRaf = null
+
         val p = process ?: return
         process = null
         try {

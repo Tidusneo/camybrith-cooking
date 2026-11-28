@@ -214,11 +214,21 @@ class MachineClient(private val context: Context) {
 }
 
 fun pilotIntent(): Intent = Intent().setComponent(ComponentName(Ipc.PILOT_PACKAGE, Ipc.PILOT_SERVICE))
+    .addFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES)
 
 /** Démarre le pilote (service au premier plan sur Android 8 : autorisé même en arrière-plan). */
 fun startPilot(c: Context) {
     try {
-        if (android.os.Build.VERSION.SDK_INT >= 26) c.startForegroundService(pilotIntent()) else c.startService(pilotIntent())
+        c.startActivity(
+            Intent()
+                .setComponent(ComponentName(Ipc.PILOT_PACKAGE, "app.toque.machine.PiloteLauncher"))
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        )
+    } catch (_: Exception) {
+    }
+    try {
+        val i = pilotIntent()
+        if (android.os.Build.VERSION.SDK_INT >= 26) c.startForegroundService(i) else c.startService(i)
     } catch (_: Exception) {
     }
 }

@@ -527,9 +527,11 @@ class SettingsScreen(a: MainActivity) : Screen(a) {
         a.toast(tr("Vérifications…"))
         Thread {
             val problems = ArrayList<String>()
-            if (!RootShell.available()) problems += tr("accès root refusé")
+            val devFile = java.io.File(a.prefs.serialDevice)
+            val directAccessible = devFile.exists() && devFile.canRead() && devFile.canWrite()
+            if (!directAccessible && !RootShell.available()) problems += tr("accès root refusé")
             val sync = LidlSync(a, a.prefs, a.app.recipes, a.app.log)
-            if (problems.isEmpty() && sync.installed()) {
+            if (problems.isEmpty() && sync.installed() && RootShell.available()) {
                 if (sync.components().hardwareService != null && !sync.setVendorHardware(false))
                     problems += tr("impossible de couper l'appli d'origine du moteur")
                 sync.forceStop()

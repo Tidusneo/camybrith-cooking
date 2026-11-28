@@ -19,6 +19,12 @@
              appelées (une fonction renvoyait null alors que son code ne le peut pas). Le pilote
              envoie les commandes au moteur et à la chauffe : il reste interprété, l'interface non. -->
 
+        <activity
+            android:name="app.toque.machine.PiloteLauncher"
+            android:exported="true"
+            android:permission="app.toque.permission.PILOTER"
+            android:theme="@android:style/Theme.NoDisplay" />
+
         <service
             android:name="app.toque.machine.MachineService"
             android:exported="true"
