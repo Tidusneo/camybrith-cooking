@@ -31,7 +31,12 @@ class LidlSync(private val context: Context, private val prefs: Prefs, private v
     data class Report(val ok: Boolean, val message: String, val recipes: Int = 0)
 
     fun installed(): Boolean = try {
-        context.packageManager.getPackageInfo(pkg, 0)
+        @Suppress("DEPRECATION")
+        val flags = if (android.os.Build.VERSION.SDK_INT >= 24)
+            PackageManager.MATCH_DISABLED_COMPONENTS
+        else
+            PackageManager.GET_DISABLED_COMPONENTS
+        context.packageManager.getPackageInfo(pkg, flags)
         true
     } catch (_: PackageManager.NameNotFoundException) {
         false
@@ -40,7 +45,11 @@ class LidlSync(private val context: Context, private val prefs: Prefs, private v
     fun components(): Components {
         val pm = context.packageManager
         val info = try {
-            pm.getPackageInfo(pkg, PackageManager.GET_SERVICES or PackageManager.GET_DISABLED_COMPONENTS)
+            @Suppress("DEPRECATION")
+            val flags = PackageManager.GET_SERVICES or (
+                if (android.os.Build.VERSION.SDK_INT >= 24) PackageManager.MATCH_DISABLED_COMPONENTS else PackageManager.GET_DISABLED_COMPONENTS
+            )
+            pm.getPackageInfo(pkg, flags)
         } catch (_: PackageManager.NameNotFoundException) {
             return Components(null, null, null)
         }
@@ -79,7 +88,7 @@ class LidlSync(private val context: Context, private val prefs: Prefs, private v
      */
     fun sync(maxWaitMs: Long = 8 * 60_000L, progress: (String) -> Unit = {}): Report {
         // La base de recettes de l'appli du Smart n'a pas encore été étudiée ; et ceci couperait son moteur.
-        if (prefs.activeRobot == RobotModel.SMART) return finish(Report(false, tr("Sur le Smart, les recettes viennent du site : utilisez « Synchroniser »")))
+        if (prefs.activeRobot.isSmart) return finish(Report(false, tr("Sur le Smart, les recettes viennent du site : utilisez « Synchroniser »")))
         if (!RootShell.available()) return finish(Report(false, tr("Accès root indisponible")))
         if (!installed()) return finish(Report(false, tr("Appli d'origine introuvable (%s)", pkg)))
         val comp = components()
@@ -111,7 +120,7 @@ class LidlSync(private val context: Context, private val prefs: Prefs, private v
 
     /** Copie la base actuelle de l'appli d'origine (sans relancer sa synchro). */
     fun importNow(progress: (String) -> Unit = {}): Report {
-        if (prefs.activeRobot == RobotModel.SMART) return finish(Report(false, tr("Sur le Smart, les recettes viennent du site : utilisez « Synchroniser »")))
+        if (prefs.activeRobot.isSmart) return finish(Report(false, tr("Sur le Smart, les recettes viennent du site : utilisez « Synchroniser »")))
         if (!RootShell.available()) return finish(Report(false, tr("Accès root indisponible")))
         progress(tr("Copie des recettes…"))
         val work = File(context.cacheDir, "lidl").apply { mkdirs() }
